@@ -12,12 +12,12 @@ colors:
   accent-success: "#16a34a"
 typography:
   display:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(2rem, 5vw, 3rem)"
     fontWeight: 900
     lineHeight: 1.15
   body:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 500
     lineHeight: 1.5
@@ -77,8 +77,8 @@ A paleta de cores é focada no contraste limpo e legibilidade.
 
 ## 3. Typography
 
-**Display Font:** ui-sans-serif, system-ui, sans-serif
-**Body Font:** ui-sans-serif, system-ui, sans-serif
+**Display Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
+**Body Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
 
 **Character:** Tipografia geométrica, moderna, limpa e com forte variação de peso para separar claramente títulos de parágrafos.
 

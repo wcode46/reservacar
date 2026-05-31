@@ -5,13 +5,46 @@ import {
   MessageCircle, Phone, Heart, Share, ArrowRight, ArrowUpRight, ArrowLeft, Shield,
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
-  CircleDollarSign
+  CircleDollarSign, Settings
 } from 'lucide-react';
+
 
 // --- UTILITY FUNCTIONS ---
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
+
+const formatCPF = (v: string) => {
+  v = v.replace(/\D/g, "");
+  if (v.length > 11) v = v.substring(0, 11);
+  return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+          .replace(/(\d{3})(\d{3})(\d)/, "$1.$2.$3")
+          .replace(/(\d{3})(\d)/, "$1.$2");
+};
+
+const formatCNPJ = (v: string) => {
+  v = v.replace(/\D/g, "");
+  if (v.length > 14) v = v.substring(0, 14);
+  return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")
+          .replace(/(\d{2})(\d{3})(\d{3})(\d)/, "$1.$2.$3/$4")
+          .replace(/(\d{2})(\d{3})(\d)/, "$1.$2.$3");
+};
+
+const formatPhone = (v: string) => {
+  v = v.replace(/\D/g, "");
+  if (v.length > 11) v = v.substring(0, 11);
+  if (v.length > 10) {
+    return v.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+  }
+  return v.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+};
+
+const formatCEP = (v: string) => {
+  v = v.replace(/\D/g, "");
+  if (v.length > 8) v = v.substring(0, 8);
+  return v.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+};
+
 
 // Safe copy helper due to iframe sandbox constraints
 const copyToClipboard = (text, callback) => {
@@ -94,7 +127,7 @@ const MOCK_YEARS = [
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState('home'); // home, login, hub, sales-stats, dashboard, preview, mobile-preview, assinar, cadastrar-reserva
+  const [currentRoute, setCurrentRoute] = useState('home'); // home, login, hub, sales-stats, dashboard, preview, mobile-preview, assinar, cadastrar-reserva, configuracoes, checkout-plano
   const [activeReservation, setActiveReservation] = useState<any>(null); 
   const [toastMessage, setToastMessage] = useState<any>(null);
   
@@ -104,8 +137,13 @@ export default function App() {
   const [empresaLogada, setEmpresaLogada] = useState<any>({
     nome: 'BMW Premium SP',
     cnpj: '12.345.678/0001-90',
-    email: 'vendedor@bmwpremium.com.br'
+    email: 'vendedor@bmwpremium.com.br',
+    telefone: '(11) 99999-8822',
+    valorMinimoSinal: 1500,
+    plano: 'Plus',
+    planoAtivo: 'Plus'
   });
+  const [planoUpgrade, setPlanoUpgrade] = useState<string>('Plus');
   
   // Real-time live notifications (makes the dashboard dynamic!)
   const [liveNotifications, setLiveNotifications] = useState([
@@ -229,6 +267,7 @@ export default function App() {
             setReservasUsadas={setReservasUsadas}
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
+            empresaLogada={empresaLogada}
           />
         )}
         
@@ -242,6 +281,7 @@ export default function App() {
             setReservasUsadas={setReservasUsadas}
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
+            empresaLogada={empresaLogada}
           />
         )}
 
@@ -255,11 +295,35 @@ export default function App() {
           />
         )}
 
+        {currentRoute === 'configuracoes' && (
+          <ConfiguracoesView 
+            navigateTo={navigateTo} 
+            showToast={showToast}
+            empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
+            totalReservasPlano={totalReservasPlano}
+            setTotalReservasPlano={setTotalReservasPlano}
+            setPlanoUpgrade={setPlanoUpgrade}
+          />
+        )}
+
+        {currentRoute === 'checkout-plano' && (
+          <CheckoutPlanoView 
+            navigateTo={navigateTo} 
+            showToast={showToast}
+            empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
+            planoUpgrade={planoUpgrade}
+            setTotalReservasPlano={setTotalReservasPlano}
+          />
+        )}
+
         {currentRoute === 'cadastrar-reserva' && (
           <CadastroReservaClienteView 
             navigateTo={navigateTo} 
             showToast={showToast}
             setActiveReservation={setActiveReservation}
+            empresaLogada={empresaLogada}
           />
         )}
       </main>
@@ -358,11 +422,24 @@ function Navbar({ currentRoute, navigateTo }) {
                 </button>
               </>
             )}
-            {['hub', 'sales-stats', 'dashboard', 'assinar'].includes(currentRoute) && (
+            {['hub', 'sales-stats', 'dashboard', 'assinar', 'configuracoes'].includes(currentRoute) && (
               <>
                 <button 
+                  onClick={() => navigateTo('configuracoes')}
+                  className={`p-2.5 rounded-xl transition flex items-center justify-center mr-2 border ${
+                    currentRoute === 'configuracoes'
+                      ? 'bg-blue-50 text-blue-600 border-blue-200'
+                      : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50 border-transparent'
+                  }`}
+                  title="Configurações"
+                >
+                  <Settings size={18} />
+                </button>
+                <button 
                   onClick={() => navigateTo('hub')}
-                  className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition mr-4 py-2"
+                  className={`text-sm font-semibold transition mr-4 py-2 ${
+                    currentRoute === 'hub' ? 'text-blue-600 font-bold' : 'text-slate-600 hover:text-blue-600'
+                  }`}
                 >
                   Painel Principal
                 </button>
@@ -489,7 +566,7 @@ function HomeView({ navigateTo }) {
           <div className="lg:col-span-7 flex flex-col items-start max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-slate-300 select-none backdrop-blur-md">
               <Sparkles size={14} className="text-blue-400" />
-              <span className="text-xs font-semibold tracking-wider uppercase">NOVA VERSÃO 2026 DISPONIVEL</span>
+              <span className="text-xs font-semibold tracking-wider uppercase">NOVA VERSÂO 2026 DISPONIVEL</span>
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-[64px] font-extrabold leading-[1.08] text-white tracking-tighter mb-6">
@@ -1311,7 +1388,8 @@ function PreviewView({
   setRecentReservations, 
   setReservasUsadas, 
   reservasUsadas = 0, 
-  totalReservasPlano = 30 
+  totalReservasPlano = 30,
+  empresaLogada
 }) {
   const data = reservation || {
     title: 'BMW 320i Sport GP 2.0 Turbo ActiveFlex',
@@ -1524,10 +1602,36 @@ function PreviewView({
                   </span>
                 ))}
               </div>
+
+              {/* Concessionária info */}
+              <div className="border-t border-slate-200 pt-6 mt-6">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Sobre a Loja</h4>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Razão Social</span>
+                    <span className="text-sm font-semibold text-slate-800">{empresaLogada?.nome || 'BMW Premium SP'}</span>
+                  </div>
+                  {empresaLogada?.cnpj && (
+                    <div>
+                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">CNPJ</span>
+                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.cnpj}</span>
+                    </div>
+                  )}
+                  {empresaLogada?.email && (
+                    <div>
+                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">E-mail de Contato</span>
+                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.email}</span>
+                    </div>
+                  )}
+                  {empresaLogada?.telefone && (
+                    <div>
+                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Telefone Comercial</span>
+                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.telefone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            
-            {/* Live Chat Drawer */}
-            <LiveChatSimulator sellerName={data.vendedores ? data.vendedores.split(',')[0].trim() : 'Consultor'} showToast={showToast} />
           </div>
 
           {/* Pricing Signal Booking card */}
@@ -1595,7 +1699,8 @@ function MobileClientView({
   setRecentReservations, 
   setReservasUsadas, 
   reservasUsadas = 0, 
-  totalReservasPlano = 30 
+  totalReservasPlano = 30,
+  empresaLogada
 }) {
   const data = reservation || {
     title: 'BMW 320i Sport GP 2024',
@@ -1610,6 +1715,8 @@ function MobileClientView({
   const [timeLeft, setTimeLeft] = useState(data.expiracao * 60); 
   const [showPixModal, setShowPixModal] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<'veiculo' | 'ficha' | 'atividade'>('veiculo');
+  const [selectedAtendente, setSelectedAtendente] = useState(data.vendedores ? data.vendedores.split(',')[0] : '');
   
   const economiaPct = Math.round((1 - (data.valorVenda / data.fipeValue)) * 100) || 6;
   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
@@ -1655,7 +1762,7 @@ function MobileClientView({
         <div className="absolute top-6 right-6 bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between items-center gap-3 z-20 w-64">
           <div className="text-center">
             <h4 className="font-extrabold text-xs text-slate-900">Visualização Mobile</h4>
-            <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salvá-la no painel.</p>
+            <p className="text-[10px] text-slate-550 mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salvá-la no painel.</p>
           </div>
           <button 
             onClick={handlePublish}
@@ -1687,7 +1794,7 @@ function MobileClientView({
         <div className="flex-1 overflow-y-auto pb-24 bg-white">
           
           {/* Photos and Indicators */}
-          <div className="relative w-full h-56 bg-slate-50 overflow-hidden">
+          <div className="relative w-full h-56 bg-slate-50 overflow-hidden shrink-0">
             <div 
               className="flex w-full h-full transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
@@ -1754,21 +1861,250 @@ function MobileClientView({
               <p className="text-[10px] text-slate-500 font-semibold mt-1">4 clientes estão visualizando este link agora</p>
             </div>
 
-            {/* Specs visual cards */}
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Combustível</span>
-                <span className="block text-xs font-bold text-slate-900">{data.combustivel || 'Flex'}</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
-                <span className="block text-xs font-bold text-slate-900">{data.km || 'N/A'}</span>
-              </div>
+            {/* Tabs Bar */}
+            <div className="flex border-b border-slate-200 mb-6 bg-white shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('veiculo')}
+                className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
+                  activeTab === 'veiculo'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                VEÍCULO
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('ficha')}
+                className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
+                  activeTab === 'ficha'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                FICHA
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('atividade')}
+                className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
+                  activeTab === 'atividade'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                }`}
+              >
+                ATIVIDADE
+              </button>
             </div>
 
-            {/* Simulated instant client messaging pane inside the mobile frame */}
-            <div className="border-t border-slate-200 pt-6">
-              <LiveChatSimulator sellerName={data.vendedores ? data.vendedores.split(',')[0].trim() : 'Consultor'} showToast={showToast} embeddedInMobile />
+            {/* ABA: VEÍCULO */}
+            {activeTab === 'veiculo' && (
+              <div className="space-y-6 animate-fadeIn text-left">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Combustível</span>
+                    <span className="block text-xs font-bold text-slate-900">{data.combustivel || 'Flex'}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
+                    <span className="block text-xs font-bold text-slate-900">{data.km || 'N/A'}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Cor Externa</span>
+                    <span className="block text-xs font-bold text-slate-900">{data.corText || 'N/A'}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Câmbio</span>
+                    <span className="block text-xs font-bold text-slate-900">{data.cambio || 'N/A'}</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mt-4 text-left">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Atendente Dedicado</h4>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <select 
+                        value={selectedAtendente} 
+                        onChange={(e) => {
+                          setSelectedAtendente(e.target.value);
+                          data.vendedores = e.target.value;
+                        }} 
+                        className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-slate-850 transition appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
+                      >
+                        <option value="" disabled>Selecione seu vendedor...</option>
+                        <option value="Carla Silva">Carla Silva</option>
+                        <option value="Roberto Oliveira">Roberto Oliveira</option>
+                        <option value="Marcos Souza">Marcos Souza</option>
+                      </select>
+                    </div>
+
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (!selectedAtendente) {
+                          showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
+                          return;
+                        }
+                        setShowPixModal(true);
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-750 text-white font-bold text-sm py-4 rounded-xl flex items-center justify-center transition"
+                    >
+                      Confirmar Reserva e ir para o PIX
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ABA: FICHA */}
+            {activeTab === 'ficha' && (
+              <div className="space-y-6 animate-fadeIn text-left">
+                {/* Ficha Técnica Detail List */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Ficha Técnica</h4>
+                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-bold">Marca</span>
+                    <span className="font-extrabold text-slate-800">{data.marcaText || data.title.split(' ')[0]}</span>
+                  </div>
+                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-bold">Modelo</span>
+                    <span className="font-extrabold text-slate-800">{data.modeloText || data.title.split(' ').slice(1).join(' ')}</span>
+                  </div>
+                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-bold">Ano</span>
+                    <span className="font-extrabold text-slate-800">{data.anoText}</span>
+                  </div>
+                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
+                    <span className="text-slate-500 font-bold">Motorização</span>
+                    <span className="font-extrabold text-slate-800">{data.motorText}</span>
+                  </div>
+                  <div className="flex justify-between text-xs py-1">
+                    <span className="text-slate-500 font-bold">Cor</span>
+                    <span className="font-extrabold text-slate-800">{data.corText}</span>
+                  </div>
+                </div>
+
+                {/* Opcionais do veículo */}
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">Opcionais inclusos</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {data.opcionais ? data.opcionais.split(',').map((opc: string, idx: number) => (
+                      <span key={idx} className="bg-slate-50 text-slate-700 text-[10px] font-black px-3 py-1.5 rounded-xl border border-slate-200">
+                        {opc.trim()}
+                      </span>
+                    )) : (
+                      <span className="text-xs text-slate-500 font-semibold">Nenhum opcional cadastrado.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Concessionária info */}
+                <div className="border-t border-slate-200 pt-6 mt-6">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">Sobre a Loja</h4>
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div>
+                      <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Razão Social</span>
+                      <span className="text-xs font-semibold text-slate-800">{empresaLogada?.nome || 'BMW Premium SP'}</span>
+                    </div>
+                    {empresaLogada?.cnpj && (
+                      <div>
+                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">CNPJ</span>
+                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.cnpj}</span>
+                      </div>
+                    )}
+                    {empresaLogada?.email && (
+                      <div>
+                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">E-mail de Contato</span>
+                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.email}</span>
+                      </div>
+                    )}
+                    {empresaLogada?.telefone && (
+                      <div>
+                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Telefone Comercial</span>
+                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.telefone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ABA: ATIVIDADE */}
+            {activeTab === 'atividade' && (
+              <div className="space-y-6 animate-fadeIn text-left">
+                <h3 className="text-[11px] font-black mb-6 text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock size={14} className="text-blue-600" />
+                  Linha do Tempo de Atividade
+                </h3>
+                
+                <div className="relative pl-6 border-l-2 border-slate-100 space-y-8 ml-2">
+                  {/* 1. Vitrine Ativada */}
+                  <div className="relative">
+                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Vitrine Ativada</h4>
+                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                          O link exclusivo do veículo foi gerado e enviado para o cliente.
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+0min</span>
+                    </div>
+                  </div>
+
+                  {/* 2. Tabela FIPE */}
+                  <div className="relative">
+                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Atualização da Tabela FIPE</h4>
+                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                          Tabela FIPE oficial carregada: Preço exclusivo tem margem de R$ 5.000,00 de desconto!
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+30min</span>
+                    </div>
+                  </div>
+
+                  {/* 3. Vídeo */}
+                  <div className="relative">
+                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900">Tour de Vídeo Adicionado</h4>
+                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                          Vídeo completo do laudo estrutural e partida a frio foi disponibilizado.
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+60min</span>
+                    </div>
+                  </div>
+
+                  {/* 4. Eventos Futuros */}
+                  <div className="relative">
+                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-slate-200 border-4 border-white"></div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 italic">Eventos Futuros Agendados pelo Lojista...</h4>
+                      <p className="text-[10.5px] text-slate-400 font-medium mt-1 leading-relaxed italic font-semibold">
+                        Automatizações complementares estão escalonadas baseadas no seu tempo ativo.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Garantir Reserva Info Box */}
+            <div className="p-5 border-t border-slate-150 bg-slate-50 text-left -mx-5 -mb-4 mt-8">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="text-blue-600 shrink-0" size={16} />
+                <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Garantir Reserva</h4>
+              </div>
+              <p className="text-[10px] text-slate-550 font-semibold leading-relaxed">
+                Ao efetuar o sinal de garantia, este veículo é bloqueado imediatamente de visitas, testes e outros vendedores até você assinar o contrato final.
+              </p>
             </div>
 
           </div>
@@ -1777,7 +2113,13 @@ function MobileClientView({
         {/* Bottom Fixed Sticky Action Bar in phone emulator */}
         <div className="absolute bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 flex items-center justify-between space-x-3 z-50 text-black">
           <button 
-            onClick={() => setShowPixModal(true)}
+            onClick={() => {
+              if (!selectedAtendente) {
+                showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
+                return;
+              }
+              setShowPixModal(true);
+            }}
             className="flex-1 bg-blue-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center hover:bg-blue-700 transition-colors"
           >
             Reservar com PIX <ArrowRight size={16} className="ml-2" />
@@ -1790,7 +2132,7 @@ function MobileClientView({
       </div>
       
       {showPixModal && (
-        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={data.vendedores ? data.vendedores.split(',')[0] : 'Consultor'} showToast={showToast} />
+        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={selectedAtendente || 'Consultor'} showToast={showToast} />
       )}
     </div>
   );
@@ -1991,7 +2333,7 @@ function PixModal({ onClose, sinal, vendedor, showToast }) {
 }
 
 // --- NEW COMPONENT: WIZARD FLOW "CADASTRO DE RESERVA DO CLIENTE" ---
-function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservation }) {
+function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservation, empresaLogada }) {
   const [step, setStep] = useState(1);
   const [marcas, setMarcas] = useState([]);
   const [modelos, setModelos] = useState([]);
@@ -2031,19 +2373,22 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     showPhone: false,
     sinal: 0,
     expiracaoMinutos: 60,
+    atendente: '',
   });
 
-  const [sinal, setSinal] = useState('');
+  const [sinal, setSinal] = useState(empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : '');
   const [expiracao, setExpiracao] = useState(60);
 
   useEffect(() => {
     if (vehicleData.sinal) {
       setSinal(String(vehicleData.sinal));
+    } else if (empresaLogada?.valorMinimoSinal && !sinal) {
+      setSinal(String(empresaLogada.valorMinimoSinal));
     }
     if (vehicleData.expiracaoMinutos) {
       setExpiracao(vehicleData.expiracaoMinutos);
     }
-  }, [vehicleData.sinal, vehicleData.expiracaoMinutos]);
+  }, [vehicleData.sinal, vehicleData.expiracaoMinutos, empresaLogada?.valorMinimoSinal]);
 
   const formatExpiracaoLabel = (minutos: number): string => {
     if (minutos < 60) return `${minutos} minutos`;
@@ -2176,9 +2521,14 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let finalValue = value;
+    if (name === 'cpf') finalValue = formatCPF(value);
+    else if (name === 'phone') finalValue = formatPhone(value);
+    else if (name === 'cep') finalValue = formatCEP(value);
+
     setVehicleData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : finalValue
     }));
   };
 
@@ -2206,8 +2556,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
       showToast('Por favor, preencha a FIPE e o preço do veículo.', 'error');
       return;
     }
-    if (!vehicleData.fullName || !vehicleData.cpf || !vehicleData.phone) {
-      showToast('Por favor, preencha os dados da reserva (Passo 5).', 'error');
+    if (!vehicleData.fullName || !vehicleData.cpf || !vehicleData.phone || !vehicleData.atendente) {
+      showToast('Por favor, preencha todos os dados da reserva e o atendente (Passo 5).', 'error');
       return;
     }
 
@@ -2231,7 +2581,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
       combustivel: vehicleData.fuel,
       opcionais: vehicleData.selectedOpcionais.join(', '),
       fotos: vehicleData.photos.length > 0 ? vehicleData.photos.join(',') : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
-      vendedores: vehicleData.fullName,
+      vendedores: vehicleData.atendente,
+      clienteNome: vehicleData.fullName,
       laudoAprovado: true,
       status: 'Active',
       elapsedSeconds: 0
@@ -2324,7 +2675,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                 <p className="text-slate-500 text-xs mb-8 text-center font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
 
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className={labelClass}>Quilometragem (KM)</label>
                       <input 
@@ -2334,6 +2685,17 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         onChange={handleInputChange} 
                         className={inputClass} 
                         placeholder="Ex: 45.000"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Cor do Veículo</label>
+                      <input 
+                        type="text" 
+                        name="color" 
+                        value={vehicleData.color} 
+                        onChange={handleInputChange} 
+                        className={inputClass} 
+                        placeholder="Ex: Branco"
                       />
                     </div>
                     <div>
@@ -2532,6 +2894,22 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                       <input type="text" name="cep" value={vehicleData.cep} onChange={handleInputChange} className={inputClass} placeholder="Ex: 02522-000" required />
                     </div>
                   </div>
+                  <div>
+                    <label className={labelClass}>Atendente Dedicado *</label>
+                    <select 
+                      name="atendente" 
+                      value={vehicleData.atendente} 
+                      onChange={handleInputChange} 
+                      className={`${inputClass} appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]`}
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
+                      required
+                    >
+                      <option value="" disabled>Selecione seu vendedor...</option>
+                      <option value="Carla Silva">Carla Silva</option>
+                      <option value="Roberto Oliveira">Roberto Oliveira</option>
+                      <option value="Marcos Souza">Marcos Souza</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
@@ -2564,6 +2942,10 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   if (step === 2) {
                     if (!sinal) {
                       showToast('Por favor, informe o valor do sinal da reserva.', 'error');
+                      return;
+                    }
+                    if (empresaLogada?.valorMinimoSinal && Number(sinal) < empresaLogada.valorMinimoSinal) {
+                      showToast(`O sinal Pix não pode ser menor que o mínimo configurado de R$ ${empresaLogada.valorMinimoSinal}.`, 'error');
                       return;
                     }
                     if (!vehicleData.price) {
@@ -2615,7 +2997,10 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEmpresaData(prev => ({ ...prev, [name]: value }));
+    let finalValue = value;
+    if (name === 'cnpj') finalValue = formatCNPJ(value);
+    else if (name === 'telefone') finalValue = formatPhone(value);
+    setEmpresaData(prev => ({ ...prev, [name]: finalValue }));
   };
 
   const getPlanPrice = () => {
@@ -2910,6 +3295,659 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
           </div>
 
         </div>
+      </div>
+    </div>
+  );
+}
+
+// --- CONFIGURACOES VIEW ---
+function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, totalReservasPlano, setTotalReservasPlano, setPlanoUpgrade }) {
+  const [formData, setFormData] = useState({
+    nome: empresaLogada.nome || '',
+    telefone: empresaLogada.telefone || '',
+    valorMinimoSinal: empresaLogada.valorMinimoSinal || 1500,
+    plano: empresaLogada.planoAtivo || 'Plus'
+  });
+
+  const planosNivel = { 'Basic': 1, 'Plus': 2, 'Premium': 3 };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    let finalValue = value;
+    if (name === 'telefone') {
+      const clean = value.replace(/\D/g, '');
+      if (clean.length <= 10) {
+        finalValue = clean.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
+      } else {
+        finalValue = clean.substring(0, 11).replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+      }
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+  };
+
+  const handleSelectPlano = (planoNome) => {
+    setFormData(prev => ({ ...prev, plano: planoNome }));
+  };
+
+  const handleUpgradeClick = (planoNome) => {
+    setPlanoUpgrade(planoNome);
+    navigateTo('checkout-plano');
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!formData.nome.trim()) {
+      showToast('Por favor, informe o nome da loja.', 'error');
+      return;
+    }
+    if (!formData.telefone.trim()) {
+      showToast('Por favor, informe o telefone de WhatsApp.', 'error');
+      return;
+    }
+
+    setEmpresaLogada(prev => ({
+      ...prev,
+      nome: formData.nome,
+      telefone: formData.telefone,
+      valorMinimoSinal: Number(formData.valorMinimoSinal)
+    }));
+    
+    showToast('Configurações salvas com sucesso!', 'success');
+  };
+
+  const planos = [
+    {
+      nome: 'Basic',
+      preco: 'R$ 159,90',
+      limite: '10 links de reserva ativos',
+      detalhe: 'Recomendado para pequenas lojas',
+      tag: 'PLANO BÁSICO'
+    },
+    {
+      nome: 'Plus',
+      preco: 'R$ 239,90',
+      limite: '30 links de reserva ativos',
+      detalhe: 'Melhor custo benefício',
+      tag: 'PLANO RECOMENDADO',
+      destaque: true
+    },
+    {
+      nome: 'Premium',
+      preco: 'R$ 349,90',
+      limite: '50 links de reserva ativos',
+      detalhe: 'Exposição máxima do showroom',
+      tag: 'PLANO CORPORATIVO'
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8 text-left">
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Configurações do Lojista</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
+        </div>
+
+        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left flex flex-col justify-between">
+            <div>
+              <div className="mb-6">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                  Dados da Loja / Perfil
+                </span>
+                <div className="h-px bg-slate-100 mt-2"></div>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="nome" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    Nome da Loja Exibida na Vitrine
+                  </label>
+                  <input
+                    type="text"
+                    id="nome"
+                    name="nome"
+                    value={formData.nome}
+                    onChange={handleInputChange}
+                    placeholder="Ex: Veloce Premium Motors"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="telefone" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    Número Oficial de WhatsApp do Lojista
+                  </label>
+                  <input
+                    type="text"
+                    id="telefone"
+                    name="telefone"
+                    value={formData.telefone}
+                    onChange={handleInputChange}
+                    placeholder="Ex: (11) 99999-8822"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="valorMinimoSinal" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    Valor Mínimo para Sinal Pix de Reserva (R$)
+                  </label>
+                  <input
+                    type="number"
+                    id="valorMinimoSinal"
+                    name="valorMinimoSinal"
+                    value={formData.valorMinimoSinal}
+                    onChange={handleInputChange}
+                    placeholder="Ex: 1500"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
+              >
+                Salvar Configurações
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left flex flex-col justify-between">
+            <div>
+              <div className="mb-6">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                  Seu Plano SaaS Autolock
+                </span>
+                <div className="h-px bg-slate-100 mt-2"></div>
+              </div>
+
+              <div className="space-y-4">
+                {planos.map((plano) => {
+                  const isPlanoAtivo = plano.nome === empresaLogada.planoAtivo;
+                  const isSelected = formData.plano === plano.nome;
+                  
+                  const level = planosNivel[plano.nome];
+                  const activeLevel = planosNivel[empresaLogada.planoAtivo];
+                  
+                  const isDowngrade = level < activeLevel;
+                  const isUpgrade = level > activeLevel;
+
+                  return (
+                    <div
+                      key={plano.nome}
+                      onClick={() => {
+                        if (isDowngrade) return;
+                        handleSelectPlano(plano.nome);
+                      }}
+                      className={`border rounded-2xl p-4 transition-all flex flex-col justify-between ${
+                        isDowngrade
+                          ? 'opacity-40 cursor-not-allowed pointer-events-none bg-slate-50 border-slate-200'
+                          : isSelected
+                            ? 'border-blue-600 bg-blue-50/40 cursor-pointer'
+                            : 'border-slate-200 hover:border-slate-400 bg-white cursor-pointer opacity-40 hover:opacity-75'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
+                              {plano.tag}
+                            </span>
+                            {plano.destaque && (
+                              <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
+                                Destaque
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-black text-slate-900">{plano.nome}</h4>
+                          <p className="text-xs text-slate-650 font-semibold">{plano.limite}</p>
+                          <p className="text-[11px] text-slate-400 font-semibold">{plano.detalhe}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <span className="block text-base font-black text-slate-900">{plano.preco}</span>
+                            <span className="block text-[9px] text-slate-400 font-bold uppercase">/mês</span>
+                          </div>
+
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition ${
+                            isSelected 
+                              ? 'border-blue-600 bg-blue-600 text-white' 
+                              : isDowngrade
+                                ? 'border-slate-200 bg-slate-100 text-slate-400'
+                                : 'border-slate-300 bg-white'
+                          }`}>
+                            {isSelected && <Check size={12} strokeWidth={3} />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Linha heurística para Upgrade com botão */}
+                      {isSelected && isUpgrade && (
+                        <div className="mt-4 pt-4 border-t border-slate-150 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fadeIn w-full">
+                          <p className="text-[10px] text-slate-600 font-semibold leading-relaxed">
+                            💡 Você selecionou um plano maior. Clique em upgrade para realizar o pagamento.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpgradeClick(plano.nome);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-750 text-white font-bold text-[10px] px-4 py-2 rounded-xl transition uppercase tracking-wider shrink-0"
+                          >
+                            Fazer Upgrade
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-8 pt-4 border-t border-slate-100">
+              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                *Nota: No plano Premium/Enterprise, a plataforma retém 1,5% sobre o sinal PIX processado para fins de cobertura de infraestrutura de webhook e processamento de segurança.
+              </p>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- CHECKOUT PLANO VIEW ---
+function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, planoUpgrade, setTotalReservasPlano }) {
+  const [paymentMethod, setPaymentMethod] = useState('credit_card'); // 'credit_card' ou 'pix'
+  const [cardData, setCardData] = useState({
+    numero: '',
+    nome: '',
+    validade: '',
+    cvv: ''
+  });
+  const [pixGenerated, setPixGenerated] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Mapeamento dos valores e limites dos planos
+  const infoPlanos = {
+    'Basic': { preco: 'R$ 159,90', valor: 159.90, limite: 10, descricao: 'Plano Básico - 10 links ativos' },
+    'Plus': { preco: 'R$ 239,90', valor: 239.90, limite: 30, descricao: 'Plano Recomendado - 30 links ativos' },
+    'Premium': { preco: 'R$ 349,90', valor: 349.90, limite: 50, descricao: 'Plano Corporativo - 50 links ativos' }
+  };
+
+  const planoInfo = infoPlanos[planoUpgrade] || infoPlanos['Plus'];
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    let finalValue = value;
+    
+    if (name === 'numero') {
+      const clean = value.replace(/\D/g, '');
+      finalValue = clean.substring(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ');
+    } else if (name === 'validade') {
+      const clean = value.replace(/\D/g, '');
+      if (clean.length <= 2) {
+        finalValue = clean;
+      } else {
+        finalValue = clean.substring(0, 4).replace(/^(\d{2})(\d)/, '$1/$2');
+      }
+    } else if (name === 'cvv') {
+      finalValue = value.replace(/\D/g, '').substring(0, 4);
+    }
+    
+    setCardData(prev => ({ ...prev, [name]: finalValue }));
+  };
+
+  const handleConfirmarPagamento = (e) => {
+    e.preventDefault();
+    
+    if (paymentMethod === 'credit_card') {
+      if (!cardData.numero || cardData.numero.replace(/\s/g, '').length < 16) {
+        showToast('Por favor, insira um número de cartão válido.', 'error');
+        return;
+      }
+      if (!cardData.nome.trim()) {
+        showToast('Por favor, insira o nome do titular do cartão.', 'error');
+        return;
+      }
+      if (!cardData.validade || cardData.validade.length < 5) {
+        showToast('Por favor, insira uma data de validade válida (MM/AA).', 'error');
+        return;
+      }
+      if (!cardData.cvv || cardData.cvv.length < 3) {
+        showToast('Por favor, insira um CVV válido.', 'error');
+        return;
+      }
+    } else {
+      if (!pixGenerated) {
+        showToast('Por favor, gere o QR Code do PIX primeiro.', 'error');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+
+    // Simular processamento do pagamento
+    setTimeout(() => {
+      setIsProcessing(false);
+      
+      // Atualiza plano ativo e nome do plano
+      setEmpresaLogada(prev => ({
+        ...prev,
+        plano: planoUpgrade,
+        planoAtivo: planoUpgrade
+      }));
+
+      // Atualiza limite de reservas do plano
+      setTotalReservasPlano(planoInfo.limite);
+
+      showToast(`Upgrade para o plano ${planoUpgrade} concluído com sucesso!`, 'success');
+      navigateTo('configuracoes');
+    }, 1500);
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText('00020101021226830014br.gov.bcb.pix2561api.reservacar.com.br/pix/v2/cob46a782b5e2');
+    showToast('Código PIX copiado para a área de transferência!', 'success');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-slate-900">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Header */}
+        <div className="mb-8 text-left">
+          <button 
+            type="button"
+            onClick={() => navigateTo('configuracoes')}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition mb-3 uppercase tracking-wider"
+          >
+            <ArrowLeft size={14} /> Voltar para Configurações
+          </button>
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Checkout de Assinatura SaaS</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+          
+          {/* Coluna Esquerda: Formulário de Pagamento */}
+          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <div className="mb-6">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                  Método de Pagamento
+                </span>
+                <div className="h-px bg-slate-100 mt-2"></div>
+              </div>
+
+              {/* Seletor de Abas Flat */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('credit_card')}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border-2 ${
+                    paymentMethod === 'credit_card'
+                      ? 'border-blue-600 bg-blue-50/40 text-blue-700 font-extrabold'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-650 bg-white'
+                  }`}
+                >
+                  <CreditCard size={16} /> Cartão de Crédito
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('pix')}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border-2 ${
+                    paymentMethod === 'pix'
+                      ? 'border-blue-600 bg-blue-50/40 text-blue-700 font-extrabold'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-655 bg-white'
+                  }`}
+                >
+                  <CircleDollarSign size={16} /> Pix Instantâneo
+                </button>
+              </div>
+
+              {/* Conteúdo do Cartão de Crédito */}
+              {paymentMethod === 'credit_card' && (
+                <form onSubmit={handleConfirmarPagamento} className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      Número do Cartão
+                    </label>
+                    <input
+                      type="text"
+                      name="numero"
+                      value={cardData.numero}
+                      onChange={handleInputChange}
+                      placeholder="0000 0000 0000 0000"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      Nome Impresso no Cartão
+                    </label>
+                    <input
+                      type="text"
+                      name="nome"
+                      value={cardData.nome}
+                      onChange={handleInputChange}
+                      placeholder="MARIA SILVA SOUZA"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition uppercase"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                        Validade (MM/AA)
+                      </label>
+                      <input
+                        type="text"
+                        name="validade"
+                        value={cardData.validade}
+                        onChange={handleInputChange}
+                        placeholder="MM/AA"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                        CVC / CVV
+                      </label>
+                      <input
+                        type="text"
+                        name="cvv"
+                        value={cardData.cvv}
+                        onChange={handleInputChange}
+                        placeholder="123"
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                        required
+                      />
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Conteúdo do Pix */}
+              {paymentMethod === 'pix' && (
+                <div className="space-y-5 text-center py-2">
+                  {!pixGenerated ? (
+                    <div className="space-y-4 text-left">
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-slate-900 mb-2">Pague instantaneamente via PIX</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Ao clicar no botão abaixo, geraremos um QR Code dinâmico do Pix e um código Pix Copia e Cola no valor de <strong className="text-slate-800">{planoInfo.preco}</strong> correspondente ao primeiro mês.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPixGenerated(true)}
+                        className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
+                      >
+                        Gerar QR Code e Copia e Cola
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                        {/* Placeholder QR Code Flat com design legal */}
+                        <div className="w-40 h-40 bg-white border border-slate-300 p-2 rounded-lg flex flex-col justify-between items-center relative mb-4">
+                          {/* Desenho Flat de QR Code */}
+                          <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-1.5 p-1 bg-slate-50">
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-100"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-slate-900 rounded-sm"></div>
+                          </div>
+                          <span className="absolute text-[8px] font-black uppercase text-blue-600 bg-white px-2 py-0.5 border border-blue-600 rounded">PIX RESERVACAR</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-bold mb-2">Escaneie o QR Code acima usando o aplicativo do seu banco.</p>
+                      </div>
+
+                      <div className="space-y-2 text-left">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                          Pix Copia e Cola
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value="00020101021226830014br.gov.bcb.pix2561api.reservacar.com.br/pix/v2/cob46a782b5e2"
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-500 outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCopyPix}
+                            className="bg-slate-900 hover:bg-slate-950 text-white font-bold px-4 py-3 rounded-xl transition text-xs flex items-center gap-1.5 shrink-0"
+                          >
+                            <Copy size={14} /> Copiar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Ações de Botões */}
+            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
+              <button
+                type="button"
+                onClick={handleConfirmarPagamento}
+                disabled={isProcessing}
+                className="w-full bg-blue-600 hover:bg-blue-750 text-white font-bold px-6 py-4 rounded-xl transition text-sm flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" /> Processando Pagamento...
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} strokeWidth={3} /> Finalizar Pagamento e Ativar Plano
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+
+          {/* Coluna Direita: Resumo do Pedido */}
+          <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between h-fit space-y-6">
+            <div>
+              <div className="mb-4">
+                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                  Resumo do Pedido
+                </span>
+                <div className="h-px bg-slate-200 mt-2"></div>
+              </div>
+
+              {/* Card de Detalhe do Plano */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded">
+                    PLANO SELECIONADO
+                  </span>
+                  <span className="text-xs text-slate-500 font-bold">Recorrência Mensal</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">{planoUpgrade}</h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">{planoInfo.descricao}</p>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500">Valor Mensal</span>
+                  <span className="text-lg font-black text-slate-900">{planoInfo.preco}</span>
+                </div>
+              </div>
+
+              {/* Detalhes de Limites */}
+              <div className="mt-6 space-y-3">
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                  <span>Links de Reserva Disponíveis:</span>
+                  <span className="font-bold text-slate-950">{planoInfo.limite} links ativos</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                  <span>Taxa de Processamento de Sinal:</span>
+                  <span className="font-bold text-slate-950">1,5% retido</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                  <span>Atendimento Integrado:</span>
+                  <span className="font-bold text-slate-950">Disponível</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-slate-200 space-y-3 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-extrabold text-slate-900">Total a pagar:</span>
+                <span className="text-2xl font-black text-blue-600">{planoInfo.preco}</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                *Ao clicar em finalizar pagamento, você concorda com os termos de uso do Reservacar SaaS e autoriza a cobrança recorrente no método de pagamento selecionado.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
     </div>
   );
