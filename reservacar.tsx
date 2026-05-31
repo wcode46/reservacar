@@ -1160,35 +1160,6 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
   const percentagemUso = Math.min((reservasUsadas / totalReservasPlano) * 100, 100);
 
-  const planoInfo = (() => {
-    const plano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
-    if (plano === 'Basic') {
-      return {
-        nome: 'PLANO BÁSICO',
-        tag: 'Basic',
-        desc: 'Recomendado para pequenas lojas',
-        preco: 'R$ 159,90/mês',
-        linksText: '10 links de reserva ativos'
-      };
-    } else if (plano === 'Premium') {
-      return {
-        nome: 'PLANO CORPORATIVO',
-        tag: 'Premium',
-        desc: 'Exposição máxima do showroom',
-        preco: 'R$ 349,90/mês',
-        linksText: '50 links de reserva ativos'
-      };
-    } else {
-      return {
-        nome: 'PLANO RECOMENDADO',
-        tag: 'Destaque',
-        desc: 'Melhor custo benefício',
-        preco: 'R$ 239,90/mês',
-        linksText: '30 links de reserva ativos'
-      };
-    }
-  })();
-
   return (
     <div className="min-h-screen pt-32 pb-20 px-6 bg-[#f8f9fa] flex flex-col items-center">
       <div className="w-full max-w-5xl mb-8">
@@ -1204,48 +1175,57 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         </div>
 
         {/* Credit System Visual Widget */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between md:items-center gap-8 relative overflow-hidden">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{planoInfo.nome}</span>
-              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase tracking-wider">
-                {planoInfo.tag}
+        <div className="mt-8 bg-[#121318] border border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
+          
+          {/* Left Column: Plano Info */}
+          <div className="flex flex-col min-w-[200px]">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-3xl font-extrabold text-white tracking-tight">
+                {empresaLogada?.planoAtivo || 'Plus'}
               </span>
-              <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-wider">
+              <span className="border border-blue-500/30 bg-blue-500/10 text-blue-450 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">
                 ATIVO
               </span>
             </div>
-            <p className="text-3xl font-black text-slate-900 leading-none mb-1.5">
-              {empresaLogada?.planoAtivo || 'Plus'}
-            </p>
-            <p className="text-xs text-slate-500 font-semibold mb-3">
-              {planoInfo.desc} • <span className="text-slate-800 font-bold">{planoInfo.preco}</span>
-            </p>
-            <div className="h-px bg-slate-200 my-3 w-48"></div>
-            <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-2">
-              <span className="text-2xl font-black text-blue-600 leading-none">{reservasDisponiveis}</span>
-              <span className="text-slate-500 text-xs font-semibold">links disponíveis ({planoInfo.linksText})</span>
-            </p>
-            <p className="text-[10px] text-slate-400 font-semibold mt-2.5">Renova-se a 10/06/2026</p>
+            <p className="text-xs text-slate-500 font-semibold">Renova-se a 10/06/2026</p>
           </div>
-          
-          <div className="w-full md:w-5/12 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-500 mb-3">
-              <span>CRÉDITOS UTILIZADOS</span>
-              <span className="text-slate-900 text-sm">{reservasUsadas} / {totalReservasPlano}</span>
+
+          {/* Middle Column: Credits Progress */}
+          <div className="w-full md:max-w-md flex-1">
+            <div className="flex justify-between items-center text-xs font-bold text-slate-500 mb-2">
+              <span className="tracking-wider">CRÉDITOS UTILIZADOS</span>
+              <span className="text-white text-sm font-bold">{reservasUsadas} / {totalReservasPlano}</span>
             </div>
-            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden mb-2">
+            <div className="w-full bg-[#1e2026] h-2.5 rounded-full overflow-hidden mb-2">
               <div 
                 className={`h-full rounded-full transition-all duration-1000 ${percentagemUso > 80 ? 'bg-amber-500' : 'bg-blue-600'}`} 
                 style={{ width: `${percentagemUso}%` }}
               ></div>
             </div>
             {percentagemUso > 80 ? (
-              <p className="text-[11px] font-semibold text-amber-600">Você está próximo do limite. Considere um upgrade de plano.</p>
+              <p className="text-xs font-semibold text-amber-500 mt-1 flex flex-wrap items-center gap-1.5">
+                <span>{reservasDisponiveis} links disponíveis</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 animate-pulse uppercase tracking-wider">Sugerimos upgrade</span>
+              </p>
             ) : (
-              <p className="text-[11px] text-slate-550">Excelente margem de vendas disponível.</p>
+              <p className="text-xs text-slate-400 mt-1 font-semibold">
+                {reservasDisponiveis} links disponíveis
+              </p>
             )}
           </div>
+
+          {/* Right Column: Upgrade Button */}
+          <div className="w-full md:w-auto flex justify-end md:justify-start">
+            <button 
+              onClick={() => navigateTo('configuracoes')}
+              className="w-full md:w-auto bg-blue-650 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 group whitespace-nowrap"
+            >
+              Fazer Upgrade
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+
         </div>
       </div>
 
