@@ -1175,16 +1175,16 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         </div>
 
         {/* Credit System Visual Widget */}
-        <div className="mt-8 bg-[#121318] border border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
+        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
           
           {/* Left Column: Plano Info */}
           <div className="flex flex-col min-w-[200px]">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-3xl font-extrabold text-white tracking-tight">
+              <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                 {empresaLogada?.planoAtivo || 'Plus'}
               </span>
-              <span className="border border-blue-500/30 bg-blue-500/10 text-blue-450 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">
+              <span className="border border-blue-200 bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                 ATIVO
               </span>
             </div>
@@ -1195,21 +1195,21 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:max-w-md flex-1">
             <div className="flex justify-between items-center text-xs font-bold text-slate-500 mb-2">
               <span className="tracking-wider">CRÉDITOS UTILIZADOS</span>
-              <span className="text-white text-sm font-bold">{reservasUsadas} / {totalReservasPlano}</span>
+              <span className="text-slate-950 text-sm font-bold">{reservasUsadas} / {totalReservasPlano}</span>
             </div>
-            <div className="w-full bg-[#1e2026] h-2.5 rounded-full overflow-hidden mb-2">
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
               <div 
                 className={`h-full rounded-full transition-all duration-1000 ${percentagemUso > 80 ? 'bg-amber-500' : 'bg-blue-600'}`} 
                 style={{ width: `${percentagemUso}%` }}
               ></div>
             </div>
             {percentagemUso > 80 ? (
-              <p className="text-xs font-semibold text-amber-500 mt-1 flex flex-wrap items-center gap-1.5">
+              <p className="text-xs font-semibold text-amber-600 mt-1 flex flex-wrap items-center gap-1.5">
                 <span>{reservasDisponiveis} links disponíveis</span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 animate-pulse uppercase tracking-wider">Sugerimos upgrade</span>
               </p>
             ) : (
-              <p className="text-xs text-slate-400 mt-1 font-semibold">
+              <p className="text-xs text-slate-500 mt-1 font-semibold">
                 {reservasDisponiveis} links disponíveis
               </p>
             )}
@@ -1219,7 +1219,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:w-auto flex justify-end md:justify-start">
             <button 
               onClick={() => navigateTo('configuracoes')}
-              className="w-full md:w-auto bg-blue-650 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 group whitespace-nowrap"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 group whitespace-nowrap"
             >
               Fazer Upgrade
               <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
