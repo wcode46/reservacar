@@ -1305,8 +1305,8 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
       <div className="w-full max-w-5xl mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Olá, {empresaLogada?.nome || 'Marcos Freitas'} 👋</h1>
-            <p className="text-lg font-medium text-slate-550 mt-1">{empresaLogada?.nome || 'BMW Premium SP'} — Central de Vendas</p>
+            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Olá, Marcos</h1>
+            <p className="text-lg font-medium text-slate-550 mt-1">Central de Vendas</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-sm">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -1491,14 +1491,8 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
     <div className="pt-28 pb-20 px-6 lg:px-8 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-200 pb-6">
         <div>
-          <button 
-            onClick={() => navigateTo('hub')}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition mb-3 uppercase tracking-wider"
-          >
-            <ChevronLeft size={14} /> Voltar ao Hub
-          </button>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel da Loja</h1>
-          <p className="text-sm font-medium text-slate-550 mt-1">{empresaLogada?.nome || 'BMW Premium SP'} — Atividade Comercial</p>
+          <p className="text-sm font-medium text-slate-550 mt-1">Atividade Comercial</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl flex items-center gap-3">
@@ -1677,14 +1671,8 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
     <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
         <div>
-          <button 
-            onClick={() => navigateTo('hub')}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition mb-3 uppercase tracking-wider"
-          >
-            <ChevronLeft size={14} /> Voltar ao Hub
-          </button>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Gerador de Reservas</h1>
-          <p className="text-lg font-medium text-slate-500 mt-1 font-sans">Gere páginas exclusivas personalizadas para cada lead.</p>
+          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Gere páginas exclusivas personalizadas para cada lead.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
