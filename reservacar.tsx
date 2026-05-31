@@ -549,12 +549,17 @@ function HomeView({ navigateTo }) {
       
       {/* 1. Hero Area (Estilo Revolut) */}
       <div className="relative w-full min-h-[750px] lg:h-[700px] bg-[#030712] flex items-center justify-center overflow-hidden py-24 lg:py-0">
-        {/* Fundo de Imagem (Porsche Cayman vermelho do Unsplash) */}
-        <img 
-          src="https://images.unsplash.com/photo-1614905218621-99262ff8f8e1?q=80&w=2087&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none" 
-          alt="Porsche Cayman vermelho premium" 
-        />
+        {/* Fundo de Vídeo (ShaderEffects em loop) */}
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+        >
+          <source src="/video/ShaderEffects-1780198452770_202605310047.mp4" type="video/mp4" />
+          Seu navegador não suporta vídeos HTML5.
+        </video>
         {/* Overlay escuro de leitura na esquerda e transição na base */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/25 to-transparent z-10" />
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8f9fa] to-transparent z-10" />
