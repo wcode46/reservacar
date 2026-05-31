@@ -1160,6 +1160,35 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
   const percentagemUso = Math.min((reservasUsadas / totalReservasPlano) * 100, 100);
 
+  const planoInfo = (() => {
+    const plano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
+    if (plano === 'Basic') {
+      return {
+        nome: 'PLANO BÁSICO',
+        tag: 'Basic',
+        desc: 'Recomendado para pequenas lojas',
+        preco: 'R$ 159,90/mês',
+        linksText: '10 links de reserva ativos'
+      };
+    } else if (plano === 'Premium') {
+      return {
+        nome: 'PLANO CORPORATIVO',
+        tag: 'Premium',
+        desc: 'Exposição máxima do showroom',
+        preco: 'R$ 349,90/mês',
+        linksText: '50 links de reserva ativos'
+      };
+    } else {
+      return {
+        nome: 'PLANO RECOMENDADO',
+        tag: 'Destaque',
+        desc: 'Melhor custo benefício',
+        preco: 'R$ 239,90/mês',
+        linksText: '30 links de reserva ativos'
+      };
+    }
+  })();
+
   return (
     <div className="min-h-screen pt-32 pb-20 px-6 bg-[#f8f9fa] flex flex-col items-center">
       <div className="w-full max-w-5xl mb-8">
@@ -1177,11 +1206,27 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         {/* Credit System Visual Widget */}
         <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between md:items-center gap-8 relative overflow-hidden">
           <div>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Plano Atual: Concessionária Starter</h3>
-            <p className="text-4xl font-black text-slate-900 leading-none">
-              {reservasDisponiveis} <span className="text-base font-semibold text-slate-500 ml-1">links disponíveis</span>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{planoInfo.nome}</span>
+              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase tracking-wider">
+                {planoInfo.tag}
+              </span>
+              <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-wider">
+                ATIVO
+              </span>
+            </div>
+            <p className="text-3xl font-black text-slate-900 leading-none mb-1.5">
+              {empresaLogada?.planoAtivo || 'Plus'}
             </p>
-            <p className="text-xs text-slate-600 mt-3">Renova automaticamente em: 10/06/2026</p>
+            <p className="text-xs text-slate-500 font-semibold mb-3">
+              {planoInfo.desc} • <span className="text-slate-800 font-bold">{planoInfo.preco}</span>
+            </p>
+            <div className="h-px bg-slate-200 my-3 w-48"></div>
+            <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mt-2">
+              <span className="text-2xl font-black text-blue-600 leading-none">{reservasDisponiveis}</span>
+              <span className="text-slate-500 text-xs font-semibold">links disponíveis ({planoInfo.linksText})</span>
+            </p>
+            <p className="text-[10px] text-slate-400 font-semibold mt-2.5">Renova-se a 10/06/2026</p>
           </div>
           
           <div className="w-full md:w-5/12 bg-slate-50 p-5 rounded-2xl border border-slate-200">
