@@ -1285,6 +1285,43 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
 
+  // Cálculos dinâmicos com histórico simulado (Opção 2)
+  const concluidasSessao = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
+
+  // 1. Resgates Ativos: 4 histórico + novos concluidos
+  const totalResgatesAtivos = 4 + concluidasSessao;
+
+  // 2. Conversão Líquida: 5 pagos / 7 criados de histórico + sessão
+  const totalCriadasSessao = recentReservations.length;
+  const totalCriadasAcumulado = 7 + totalCriadasSessao;
+  const concluidasAcumuladas = 5 + concluidasSessao;
+  const conversaoLiquida = totalCriadasAcumulado > 0 
+    ? Math.round((concluidasAcumuladas / totalCriadasAcumulado) * 100) 
+    : 0;
+
+  // 3. Sinal em Caixa: R$ 37k histórico + novos sinais recebidos
+  const somaSinaisNovos = recentReservations
+    .filter(r => r.status === 'Completed' || r.paidSignal)
+    .reduce((acc, r) => acc + (Number(r.sinal) || 0), 0);
+  const totalSinalCaixa = 37000 + somaSinaisNovos;
+  const formatSinalCaixa = totalSinalCaixa >= 1000 
+    ? `R$ ${(totalSinalCaixa / 1000).toFixed(0)}k` 
+    : `R$ ${totalSinalCaixa}`;
+
+  // 4. Velocidade Média: elapsedSeconds médio das propostas pagas, com 1h 48m de fallback
+  const reservasPagas = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal);
+  const mediaSegundos = reservasPagas.length > 0
+    ? reservasPagas.reduce((acc, r) => acc + (r.elapsedSeconds || 0), 0) / reservasPagas.length
+    : 6480; // 1h 48m (108 minutos)
+
+  const formatVelocidadeMedia = (segundos) => {
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    if (horas > 0) return `${horas}h ${minutos}m`;
+    return `${minutos}m`;
+  };
+  const velocidadeMediaText = formatVelocidadeMedia(mediaSegundos);
+
   // Simulator helper to let vendors mock real scenarios instantly
   const handleSimulatePayment = (resId, clientName) => {
     setRecentReservations(prev => 
@@ -1321,12 +1358,12 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <ChevronLeft size={14} /> Voltar ao Hub
           </button>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel da Loja</h1>
-          <p className="text-sm font-medium text-slate-500 mt-1">{empresaLogada?.nome || 'BMW Premium SP'} — Atividade Comercial</p>
+          <p className="text-sm font-medium text-slate-550 mt-1">{empresaLogada?.nome || 'BMW Premium SP'} — Atividade Comercial</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl flex items-center gap-3">
             <span className="text-xl font-bold text-slate-900 leading-none">{reservasDisponiveis}</span>
-            <span className="text-xs font-semibold text-slate-550 leading-none">créditos de links livres</span>
+            <span className="text-xs font-semibold text-slate-555 leading-none">créditos de links livres</span>
           </div>
         </div>
       </div>
@@ -1338,7 +1375,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resgates Ativos</span>
             <Users size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">7</span>
+          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{totalResgatesAtivos}</span>
           <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
             <ArrowUpRight size={14}/> 3 novos hoje
           </span>
@@ -1349,9 +1386,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Conversão Líquida</span>
             <TrendingUp size={16} className="text-emerald-600" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">71%</span>
-          <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-            <ArrowUpRight size={14}/> +8% vs mês anterior
+          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{conversaoLiquida}%</span>
+          <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
+            Baseado em {totalCriadasAcumulado} propostas
           </span>
         </div>
 
@@ -1360,7 +1397,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sinal em Caixa</span>
             <DollarSign size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">R$ 42k</span>
+          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{formatSinalCaixa}</span>
           <span className="text-xs text-slate-550 font-semibold">Este mês corrente</span>
         </div>
 
@@ -1369,7 +1406,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Velocidade Média</span>
             <Clock size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">1h 48m</span>
+          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{velocidadeMediaText}</span>
           <span className="text-xs text-emerald-600 font-semibold">Fechamento rápido</span>
         </div>
       </div>
