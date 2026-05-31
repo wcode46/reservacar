@@ -1,0 +1,704 @@
+﻿diff --git a/DESIGN.md b/DESIGN.md
+index b6d681b..a772dae 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -12,12 +12,12 @@ colors:
+   accent-success: "#16a34a"
+ typography:
+   display:
+-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
++    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
+     fontSize: "clamp(2rem, 5vw, 3rem)"
+     fontWeight: 900
+     lineHeight: 1.15
+   body:
+-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
++    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
+     fontSize: "14px"
+     fontWeight: 500
+     lineHeight: 1.5
+@@ -77,8 +77,8 @@ A paleta de cores ├® focada no contraste limpo e legibilidade.
+ 
+ ## 3. Typography
+ 
+-**Display Font:** ui-sans-serif, system-ui, sans-serif
+-**Body Font:** ui-sans-serif, system-ui, sans-serif
++**Display Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
++**Body Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
+ 
+ **Character:** Tipografia geom├®trica, moderna, limpa e com forte varia├º├úo de peso para separar claramente t├¡tulos de par├ígrafos.
+ 
+diff --git a/reservacar.tsx b/reservacar.tsx
+index 75b702f..d08dc29 100644
+--- a/reservacar.tsx
++++ b/reservacar.tsx
+@@ -47,6 +47,58 @@ const copyToClipboard = (text, callback) => {
+   }
+ };
+ 
++// --- UTILITY MASK AND VALIDATION FUNCTIONS ---
++const maskCPF = (value: string) => {
++  return value
++    .replace(/\D/g, '')
++    .replace(/(\d{3})(\d)/, '$1.$2')
++    .replace(/(\d{3})(\d)/, '$1.$2')
++    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
++    .replace(/(-\d{2})\d+?$/, '$1');
++};
++
++const maskCNPJ = (value: string) => {
++  return value
++    .replace(/\D/g, '')
++    .replace(/(\d{2})(\d)/, '$1.$2')
++    .replace(/(\d{3})(\d)/, '$1.$2')
++    .replace(/(\d{3})(\d)/, '$1/$2')
++    .replace(/(\d{4})(\d{1,2})/, '$1-$2')
++    .replace(/(-\d{2})\d+?$/, '$1');
++};
++
++const maskPhone = (value: string) => {
++  return value
++    .replace(/\D/g, '')
++    .replace(/(\d{2})(\d)/, '($1) $2')
++    .replace(/(\d{5})(\d)/, '$1-$2')
++    .replace(/(-\d{4})\d+?$/, '$1');
++};
++
++const maskCEP = (value: string) => {
++  return value
++    .replace(/\D/g, '')
++    .replace(/(\d{5})(\d)/, '$1-$2')
++    .replace(/(-\d{3})\d+?$/, '$1');
++};
++
++const validateCPF = (cpf: string) => {
++  const clean = cpf.replace(/\D/g, '');
++  if (clean.length !== 11) return false;
++  if (/^(\d)\1{10}$/.test(clean)) return false;
++  return true;
++};
++
++const validateCNPJ = (cnpj: string) => {
++  const clean = cnpj.replace(/\D/g, '');
++  if (clean.length !== 14) return false;
++  return true;
++};
++
++const validateEmail = (email: string) => {
++  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
++};
++
+ // --- STATIC IMAGES PRESETS ---
+ const CAR_IMAGES = [
+   { name: 'BMW Black Accent', url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80' },
+@@ -229,6 +281,7 @@ export default function App() {
+             setReservasUsadas={setReservasUsadas}
+             reservasUsadas={reservasUsadas}
+             totalReservasPlano={totalReservasPlano}
++            empresaLogada={empresaLogada}
+           />
+         )}
+         
+@@ -242,6 +295,7 @@ export default function App() {
+             setReservasUsadas={setReservasUsadas}
+             reservasUsadas={reservasUsadas}
+             totalReservasPlano={totalReservasPlano}
++            empresaLogada={empresaLogada}
+           />
+         )}
+ 
+@@ -1311,7 +1365,8 @@ function PreviewView({
+   setRecentReservations, 
+   setReservasUsadas, 
+   reservasUsadas = 0, 
+-  totalReservasPlano = 30 
++  totalReservasPlano = 30,
++  empresaLogada
+ }) {
+   const data = reservation || {
+     title: 'BMW 320i Sport GP 2.0 Turbo ActiveFlex',
+@@ -1326,7 +1381,10 @@ function PreviewView({
+ 
+   const [timeLeft, setTimeLeft] = useState(data.expiracao * 60); 
+   const [showPixModal, setShowPixModal] = useState(false);
+-  const [selectedVendedor, setSelectedVendedor] = useState('');
++  
++  const vendedoresList = data.vendedores ? data.vendedores.split(',').map((v: any) => v.trim()).filter(Boolean) : [];
++  const defaultVendedor = vendedoresList[0] || 'Consultor';
++  const [selectedVendedor, setSelectedVendedor] = useState(defaultVendedor);
+   
+   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+   const [showVideo, setShowVideo] = useState(false);
+@@ -1526,58 +1584,47 @@ function PreviewView({
+               </div>
+             </div>
+             
+-            {/* Live Chat Drawer */}
+-            <LiveChatSimulator sellerName={data.vendedores ? data.vendedores.split(',')[0].trim() : 'Consultor'} showToast={showToast} />
+           </div>
+-
+-          {/* Pricing Signal Booking card */}
+-          <div>
+-            <div className="bg-white rounded-3xl p-8 border border-slate-200 sticky top-24">
+-              <h3 className="text-2xl font-bold mb-4 text-slate-900 tracking-tight">Garantir Reserva</h3>
+-              <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
+-                Ao efetuar o sinal de garantia, este ve├¡culo ├® bloqueado imediatamente de visitas, testes e outros vendedores at├® voc├¬ assinar o contrato final.
+-              </p>
+-
+-              <div className="space-y-4 mb-8">
+-                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+-                  <span className="text-slate-500 font-semibold text-xs uppercase tracking-wider">Valor do Carro</span>
+-                  <span className="font-extrabold text-base text-slate-900">{formatCurrency(data.valorVenda)}</span>
+-                </div>
+-                <div className="flex justify-between items-center bg-blue-50 border border-blue-100 p-4 rounded-2xl">
+-                  <span className="text-blue-600 font-bold text-xs uppercase tracking-wider">Sinal do PIX Requerido</span>
+-                  <span className="font-black text-2xl text-blue-900">{formatCurrency(data.sinal)}</span>
+-                </div>
+-              </div>
+-
+-              <div className="mb-8">
+-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Atendente Dedicado</label>
+-                <select 
+-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-4 text-[15px] font-semibold text-slate-800 focus:border-slate-900 outline-none appearance-none cursor-pointer"
+-                  value={selectedVendedor}
+-                  onChange={(e) => setSelectedVendedor(e.target.value)}
+-                >
+-                  <option value="" className="bg-white text-slate-500">Selecione seu vendedor...</option>
+-                  {data.vendedores.split(',').map((v, i) => (
+-                    <option key={i} value={v.trim()} className="bg-white text-slate-800">{v.trim()}</option>
+-                  ))}
+-                </select>
+-              </div>
+-
+-              <button 
+-                disabled={timeLeft === 0 || !selectedVendedor}
+-                onClick={() => setShowPixModal(true)}
+-                className={`w-full font-bold text-base py-4 rounded-full transition-all duration-300 flex justify-center items-center ${
+-                  (timeLeft === 0 || !selectedVendedor)
+-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' 
+-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+-                }`}
+-              >
+-                {timeLeft === 0 ? 'Proposta Expirada' : 'Confirmar Reserva e ir para o PIX'}
+-              </button>
+-            </div>
+-          </div>
+-        </div>
+-      </div>
++ 
++           {/* Pricing Signal Booking card */}
++           <div>
++             <div className="bg-white rounded-3xl p-8 border border-slate-200 sticky top-24">
++               <h3 className="text-2xl font-bold mb-4 text-slate-900 tracking-tight">Garantir Reserva</h3>
++               <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
++                 Ao efetuar o sinal de garantia, este ve├¡culo ├® bloqueado imediatamente de visitas, testes e outros vendedores at├® voc├¬ assinar o contrato final.
++               </p>
++ 
++               <div className="space-y-4 mb-8">
++                 <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-4 rounded-2xl">
++                   <span className="text-slate-500 font-semibold text-xs uppercase tracking-wider">Valor do Carro</span>
++                   <span className="font-extrabold text-base text-slate-900">{formatCurrency(data.valorVenda)}</span>
++                 </div>
++                 <div className="flex justify-between items-center bg-blue-50 border border-blue-100 p-4 rounded-2xl">
++                   <span className="text-blue-600 font-bold text-xs uppercase tracking-wider">Sinal do PIX Requerido</span>
++                   <span className="font-black text-2xl text-blue-900">{formatCurrency(data.sinal)}</span>
++                 </div>
++               </div>
++ 
++               <div className="mb-8 flex items-center justify-between bg-slate-50 border border-slate-200 p-4 rounded-2xl">
++                 <span className="text-slate-500 font-semibold text-xs uppercase tracking-wider">Atendente Dedicado</span>
++                 <span className="font-extrabold text-sm text-slate-800">{selectedVendedor}</span>
++               </div>
++ 
++               <button 
++                 disabled={timeLeft === 0}
++                 onClick={() => setShowPixModal(true)}
++                 className={`w-full font-bold text-base py-4 rounded-full transition-all duration-300 flex justify-center items-center gap-1.5 ${
++                   timeLeft === 0
++                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' 
++                   : 'bg-blue-600 hover:bg-blue-700 text-white'
++                 }`}
++               >
++                 {timeLeft === 0 ? 'Proposta Expirada' : <>Reservar com PIX <ArrowRight size={16} /></>}
++               </button>
++             </div>
++           </div>
++         </div>
++       </div>
+ 
+       {showPixModal && (
+         <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={selectedVendedor} showToast={showToast} />
+@@ -1595,7 +1642,8 @@ function MobileClientView({
+   setRecentReservations, 
+   setReservasUsadas, 
+   reservasUsadas = 0, 
+-  totalReservasPlano = 30 
++  totalReservasPlano = 30,
++  empresaLogada
+ }) {
+   const data = reservation || {
+     title: 'BMW 320i Sport GP 2024',
+@@ -1610,6 +1658,7 @@ function MobileClientView({
+   const [timeLeft, setTimeLeft] = useState(data.expiracao * 60); 
+   const [showPixModal, setShowPixModal] = useState(false);
+   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
++  const [activeTab, setActiveTab] = useState('vitrine'); // vitrine, ficha, atividade
+   
+   const economiaPct = Math.round((1 - (data.valorVenda / data.fipeValue)) * 100) || 6;
+   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
+@@ -1642,6 +1691,9 @@ function MobileClientView({
+ 
+   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
+ 
++  const vendedoresList = data.vendedores ? data.vendedores.split(',').map((v: any) => v.trim()).filter(Boolean) : [];
++  const selectedVendedor = vendedoresList[0] || 'Consultor';
++
+   return (
+     <div className="min-h-screen bg-[#f8f9fa] py-12 flex justify-center relative items-center px-4">
+       <button 
+@@ -1655,7 +1707,7 @@ function MobileClientView({
+         <div className="absolute top-6 right-6 bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between items-center gap-3 z-20 w-64">
+           <div className="text-center">
+             <h4 className="font-extrabold text-xs text-slate-900">Visualiza├º├úo Mobile</h4>
+-            <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salv├í-la no painel.</p>
++            <p className="text-[10px] text-slate-550 mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salv├í-la no painel.</p>
+           </div>
+           <button 
+             onClick={handlePublish}
+@@ -1683,106 +1735,332 @@ function MobileClientView({
+           <Share size={18} className="cursor-pointer text-slate-850" />
+         </div>
+ 
++        {/* Tabs Bar Selector */}
++        <div className="bg-white px-5 py-3 border-b border-slate-200 shrink-0">
++          <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
++            <button 
++              onClick={() => setActiveTab('vitrine')}
++              className={`flex-1 text-[10px] font-black uppercase py-2.5 rounded-xl transition-all text-center tracking-wider ${activeTab === 'vitrine' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-505 bg-transparent font-bold'}`}
++            >
++              Vitrine
++            </button>
++            <button 
++              onClick={() => setActiveTab('ficha')}
++              className={`flex-1 text-[10px] font-black uppercase py-2.5 rounded-xl transition-all text-center tracking-wider ${activeTab === 'ficha' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-505 bg-transparent font-bold'}`}
++            >
++              Ficha
++            </button>
++            <button 
++              onClick={() => setActiveTab('atividade')}
++              className={`flex-1 text-[10px] font-black uppercase py-2.5 rounded-xl transition-all text-center tracking-wider ${activeTab === 'atividade' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-505 bg-transparent font-bold'}`}
++            >
++              Atividade
++            </button>
++          </div>
++        </div>
++
++        {/* Fixed Countdown block */}
++        <div className="bg-white border-b border-slate-200 px-5 py-4 text-left shrink-0">
++          <h3 className="text-[8px] font-black uppercase tracking-wider text-slate-550 mb-1 leading-none">RESERVADO EXCLUSIVAMENTE PARA VOC├è</h3>
++          <div className="flex justify-between items-center mb-2">
++            <span className="text-2xl font-mono font-black text-slate-900 leading-none">{formatTimeFull(timeLeft)}</span>
++            <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider shrink-0 leading-none">ATIVO</span>
++          </div>
++          <div className="w-full bg-slate-150 h-1.5 rounded-full overflow-hidden border border-slate-200">
++             <div className="bg-blue-600 h-full transition-all duration-1000 ease-linear" style={{ width: `${progressPercent}%` }}></div>
++          </div>
++        </div>
++
+         {/* Scrollable container on phone view */}
+         <div className="flex-1 overflow-y-auto pb-24 bg-white">
+           
+-          {/* Photos and Indicators */}
+-          <div className="relative w-full h-56 bg-slate-50 overflow-hidden">
+-            <div 
+-              className="flex w-full h-full transition-transform duration-500 ease-in-out"
+-              style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
+-            >
+-              {photosArray.map((url, index) => (
+-                <img 
+-                  key={index}
+-                  src={url} 
+-                  alt={`Car ${index}`} 
+-                  className="w-full h-full object-cover shrink-0" 
+-                />
+-              ))}
+-            </div>
+-            
+-            <div className="absolute top-4 right-4 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1.5 rounded-full flex items-center z-20">
+-              <span className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse"></span>
+-              VERIFICADO
+-            </div>
+-            
+-            {photosArray.length > 1 && (
+-              <div className="absolute bottom-4 left-0 w-full flex justify-center space-x-1.5 z-20">
+-                {photosArray.map((_, idx) => (
+-                  <div 
+-                    key={idx}
+-                    className={`h-1 rounded-full cursor-pointer transition-all ${currentPhotoIndex === idx ? 'w-4 bg-blue-600' : 'w-1 bg-slate-300'}`}
+-                  ></div>
+-                ))}
++          {/* Aba VITRINE */}
++          {activeTab === 'vitrine' && (
++            <div className="animate-fadeIn">
++              {/* Photos and Indicators */}
++              <div className="relative w-full h-56 bg-slate-50 overflow-hidden">
++                <div 
++                  className="flex w-full h-full transition-transform duration-500 ease-in-out"
++                  style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
++                >
++                  {photosArray.map((url, index) => (
++                    <img 
++                      key={index}
++                      src={url} 
++                      alt={`Car ${index}`} 
++                      className="w-full h-full object-cover shrink-0" 
++                    />
++                  ))}
++                </div>
++                
++                <div className="absolute top-4 right-4 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1.5 rounded-full flex items-center z-20">
++                  <span className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse"></span>
++                  VERIFICADO
++                </div>
++                
++                {photosArray.length > 1 && (
++                  <div className="absolute bottom-4 left-0 w-full flex justify-center space-x-1.5 z-20">
++                    {photosArray.map((_, idx) => (
++                      <div 
++                        key={idx}
++                        className={`h-1 rounded-full cursor-pointer transition-all ${currentPhotoIndex === idx ? 'w-4 bg-blue-600' : 'w-1 bg-slate-300'}`}
++                      ></div>
++                    ))}
++                  </div>
++                )}
+               </div>
+-            )}
+-          </div>
+ 
+-          <div className="px-5 pt-6 pb-4">
+-            {data.laudoAprovado && (
+-              <div className="mb-3 flex items-center text-emerald-700 bg-emerald-50 w-max px-3 py-1 rounded-full border border-emerald-200 text-[10px] font-black">
+-                <Shield size={12} className="mr-1.5 text-emerald-600" />
+-                LAUDO CAUTELAR TOTALMENTE APROVADO
++              <div className="px-5 pt-6 pb-4 text-left">
++                {data.laudoAprovado && (
++                  <div className="mb-3 flex items-center text-emerald-700 bg-emerald-50 w-max px-3 py-1 rounded-full border border-emerald-200 text-[10px] font-black">
++                    <Shield size={12} className="mr-1.5 text-emerald-600" />
++                    LAUDO CAUTELAR TOTALMENTE APROVADO
++                  </div>
++                )}
++                
++                <h1 className="text-2xl font-extrabold text-slate-900 mb-1 tracking-tight leading-tight">{data.title}</h1>
++                <p className="text-xs text-slate-550 mb-4 font-semibold">
++                  {data.anoText || '2024'} ÔÇó {data.km || '0 km'} ÔÇó {data.corText || 'Preto'} ÔÇó {data.cambio || 'Autom├ítico'}
++                </p>
++                
++                <div className="flex items-center mb-6 gap-3">
++                  <span className="text-2xl font-black text-slate-900">{formatCurrency(data.valorVenda)}</span>
++                  {economiaPct > 0 && (
++                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100">
++                      {economiaPct}% abaixo FIPE
++                    </span>
++                  )}
++                </div>
++
++                <div className="grid grid-cols-2 gap-2 mb-6">
++                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
++                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Combust├¡vel</span>
++                    <span className="block text-xs font-bold text-slate-900">{data.combustivel || 'Flex'}</span>
++                  </div>
++                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
++                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
++                    <span className="block text-xs font-bold text-slate-900">{data.km || 'N/A'}</span>
++                  </div>
++                </div>
++              </div>
++
++              {/* Card Garantir Reserva */}
++              <div className="p-5 border-t border-slate-150 bg-slate-50 text-left">
++                <div className="flex items-center gap-2 mb-2">
++                  <ShieldCheck className="text-blue-600 shrink-0" size={16} />
++                  <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Garantir Reserva</h4>
++                </div>
++                <p className="text-[10px] text-slate-550 font-semibold leading-relaxed">
++                  Ao efetuar o sinal de garantia, este ve├¡culo ├® bloqueado imediatamente de visitas, testes e outros vendedores at├® voc├¬ assinar o contrato final.
++                </p>
++                <p className="text-[9px] text-slate-400 font-semibold mt-4 leading-normal">
++                  Esta ├® uma simula├º├úo comercial de pr├®-reserva. Reservacar intermedia a garantia e a concession├íria assume total responsabilidade pelo showroom f├¡sico.
++                </p>
+               </div>
+-            )}
+-            
+-            <h1 className="text-2xl font-extrabold text-slate-900 mb-1 tracking-tight leading-tight">{data.title}</h1>
+-            <p className="text-xs text-slate-550 mb-4 font-semibold">
+-              {data.anoText || '2024'} ÔÇó {data.km || '0 km'} ÔÇó {data.corText || 'Preto'} ÔÇó {data.cambio || 'Autom├ítico'}
+-            </p>
+-            
+-            <div className="flex items-center mb-6 gap-3">
+-              <span className="text-2xl font-black text-slate-900">{formatCurrency(data.valorVenda)}</span>
+-              {economiaPct > 0 && (
+-                <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2.5 py-1 rounded-full border border-blue-100">
+-                  {economiaPct}% abaixo FIPE
+-                </span>
+-              )}
+             </div>
++          )}
+ 
+-            {/* Countdown widget */}
+-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+-              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 text-slate-500">RESERVADO EXCLUSIVAMENTE PARA VOC├è</h3>
+-              <div className="flex justify-between items-end mb-3">
+-                <span className="text-3xl font-black leading-none font-mono text-slate-900">{formatTimeFull(timeLeft)}</span>
+-                <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">ATIVO</span>
++          {/* Aba FICHA */}
++          {activeTab === 'ficha' && (
++            <div className="px-5 pt-6 pb-4 text-left animate-fadeIn">
++              <h3 className="text-[11px] font-black mb-4 text-slate-505 uppercase tracking-wider flex items-center gap-1.5">
++                <Car size={14} className="text-blue-600" />
++                Ficha T├®cnica
++              </h3>
++              
++              <div className="grid grid-cols-2 gap-2 mb-6">
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Ano</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.anoText || 'N/D'}</span>
++                </div>
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Cor</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.corText || 'N/D'}</span>
++                </div>
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">C├ómbio</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.cambio || 'Autom├ítico'}</span>
++                </div>
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Motor</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.motorText || 'N/D'}</span>
++                </div>
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Combust├¡vel</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.combustivel || 'Flex'}</span>
++                </div>
++                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
++                  <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">KM Rodados</span>
++                  <span className="font-extrabold text-xs text-slate-900">{data.km || 'N/D'}</span>
++                </div>
+               </div>
+-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden border border-slate-300">
+-                 <div className="bg-blue-600 h-full" style={{ width: `${progressPercent}%` }}></div>
++
++              {/* FIPE Comparison */}
++              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
++                <span className="text-[9px] font-black text-slate-550 uppercase tracking-wider block mb-2">Comparativo Tabela FIPE</span>
++                <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
++                  <span>M├®dia FIPE Oficial:</span>
++                  <span className="text-slate-900 font-extrabold">{formatCurrency(data.fipeValue)}</span>
++                </div>
++                <div className="flex justify-between text-xs font-semibold text-slate-600 mt-1 border-b border-slate-200 pb-2">
++                  <span>Pre├ºo Especial Showroom:</span>
++                  <span className="text-blue-600 font-black">{formatCurrency(data.valorVenda)}</span>
++                </div>
++                {data.fipeValue - data.valorVenda > 0 && (
++                  <div className="flex justify-between text-xs font-bold text-emerald-600 mt-2">
++                    <span>Sua Economia Real:</span>
++                    <span>{formatCurrency(data.fipeValue - data.valorVenda)}</span>
++                  </div>
++                )}
+               </div>
+-              <p className="text-[10px] text-slate-500 font-semibold mt-1">4 clientes est├úo visualizando este link agora</p>
+-            </div>
+ 
+-            {/* Specs visual cards */}
+-            <div className="grid grid-cols-2 gap-2 mb-6">
+-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+-                <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Combust├¡vel</span>
+-                <span className="block text-xs font-bold text-slate-900">{data.combustivel || 'Flex'}</span>
++              {/* Opcionais Inclusos */}
++              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
++                <Sparkles size={14} className="text-blue-600" />
++                Opcionais Inclusos
++              </h3>
++              <div className="flex flex-wrap gap-1.5 mb-6">
++                {data.opcionais.split(',').map((opt, i) => (
++                  <span key={i} className="bg-slate-55 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-[10.5px] font-bold leading-none">
++                    {opt.trim()}
++                  </span>
++                ))}
+               </div>
+-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+-                <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
+-                <span className="block text-xs font-bold text-slate-900">{data.km || 'N/A'}</span>
++
++              {/* Concession├íria (Loja) */}
++              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
++                <Award size={14} className="text-blue-600" />
++                Concession├íria Respons├ível
++              </h3>
++              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl mb-6">
++                <div className="space-y-3">
++                  <div>
++                    <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Raz├úo Social</span>
++                    <span className="text-xs font-extrabold text-slate-900">{empresaLogada?.nome || 'BMW Premium SP'}</span>
++                  </div>
++                  {empresaLogada?.cnpj && (
++                    <div>
++                      <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">CNPJ</span>
++                      <span className="text-xs font-semibold text-slate-800">{empresaLogada.cnpj}</span>
++                    </div>
++                  )}
++                  {empresaLogada?.email && (
++                    <div>
++                      <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">E-mail Comercial</span>
++                      <span className="text-xs font-semibold text-slate-800 break-all">{empresaLogada.email}</span>
++                    </div>
++                  )}
++                  {empresaLogada?.telefone && (
++                    <div>
++                      <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Telefone Comercial</span>
++                      <span className="text-xs font-semibold text-slate-800">{empresaLogada.telefone}</span>
++                    </div>
++                  )}
++                </div>
++              </div>
++
++              {/* Card Garantir Reserva */}
++              <div className="p-5 border-t border-slate-150 bg-slate-50 text-left -mx-5 -mb-4 mt-6">
++                <div className="flex items-center gap-2 mb-2">
++                  <ShieldCheck className="text-blue-600 shrink-0" size={16} />
++                  <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Garantir Reserva</h4>
++                </div>
++                <p className="text-[10px] text-slate-550 font-semibold leading-relaxed">
++                  Ao efetuar o sinal de garantia, este ve├¡culo ├® bloqueado imediatamente de visitas, testes e outros vendedores at├® voc├¬ assinar o contrato final.
++                </p>
+               </div>
+             </div>
++          )}
++
++          {/* Aba ATIVIDADE */}
++          {activeTab === 'atividade' && (
++            <div className="px-5 pt-6 pb-4 text-left animate-fadeIn">
++              <h3 className="text-[11px] font-black mb-6 text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
++                <Clock size={14} className="text-blue-600" />
++                Linha do Tempo de Atividade
++              </h3>
++              
++              <div className="relative pl-6 border-l-2 border-slate-100 space-y-8 ml-2">
++                
++                {/* 1. Vitrine Ativada */}
++                <div className="relative">
++                  <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
++                  <div className="flex justify-between items-start gap-2">
++                    <div>
++                      <h4 className="text-xs font-black text-slate-900">Vitrine Ativada</h4>
++                      <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
++                        O link exclusivo do ve├¡culo foi gerado e enviado para o cliente.
++                      </p>
++                    </div>
++                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+0min</span>
++                  </div>
++                </div>
+ 
+-            {/* Simulated instant client messaging pane inside the mobile frame */}
+-            <div className="border-t border-slate-200 pt-6">
+-              <LiveChatSimulator sellerName={data.vendedores ? data.vendedores.split(',')[0].trim() : 'Consultor'} showToast={showToast} embeddedInMobile />
++                {/* 2. Atualiza├º├úo Tabela FIPE */}
++                <div className="relative">
++                  <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
++                  <div className="flex justify-between items-start gap-2">
++                    <div>
++                      <h4 className="text-xs font-black text-slate-900">Atualiza├º├úo da Tabela FIPE</h4>
++                      <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
++                        Tabela FIPE oficial carregada: Pre├ºo exclusivo tem margem de R$ 5.000,00 de desconto!
++                      </p>
++                    </div>
++                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+30min</span>
++                  </div>
++                </div>
++
++                {/* 3. Tour de V├¡deo */}
++                <div className="relative">
++                  <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
++                  <div className="flex justify-between items-start gap-2">
++                    <div>
++                      <h4 className="text-xs font-black text-slate-900">Tour de V├¡deo Adicionado</h4>
++                      <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
++                        V├¡deo completo do laudo estrutural e partida a frio foi disponibilizado.
++                      </p>
++                    </div>
++                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+60min</span>
++                  </div>
++                </div>
++
++                {/* 4. Eventos Futuros */}
++                <div className="relative">
++                  <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-slate-200 border-4 border-white"></div>
++                  <div>
++                    <h4 className="text-xs font-bold text-slate-400 italic">Eventos Futuros Agendados pelo Lojista...</h4>
++                    <p className="text-[10.5px] text-slate-400 font-medium mt-1 leading-relaxed italic">
++                      Automatiza├º├Áes complementares est├úo escalonadas baseadas no seu tempo active.
++                    </p>
++                  </div>
++                </div>
++              </div>
++
++              {/* Card Garantir Reserva */}
++              <div className="p-5 border-t border-slate-150 bg-slate-50 text-left -mx-5 -mb-4 mt-8">
++                <div className="flex items-center gap-2 mb-2">
++                  <ShieldCheck className="text-blue-600 shrink-0" size={16} />
++                  <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Garantir Reserva</h4>
++                </div>
++                <p className="text-[10px] text-slate-550 font-semibold leading-relaxed">
++                  Ao efetuar o sinal de garantia, este ve├¡culo ├® bloqueado imediatamente de visitas, testes e outros vendedores at├® voc├¬ assinar o contrato final.
++                </p>
++              </div>
+             </div>
++          )}
+ 
+-          </div>
+         </div>
+ 
+         {/* Bottom Fixed Sticky Action Bar in phone emulator */}
+-        <div className="absolute bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 flex items-center justify-between space-x-3 z-50 text-black">
++        <div className="absolute bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 flex items-center justify-between space-x-3 z-50 text-black shrink-0">
+           <button 
++            disabled={timeLeft === 0}
+             onClick={() => setShowPixModal(true)}
+-            className="flex-1 bg-blue-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center hover:bg-blue-700 transition-colors"
++            className="flex-1 bg-blue-600 text-white font-bold text-sm py-4 rounded-2xl flex items-center justify-center hover:bg-blue-700 transition gap-1.5"
+           >
+-            Reservar com PIX <ArrowRight size={16} className="ml-2" />
++            Reservar com PIX <ArrowRight size={16} />
+           </button>
+-          <button className="w-14 h-14 bg-white border border-slate-250 rounded-2xl flex items-center justify-center text-slate-800 hover:bg-slate-50 transition-colors">
++          <button className="w-14 h-14 bg-white border border-slate-250 rounded-2xl flex items-center justify-center text-slate-800 hover:bg-slate-50 transition-colors shrink-0">
+             <Heart size={20} />
+           </button>
+         </div>
+@@ -1790,7 +2068,7 @@ function MobileClientView({
+       </div>
+       
+       {showPixModal && (
+-        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={data.vendedores ? data.vendedores.split(',')[0] : 'Consultor'} showToast={showToast} />
++        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={selectedVendedor} showToast={showToast} />
+       )}
+     </div>
+   );
+diff --git a/src/index.css b/src/index.css
+index fe97656..3e1771f 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -1,8 +1,13 @@
++@import url('https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap');
+ @import "tailwindcss";
+ 
++@theme {
++  --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
++}
++
+ /* Qualquer customiza├º├úo adicional em Vanilla CSS pode ser colocada aqui */
+ html, body {
+   margin: 0;
+   padding: 0;
+-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
++  font-family: 'Sora', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+ }
