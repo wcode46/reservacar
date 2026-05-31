@@ -5,7 +5,7 @@ import {
   MessageCircle, Phone, Heart, Share, ArrowRight, ArrowUpRight, ArrowLeft, Shield,
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
-  CircleDollarSign, Settings
+  CircleDollarSign, Settings, LogOut, Menu, PlusCircle
 } from 'lucide-react';
 
 
@@ -146,6 +146,7 @@ export default function App() {
   });
   const [planoUpgrade, setPlanoUpgrade] = useState<string>('Plus');
   const [reservaParaGerenciar, setReservaParaGerenciar] = useState<any>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Real-time live notifications (makes the dashboard dynamic!)
   const [liveNotifications, setLiveNotifications] = useState([
@@ -217,6 +218,8 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
 
+  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva'].includes(currentRoute);
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 transition-colors duration-200">
       
@@ -228,12 +231,37 @@ export default function App() {
         </div>
       )}
 
-      {/* Hide standard navbar on preview simulator layouts */}
-      {currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && (
+      {/* Hide standard navbar on logged-in routes and preview simulator layouts */}
+      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && (
         <Navbar currentRoute={currentRoute} navigateTo={navigateTo} />
       )}
+
+      {/* Mobile Header for Logged-in Routes */}
+      {isLoggedRoute && (
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6">
+          <button 
+            onClick={() => setMobileSidebarOpen(true)}
+            className="p-2 text-slate-600 hover:text-blue-600 transition"
+          >
+            <Menu size={24} />
+          </button>
+          <span className="font-extrabold text-slate-900 tracking-tight text-lg">Reservacar</span>
+          <div className="w-8"></div>
+        </div>
+      )}
+
+      {/* Sidebar for Logged-in Routes */}
+      {isLoggedRoute && (
+        <Sidebar 
+          currentRoute={currentRoute} 
+          navigateTo={navigateTo} 
+          empresaLogada={empresaLogada}
+          isOpen={mobileSidebarOpen}
+          setIsOpen={setMobileSidebarOpen}
+        />
+      )}
       
-      <main className="transition-all duration-300">
+      <main className={`transition-all duration-300 ${isLoggedRoute ? 'lg:pl-64 pt-16 lg:pt-0' : ''}`}>
         {currentRoute === 'home' && <HomeView navigateTo={navigateTo} />}
         {currentRoute === 'login' && <LoginView navigateTo={navigateTo} />}
         
@@ -509,6 +537,118 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// --- SIDEBAR ---
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen }) {
+  const menuItems = [
+    { id: 'hub', label: 'Painel Central', icon: Laptop },
+    { id: 'sales-stats', label: 'Painel da Loja', icon: BarChart2 },
+    { id: 'dashboard', label: 'Minhas Propostas', icon: LinkIcon },
+    { id: 'cadastrar-reserva', label: 'Nova Proposta', icon: PlusCircle },
+    { id: 'configuracoes', label: 'Configurações', icon: Settings },
+  ];
+
+  const handleNavigate = (route) => {
+    navigateTo(route);
+    setIsOpen(false);
+  };
+
+  const activePlano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
+
+  const sidebarContent = (
+    <div className="h-full flex flex-col justify-between bg-white text-slate-800">
+      <div>
+        {/* Brand Header */}
+        <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-200">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
+            <Car size={22} className="text-white" />
+          </div>
+          <div>
+            <span className="text-xl font-black tracking-tight text-slate-900 block">Reservacar</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block -mt-1">Central de Vendas</span>
+          </div>
+        </div>
+
+        {/* Store Info */}
+        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+          <p className="text-sm font-bold text-slate-800 truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Plano {activePlano}</span>
+          </div>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="px-4 py-6 space-y-1.5">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 block">Operações</span>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentRoute === item.id || (item.id === 'configuracoes' && currentRoute === 'checkout-plano');
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigate(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 ${
+                  isActive 
+                    ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                    : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50 border border-transparent'
+                }`}
+              >
+                <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-500'} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Footer Section */}
+      <div className="p-4 border-t border-slate-200 bg-slate-50/30">
+        <button
+          onClick={() => handleNavigate('home')}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition duration-150"
+        >
+          <LogOut size={18} />
+          <span>Sair da Loja</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar (Permanent) */}
+      <aside className="hidden lg:block fixed top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-200 z-30">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer Overlay */}
+      {isOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setIsOpen(false)}
+          ></div>
+
+          {/* Drawer Panel */}
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white z-50 h-full">
+            {/* Close button inside drawer */}
+            <div className="absolute top-4 right-4 z-10">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
