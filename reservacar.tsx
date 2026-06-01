@@ -887,7 +887,7 @@ function PricingLandingHero({
   trustedBy
 }) {
   return (
-    <div className="relative w-full bg-black border-b border-white/10 pt-16 pb-20 overflow-hidden text-center flex flex-col items-center">
+    <div className="relative w-full bg-black border-b border-white/10 pt-28 lg:pt-36 pb-20 overflow-hidden text-center flex flex-col items-center">
       <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center">
         
         {/* Mockup do Celular centralizado no topo */}
@@ -913,8 +913,8 @@ function PricingLandingHero({
             <div className="flex-1 flex flex-col gap-2 overflow-hidden items-center justify-start">
               {/* Notificação fixa superior estilo a foto */}
               <div className="w-full bg-[#121214]/90 border border-white/5 p-3 rounded-2xl text-center flex flex-col items-center justify-center min-h-[70px] shadow-lg">
-                <span className="text-[11px] font-bold text-white block mb-0.5">Live by Monday</span>
-                <span className="text-[8px] text-slate-400 block">Your MVP online before the next standup.</span>
+                <span className="text-[11px] font-bold text-white block mb-0.5">Vitrine Ativa</span>
+                <span className="text-[8px] text-slate-400 block">O link exclusivo do veículo foi gerado e enviado.</span>
               </div>
 
               {/* Notificação Animada Rotativa (carros reservados) */}
@@ -1062,46 +1062,46 @@ function HomeView({ navigateTo }) {
       <PricingLandingHero
         title={
           <>
-            Ship your SaaS
+            Ative seu showroom
             <br />
-            in a weekend
+            em minutos
           </>
         }
-        description="A production-ready React boilerplate with auth, billing, and email flows. Skip 200 hours of setup and start shipping."
+        description="Uma vitrine digital para cada veículo com Pix e FIPE integrados. Poupe horas de negociação e feche vendas mais rápido."
         phone={{
           time: "9:41",
           items: visibleNotifications
         }}
-        price={{ current: "$149", original: "$399" }}
-        availability="Lifetime deal — ends Sunday"
+        price={{ current: "R$ 159", original: "R$ 399" }}
+        availability="Oferta de lançamento — por tempo limitado"
         primaryAction={{ 
-          label: "Grab the boilerplate", 
-          onClick: () => navigateTo('assinar') 
-        }}
-        secondaryAction={{ 
-          label: "See what's inside", 
+          label: "Simular Reserva (Cliente)", 
           onClick: () => navigateTo('cadastrar-reserva') 
         }}
+        secondaryAction={{ 
+          label: "Assinar Reservacar", 
+          onClick: () => navigateTo('assinar') 
+        }}
         trustedBy={{
-          heading: "Used by builders shipping at",
+          heading: "Usado por concessionárias e lojistas em",
           logos: [
             <span
-              key="linear"
+              key="audi"
               className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              Linear
+              Audi Center
             </span>,
             <span
-              key="vercel"
+              key="bmw"
               className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              ▲ Vercel
+              BMW Premium
             </span>,
             <span
-              key="raycast"
+              key="toyota"
               className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              Raycast
+              Toyota Elite
             </span>,
           ],
         }}
