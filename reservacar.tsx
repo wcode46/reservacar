@@ -5,7 +5,7 @@ import {
   MessageCircle, Phone, Heart, Share, ArrowRight, ArrowUpRight, ArrowLeft, Shield,
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
-  CircleDollarSign, Settings, LogOut, Menu, PlusCircle
+  CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus
 } from 'lucide-react';
 
 
@@ -142,7 +142,17 @@ export default function App() {
     telefone: '(11) 99999-8822',
     valorMinimoSinal: 1500,
     plano: 'Plus',
-    planoAtivo: 'Plus'
+    planoAtivo: 'Plus',
+    endereco: 'Av. das Nações Unidas, 12345',
+    enderecoCobranca: 'Av. das Nações Unidas, 12345',
+    cep: '04578-000',
+    ramos: ['Luxo', 'Zero Kilômetro'],
+    estoque: 120,
+    vendedores: [
+      { id: 1, nome: 'Carla Silva', cargo: 'Consultora Premium', ativo: true, dataCadastro: '31/05/2026', linksGerados: 14, conversao: 64 },
+      { id: 2, nome: 'Roberto Oliveira', cargo: 'Gerente de Vendas', ativo: true, dataCadastro: '24/05/2026', linksGerados: 28, conversao: 71 },
+      { id: 3, nome: 'Marcos Souza', cargo: 'Consultor de Vendas', ativo: true, dataCadastro: '28/05/2026', linksGerados: 9, conversao: 56 }
+    ]
   });
   const [planoUpgrade, setPlanoUpgrade] = useState<string>('Plus');
   const [reservaParaGerenciar, setReservaParaGerenciar] = useState<any>(null);
@@ -218,7 +228,7 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva'].includes(currentRoute);
+  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva', 'vendedores'].includes(currentRoute);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 transition-colors duration-200">
@@ -373,6 +383,15 @@ export default function App() {
             empresaLogada={empresaLogada}
             totalReservasPlano={totalReservasPlano}
             reservasUsadas={reservasUsadas}
+          />
+        )}
+
+        {currentRoute === 'vendedores' && (
+          <VendedoresView 
+            navigateTo={navigateTo} 
+            showToast={showToast}
+            empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
           />
         )}
       </main>
@@ -546,6 +565,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen })
     { id: 'hub', label: 'Painel Central', icon: Laptop },
     { id: 'sales-stats', label: 'Painel da Loja', icon: BarChart2 },
     { id: 'dashboard', label: 'Minhas Propostas', icon: LinkIcon },
+    { id: 'vendedores', label: 'Vendedores', icon: Users },
     { id: 'cadastrar-reserva', label: 'Nova Proposta', icon: PlusCircle },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
   ];
@@ -3426,9 +3446,9 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                       required
                     >
                       <option value="" disabled>Selecione seu vendedor...</option>
-                      <option value="Carla Silva">Carla Silva</option>
-                      <option value="Roberto Oliveira">Roberto Oliveira</option>
-                      <option value="Marcos Souza">Marcos Souza</option>
+                      {(empresaLogada?.vendedores || []).map((v, i) => (
+                        <option key={v.id || i} value={v.nome}>{v.nome} ({v.cargo})</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -3505,7 +3525,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 // --- NEW COMPONENT: WIZARD FLOW "ASSINATURA CONCESSIONÁRIA" ---
 function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, setReservasUsadas, setEmpresaLogada }) {
   const [step, setStep] = useState(1);
-  const [empresaData, setEmpresaData] = useState({
+  const [empresaData, setEmpresaData] = useState<any>({
     nome: '',
     cnpj: '',
     email: '',
@@ -3513,8 +3533,17 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
     plano: 'Plus', // 'Basic', 'Plus', 'Premium'
     paymentMethod: 'credit_card',
     couponCode: '',
-    discountApplied: false
+    discountApplied: false,
+    endereco: '',
+    enderecoCobranca: '',
+    cep: '',
+    ramos: [],
+    estoque: '',
+    vendedores: []
   });
+
+  const [novoVendedorNome, setNovoVendedorNome] = useState('');
+  const [novoVendedorCargo, setNovoVendedorCargo] = useState('Consultor de Vendas');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -3546,9 +3575,42 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
     return 30; // Plus
   };
 
+  const handleToggleRamo = (ramo) => {
+    const isSelected = empresaData.ramos.includes(ramo);
+    const newRamos = isSelected 
+      ? empresaData.ramos.filter(r => r !== ramo)
+      : [...empresaData.ramos, ramo];
+    setEmpresaData(prev => ({ ...prev, ramos: newRamos }));
+  };
+
+  const handleAddVendedor = () => {
+    if (!novoVendedorNome.trim()) {
+      showToast('Por favor, digite o nome do vendedor.', 'error');
+      return;
+    }
+    const novo = {
+      id: Date.now(),
+      nome: novoVendedorNome.trim(),
+      cargo: novoVendedorCargo,
+      ativo: true,
+      dataCadastro: new Date().toLocaleDateString('pt-BR'),
+      linksGerados: 0,
+      conversao: 0
+    };
+    setEmpresaData(prev => ({ ...prev, vendedores: [...prev.vendedores, novo] }));
+    setNovoVendedorNome('');
+    setNovoVendedorCargo('Consultor de Vendas');
+    showToast('Vendedor adicionado à lista inicial!', 'success');
+  };
+
+  const handleRemoveVendedor = (id) => {
+    setEmpresaData(prev => ({ ...prev, vendedores: prev.vendedores.filter(v => v.id !== id) }));
+    showToast('Vendedor removido.', 'info');
+  };
+
   const handleFinalize = () => {
     if (!empresaData.nome || !empresaData.cnpj || !empresaData.email) {
-      showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+      showToast('Por favor, preencha todos os campos obrigatórios da Concessionária.', 'error');
       return;
     }
     const credits = getPlanCredits();
@@ -3561,7 +3623,17 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
       telefone: empresaData.telefone,
       plano: empresaData.plano,
       planoAtivo: empresaData.plano,
-      valorMinimoSinal: 1500
+      valorMinimoSinal: 1500,
+      endereco: empresaData.endereco || 'Endereço não informado',
+      enderecoCobranca: empresaData.enderecoCobranca || empresaData.endereco || 'Endereço não informado',
+      cep: empresaData.cep || '00000-000',
+      ramos: empresaData.ramos.length > 0 ? empresaData.ramos : ['Geral'],
+      estoque: Number(empresaData.estoque) || 0,
+      vendedores: empresaData.vendedores.length > 0 ? empresaData.vendedores : [
+        { id: 1, nome: 'Carla Silva', cargo: 'Consultora Premium', ativo: true, dataCadastro: '31/05/2026', linksGerados: 14, conversao: 64 },
+        { id: 2, nome: 'Roberto Oliveira', cargo: 'Gerente de Vendas', ativo: true, dataCadastro: '24/05/2026', linksGerados: 28, conversao: 71 },
+        { id: 3, nome: 'Marcos Souza', cargo: 'Consultor de Vendas', ativo: true, dataCadastro: '28/05/2026', linksGerados: 9, conversao: 56 }
+      ]
     });
     showToast(`Assinatura realizada com sucesso! Você contratou o Plano ${empresaData.plano} com ${credits} créditos.`, 'success');
     navigateTo('hub');
@@ -3581,11 +3653,12 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
             <span>Cadastro Lojista</span>
           </div>
           
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             {[
               { num: 1, label: 'Identificação' },
-              { num: 2, label: 'Escolha o Plano' },
-              { num: 3, label: 'Pagamento' }
+              { num: 2, label: 'Dados Operacionais' },
+              { num: 3, label: 'Escolha o Plano' },
+              { num: 4, label: 'Pagamento' }
             ].map(s => (
               <div key={s.num} className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5">
@@ -3601,7 +3674,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
         </div>
 
         {/* Main Content Box */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-10 min-h-[460px] flex flex-col justify-between">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-10 min-h-[480px] flex flex-col justify-between">
           
           <div>
             {/* STEP 1: IDENTIFICACAO */}
@@ -3633,8 +3706,132 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
               </div>
             )}
 
-            {/* STEP 2: ESCOLHA DO PLANO */}
+            {/* STEP 2: DADOS OPERACIONAIS (NOVO) */}
             {step === 2 && (
+              <div className="max-w-2xl mx-auto w-full py-4 text-left">
+                <h2 className="text-2xl font-black text-slate-900 mb-2 text-center tracking-tight">Dados Operacionais e Showroom</h2>
+                <p className="text-slate-500 text-xs mb-8 text-center font-medium">Configure as informações operacionais essenciais da sua loja.</p>
+
+                <div className="space-y-6">
+                  {/* Endereço e CEP */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                      <label className={labelClass}>Endereço Comercial</label>
+                      <input type="text" name="endereco" value={empresaData.endereco} onChange={handleInputChange} className={inputClass} placeholder="Ex: Av. das Nações Unidas, 12345" />
+                    </div>
+                    <div>
+                      <label className={labelClass}>CEP</label>
+                      <input type="text" name="cep" value={empresaData.cep} onChange={handleInputChange} className={inputClass} placeholder="Ex: 04578-000" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Endereço de Cobrança</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setEmpresaData(prev => ({ ...prev, enderecoCobranca: prev.endereco }))}
+                        className="text-[10px] font-bold text-blue-600 hover:underline"
+                      >
+                        Copiar Comercial
+                      </button>
+                    </div>
+                    <input type="text" name="enderecoCobranca" value={empresaData.enderecoCobranca} onChange={handleInputChange} className={inputClass} placeholder="Ex: Mesmo que o comercial ou outro endereço" />
+                  </div>
+
+                  {/* Ramos e Estoque */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className={labelClass}>Ramos de Atuação</label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {['Luxo', 'Zero Kilômetro', 'Carros Usados'].map((r) => {
+                          const isSelected = empresaData.ramos.includes(r);
+                          return (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => handleToggleRamo(r)}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                                isSelected 
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Carros no Estoque (Tamanho aproximado)</label>
+                      <input type="number" name="estoque" value={empresaData.estoque} onChange={handleInputChange} className={inputClass} placeholder="Ex: 120" />
+                    </div>
+                  </div>
+
+                  {/* Cadastrar Vendedores Iniciais */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-6 mt-4">
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Vendedores do Showroom</h3>
+                    
+                    <div className="flex flex-col md:flex-row gap-3 mb-4">
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          placeholder="Nome do Vendedor" 
+                          value={novoVendedorNome} 
+                          onChange={(e) => setNovoVendedorNome(e.target.value)} 
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none"
+                        />
+                      </div>
+                      <div className="w-full md:w-48">
+                        <select 
+                          value={novoVendedorCargo} 
+                          onChange={(e) => setNovoVendedorCargo(e.target.value)} 
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-850 outline-none"
+                        >
+                          <option value="Consultor de Vendas">Consultor de Vendas</option>
+                          <option value="Consultor Premium">Consultor Premium</option>
+                          <option value="Gerente de Vendas">Gerente de Vendas</option>
+                          <option value="Diretor Comercial">Diretor Comercial</option>
+                        </select>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleAddVendedor}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
+                      >
+                        + Adicionar
+                      </button>
+                    </div>
+
+                    {empresaData.vendedores.length > 0 ? (
+                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        {empresaData.vendedores.map((v) => (
+                          <div key={v.id} className="flex justify-between items-center bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold">
+                            <div>
+                              <span className="text-slate-800">{v.nome}</span>
+                              <span className="bg-slate-100 text-slate-500 text-[9px] px-2 py-0.5 rounded-full ml-2 uppercase">{v.cargo}</span>
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveVendedor(v.id)} 
+                              className="text-rose-600 hover:text-rose-800 text-[10px]"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 font-medium italic">Nenhum vendedor cadastrado ainda. O sistema carregará os 3 vendedores padrão como demonstração caso prossiga em branco.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: ESCOLHA DO PLANO */}
+            {step === 3 && (
               <div className="w-full py-4 text-center">
                 <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Escolha o plano de créditos ideal para sua concessionária</h2>
                 <p className="text-slate-500 text-xs mb-8 font-medium">Selecione a quantidade de propostas ativas que deseja gerenciar em paralelo.</p>
@@ -3686,8 +3883,8 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
               </div>
             )}
 
-            {/* STEP 3: CHECKOUT PAGAMENTO */}
-            {step === 3 && (
+            {/* STEP 4: CHECKOUT PAGAMENTO */}
+            {step === 4 && (
               <div className="max-w-2xl mx-auto w-full py-4">
                 <h2 className="text-2xl font-black text-slate-900 text-center mb-6 tracking-tight">Forma de Pagamento da Assinatura</h2>
                 
@@ -3750,7 +3947,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                   </div>
 
                   <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-left h-max">
-                    <h4 className="text-[9px] font-bold text-slate-550 uppercase tracking-widest mb-3">Resumo da Assinatura</h4>
+                    <h4 className="text-[9px] font-bold text-slate-555 uppercase tracking-widest mb-3">Resumo da Assinatura</h4>
                     <div className="text-xs space-y-2 border-b border-slate-200 pb-3 mb-3">
                       <div className="flex justify-between text-slate-550">
                         <span>Plano:</span>
@@ -3791,7 +3988,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
               <ChevronLeft size={14} /> Voltar
             </button>
             
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
                 onClick={() => {
@@ -4478,6 +4675,325 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
         </div>
 
       </div>
+    </div>
+  );
+}
+
+// --- NEW COMPONENT: VENDEDORES VIEW (SHOWROOM GERENCIAMENTO) ---
+function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada }) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [vendedorParaGerenciar, setVendedorParaGerenciar] = useState<any>(null);
+  const [formData, setFormData] = useState({ nome: '', cargo: 'Consultor de Vendas' });
+  const [editFormData, setEditFormData] = useState<any>({ nome: '', cargo: '', ativo: true });
+
+  const vendedores = empresaLogada?.vendedores || [];
+
+  const handleAddVendedor = (e) => {
+    e.preventDefault();
+    if (!formData.nome.trim()) {
+      showToast('Por favor, informe o nome do vendedor.', 'error');
+      return;
+    }
+    const novo = {
+      id: Date.now(),
+      nome: formData.nome.trim(),
+      cargo: formData.cargo,
+      ativo: true,
+      dataCadastro: new Date().toLocaleDateString('pt-BR'),
+      linksGerados: Math.floor(Math.random() * 20) + 1, // Simulado inicial
+      conversao: Math.floor(Math.random() * 40) + 40   // Simulado inicial
+    };
+    setEmpresaLogada(prev => ({
+      ...prev,
+      vendedores: [...(prev.vendedores || []), novo]
+    }));
+    setShowAddModal(false);
+    setFormData({ nome: '', cargo: 'Consultor de Vendas' });
+    showToast(`Vendedor ${novo.nome} adicionado com sucesso!`, 'success');
+  };
+
+  const handleOpenEdit = (vendedor) => {
+    setVendedorParaGerenciar(vendedor);
+    setEditFormData({
+      nome: vendedor.nome,
+      cargo: vendedor.cargo,
+      ativo: vendedor.ativo !== undefined ? vendedor.ativo : true
+    });
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    if (!editFormData.nome.trim()) {
+      showToast('Por favor, informe o nome do vendedor.', 'error');
+      return;
+    }
+    setEmpresaLogada(prev => ({
+      ...prev,
+      vendedores: prev.vendedores.map(v => v.id === vendedorParaGerenciar.id ? {
+        ...v,
+        nome: editFormData.nome.trim(),
+        cargo: editFormData.cargo,
+        ativo: editFormData.ativo
+      } : v)
+    }));
+    setVendedorParaGerenciar(null);
+    showToast('Dados do vendedor atualizados com sucesso.', 'success');
+  };
+
+  const handleExcluirVendedor = (id) => {
+    setEmpresaLogada(prev => ({
+      ...prev,
+      vendedores: prev.vendedores.filter(v => v.id !== id)
+    }));
+    setVendedorParaGerenciar(null);
+    showToast('Vendedor removido com sucesso.', 'success');
+  };
+
+  const inputClass = "w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-slate-900 transition";
+  const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5";
+
+  return (
+    <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
+      
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Equipe de Vendedores</h1>
+          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
+        </div>
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+        >
+          <UserPlus size={14} /> Adicionar Vendedor
+        </button>
+      </div>
+
+      {/* Grid de Cards de Vendedores */}
+      {vendedores.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+          {vendedores.map((v) => (
+            <div 
+              key={v.id} 
+              className={`bg-white border-2 rounded-[24px] p-6 shadow-sm hover:shadow-md transition relative flex flex-col justify-between ${
+                v.ativo ? 'border-slate-200' : 'border-slate-100 opacity-60'
+              }`}
+            >
+              {/* Top Tag & Date Row */}
+              <div className="flex justify-between items-center mb-5">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 border border-slate-200 rounded-md">
+                  {v.cargo || 'Consultor'}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 font-mono">
+                  {v.dataCadastro || '31/05/2026'}
+                </span>
+              </div>
+
+              {/* Vendedor Name */}
+              <div className="mb-4">
+                <h3 className="text-[17px] font-black text-blue-650 tracking-tight leading-snug uppercase">
+                  {v.nome}
+                </h3>
+                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${v.ativo ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                  {v.ativo ? 'Ativo no Showroom' : 'Inativo / Bloqueado'}
+                </span>
+              </div>
+
+              {/* Performance Metric Panel */}
+              <div className="grid grid-cols-2 divide-x divide-slate-200 bg-slate-50 border border-slate-150 rounded-2xl p-4 mb-4 text-center">
+                <div>
+                  <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                    Links Gerados
+                  </span>
+                  <span className="block text-base font-extrabold text-slate-900">
+                    {v.linksGerados !== undefined ? v.linksGerados : 0}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                    Taxa Conversão
+                  </span>
+                  <span className="block text-base font-extrabold text-slate-900 font-mono">
+                    {v.conversao !== undefined ? `${v.conversao}%` : '0%'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Auxiliary buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => showToast(`Desempenho detalhado de ${v.nome} carregado no log.`, 'info')}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 bg-white"
+                >
+                  <BarChart2 size={12} /> Desempenho
+                </button>
+                <button
+                  onClick={() => window.open(`https://api.whatsapp.com/send?phone=${empresaLogada.telefone}&text=Olá%20${v.nome},%20sua%20conta%20está%20configurada!`, '_blank')}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 bg-white"
+                >
+                  <MessageCircle size={12} /> WhatsApp
+                </button>
+              </div>
+
+              {/* Main Manage Button */}
+              <button
+                onClick={() => handleOpenEdit(v)}
+                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 mt-4"
+              >
+                <Settings size={12} /> Gerenciar Vendedor
+              </button>
+
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 bg-white border border-slate-200 rounded-3xl p-10 max-w-xl mx-auto">
+          <Users size={48} className="mx-auto text-slate-300 mb-4" />
+          <h3 className="text-lg font-bold text-slate-800">Nenhum vendedor cadastrado</h3>
+          <p className="text-slate-500 text-xs mt-1">Sua concessionária precisa cadastrar vendedores para assinar e emitir links de propostas Pix.</p>
+        </div>
+      )}
+
+      {/* MODAL ADICIONAR VENDEDOR */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1">Adicionar Vendedor</h3>
+            <p className="text-slate-500 text-xs mb-6 font-medium">Cadastre um novo atendente para habilitá-lo na criação de reservas.</p>
+
+            <form onSubmit={handleAddVendedor} className="space-y-4">
+              <div>
+                <label className={labelClass}>Nome Completo *</label>
+                <input 
+                  type="text" 
+                  value={formData.nome} 
+                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                  className={inputClass} 
+                  placeholder="Ex: Carla Silva" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Cargo / Função</label>
+                <select
+                  value={formData.cargo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cargo: e.target.value }))}
+                  className={`${inputClass} appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]`}
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
+                >
+                  <option value="Consultor de Vendas">Consultor de Vendas</option>
+                  <option value="Consultor Premium">Consultor Premium</option>
+                  <option value="Gerente de Vendas">Gerente de Vendas</option>
+                  <option value="Diretor Comercial">Diretor Comercial</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition uppercase tracking-wider text-center"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
+                >
+                  Salvar Cadastro
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GERENCIAR VENDEDOR (EDITAR / EXCLUIR) */}
+      {vendedorParaGerenciar && (
+        <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-1">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Gerenciar Vendedor</h3>
+              <button 
+                onClick={() => handleExcluirVendedor(vendedorParaGerenciar.id)}
+                className="text-rose-600 hover:text-rose-800 font-bold text-[10px] uppercase bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100"
+              >
+                Excluir Cadastro
+              </button>
+            </div>
+            <p className="text-slate-500 text-xs mb-6 font-medium">Modifique as informações ou bloqueie o acesso do atendente.</p>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className={labelClass}>Nome Completo *</label>
+                <input 
+                  type="text" 
+                  value={editFormData.nome} 
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, nome: e.target.value }))}
+                  className={inputClass} 
+                  placeholder="Ex: Carla Silva" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Cargo / Função</label>
+                <select
+                  value={editFormData.cargo}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, cargo: e.target.value }))}
+                  className={`${inputClass} appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]`}
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
+                >
+                  <option value="Consultor de Vendas">Consultor de Vendas</option>
+                  <option value="Consultor Premium">Consultor Premium</option>
+                  <option value="Gerente de Vendas">Gerente de Vendas</option>
+                  <option value="Diretor Comercial">Diretor Comercial</option>
+                </select>
+              </div>
+
+              {/* Status Switcher Toggle */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Vendedor Ativo</h4>
+                  <p className="text-[10px] text-slate-500">Inativo bloqueia a criação de links</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditFormData(prev => ({ ...prev, ativo: !prev.ativo }))}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${
+                    editFormData.ativo ? 'bg-blue-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                      editFormData.ativo ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setVendedorParaGerenciar(null)}
+                  className="flex-1 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition uppercase tracking-wider text-center"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
+                >
+                  Salvar Dados
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
