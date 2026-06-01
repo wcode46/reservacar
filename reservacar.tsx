@@ -1545,120 +1545,123 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        
-        {/* Main Feed Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-bold text-slate-550 uppercase tracking-widest">MONITORAMENTO DE LINKS EM TEMPO REAL</h3>
-            
-            {/* Quick Demo Simulator Instructions */}
-            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
-              Módulo de Teste de Vendas
-            </span>
+      {/* Logs de Atividade Recentes em formato de ticker horizontal */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 shrink-0 md:border-r border-slate-100 md:pr-4">
+            <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Atividade Recente</h4>
           </div>
+          <div className="flex-1 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
+            <div className="flex gap-6 min-w-max">
+              {liveNotifications.slice(0, 5).map((log, index) => (
+                <div key={index} className="flex items-center gap-2 text-xs border-r border-slate-100 pr-6 last:border-0 last:pr-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-slate-700">{log.text}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{log.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Feed (Full Width) */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Links em Tempo Real</h3>
           
-          {recentReservations.map((res) => {
-            const isCompleted = res.status === 'Completed' || res.paidSignal;
-            const isExpired = res.status === 'Expired';
-            
-            return (
-              <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 transition hover:border-slate-350">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-extrabold text-xl text-slate-900 tracking-tight">{res.title}</h4>
-                    <p className="text-xs font-medium text-slate-500 mt-1">
-                      Assinado para: <strong className="text-slate-800">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
-                    </p>
-                  </div>
-                  
-                  {isCompleted ? (
-                    <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1.5">
-                      <CheckCircle2 size={12} /> PIX RECEBIDO
-                    </span>
-                  ) : isExpired ? (
-                    <span className="bg-rose-50 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-full border border-rose-100 flex items-center gap-1.5">
-                      <X size={12} /> EXPIRADO
-                    </span>
-                  ) : (
-                    <span className="bg-amber-50 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-100 flex items-center gap-1.5">
-                      <Clock size={12} /> AGUARDANDO SINAL
-                    </span>
-                  )}
-                </div>
-
-                {/* Progress Visual Timer */}
-                {!isCompleted && !isExpired && (
-                  <div className="flex items-center gap-4 mb-6 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <div className="flex-1 h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-600 w-[65%]"></div>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-500 font-mono">Simulado Regressivo</span>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 pt-4 border-t border-slate-100">
-                  <div>
-                    <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">PROPOSTA COMERCIAL</span>
-                    <div className="font-black text-2xl text-slate-900">{formatCurrency(res.valorVenda)}</div>
-                    <div className="text-xs font-semibold text-slate-500 mt-1">Sinal Exigido: <span className="text-blue-600 font-bold">{formatCurrency(res.signal)}</span></div>
-                  </div>
-                  
-                  {/* Real interactive simulations */}
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                    {!isCompleted && !isExpired && (
-                      <>
-                        <button 
-                          onClick={() => handleSimulatePayment(res.id, 'Cliente Simulado')}
-                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
-                        >
-                          Confirmar PIX
-                        </button>
-                        <button 
-                          onClick={() => handleSimulateTimeExpiration(res.id)}
-                          className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition border border-slate-200"
-                        >
-                          Expirar Link
-                        </button>
-                      </>
-                    )}
-                    <button 
-                      onClick={() => {
-                        window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20está%20pronta!`, '_blank');
-                      }}
-                      className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
-                    >
-                      <Share size={12} /> WhatsApp
-                    </button>
-                    <button 
-                      onClick={() => setReservaParaGerenciar(res)}
-                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-950 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
-                    >
-                      <Settings size={12} /> Gerenciar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {/* Quick Demo Simulator Instructions */}
+          <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+            Módulo de Teste de Vendas
+          </span>
         </div>
-
-        {/* Sidebar Activity logs */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Logs de Atividade Recentes</h3>
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4">
-            {liveNotifications.slice(0, 5).map((log, index) => (
-              <div key={index} className="flex gap-3 text-xs">
-                <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 mt-1"></div>
+        
+        {recentReservations.map((res) => {
+          const isCompleted = res.status === 'Completed' || res.paidSignal;
+          const isExpired = res.status === 'Expired';
+          
+          return (
+            <div key={res.id} className="bg-white border border-slate-200 rounded-2xl p-4 transition hover:border-slate-350">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className="font-semibold text-slate-800 leading-tight">{log.text}</p>
-                  <span className="text-[10px] text-slate-500 mt-1 block">{log.time}</span>
+                  <h4 className="font-bold text-base text-slate-900 tracking-tight">{res.title}</h4>
+                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+                    Assinado para: <strong className="text-slate-800">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
+                  </p>
+                </div>
+                
+                {isCompleted ? (
+                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                    <CheckCircle2 size={11} /> PIX RECEBIDO
+                  </span>
+                ) : isExpired ? (
+                  <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-full border border-rose-100 flex items-center gap-1">
+                    <X size={11} /> EXPIRADO
+                  </span>
+                ) : (
+                  <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full border border-amber-100 flex items-center gap-1">
+                    <Clock size={11} /> AGUARDANDO SINAL
+                  </span>
+                )}
+              </div>
+
+              {/* Progress Visual Timer */}
+              {!isCompleted && !isExpired && (
+                <div className="flex items-center gap-3 mb-4 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 w-[65%]"></div>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-550 font-mono">Simulado Regressivo</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pt-3 border-t border-slate-100">
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PROPOSTA COMERCIAL</span>
+                  <div className="font-extrabold text-lg text-slate-900">{formatCurrency(res.valorVenda)}</div>
+                  <div className="text-[11px] font-medium text-slate-500 mt-0.5">Sinal Exigido: <span className="text-blue-600 font-semibold">{formatCurrency(res.signal)}</span></div>
+                </div>
+                
+                {/* Real interactive simulations */}
+                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                  {!isCompleted && !isExpired && (
+                    <>
+                      <button 
+                        onClick={() => handleSimulatePayment(res.id, 'Cliente Simulado')}
+                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition"
+                      >
+                        Confirmar PIX
+                      </button>
+                      <button 
+                        onClick={() => handleSimulateTimeExpiration(res.id)}
+                        className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] px-3 py-2 rounded-lg transition border border-slate-200"
+                      >
+                        Expirar Link
+                      </button>
+                    </>
+                  )}
+                  <button 
+                    onClick={() => {
+                      window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20está%20pronta!`, '_blank');
+                    }}
+                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition flex items-center justify-center gap-1"
+                  >
+                    <Share size={11} /> WhatsApp
+                  </button>
+                  <button 
+                    onClick={() => setReservaParaGerenciar(res)}
+                    className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-950 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition flex items-center justify-center gap-1"
+                  >
+                    <Settings size={11} /> Gerenciar
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
+            </div>
+          );
+        })}
       </div>
     </div>
   );
