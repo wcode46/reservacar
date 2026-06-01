@@ -888,6 +888,22 @@ function PricingLandingHero({
 }) {
   return (
     <div className="relative w-full bg-black border-b border-white/10 pt-28 lg:pt-36 pb-20 overflow-hidden text-center flex flex-col items-center">
+      {/* Estilos locais para o carrossel de logos */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: flex;
+          width: max-content;
+          animation: marquee 25s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
+        }
+      `}} />
+      
       <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center">
         
         {/* Mockup do Celular centralizado no topo */}
@@ -991,12 +1007,33 @@ function PricingLandingHero({
 
         {/* Trusted By */}
         {trustedBy && (
-          <div className="mt-16 w-full opacity-60">
-            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-4">
+          <div className="mt-16 w-full">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-6 block text-center">
               {trustedBy.heading}
             </h4>
-            <div className="flex flex-wrap gap-x-8 gap-y-4 items-center justify-center">
-              {trustedBy.logos}
+            
+            {/* Contêiner do Carrossel com máscara de fade nas laterais */}
+            <div className="relative w-full overflow-hidden py-2 select-none">
+              {/* Fade Esquerdo */}
+              <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-black via-black/85 to-transparent z-10 pointer-events-none" />
+              {/* Fade Direito */}
+              <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-l from-black via-black/85 to-transparent z-10 pointer-events-none" />
+              
+              {/* Pista do Carrossel (itens duplicados para loop contínuo) */}
+              <div className="flex gap-16 md:gap-24 items-center animate-marquee whitespace-nowrap">
+                {/* Primeira metade */}
+                {trustedBy.logos.map((logo, idx) => (
+                  <div key={`orig-${idx}`} className="text-slate-500 hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
+                    {logo}
+                  </div>
+                ))}
+                {/* Segunda metade duplicada */}
+                {trustedBy.logos.map((logo, idx) => (
+                  <div key={`dup-${idx}`} className="text-slate-500 hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
+                    {logo}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1083,26 +1120,16 @@ function HomeView({ navigateTo }) {
           onClick: () => navigateTo('assinar') 
         }}
         trustedBy={{
-          heading: "Usado por concessionárias e lojistas em",
+          heading: "Usado por concessionárias e lojistas em todo o Brasil",
           logos: [
-            <span
-              key="audi"
-              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
-            >
-              Audi Center
-            </span>,
-            <span
-              key="bmw"
-              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
-            >
-              BMW Premium
-            </span>,
-            <span
-              key="toyota"
-              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
-            >
-              Toyota Elite
-            </span>,
+            <span key="audi" className="text-base font-black tracking-tight whitespace-nowrap">Audi Center</span>,
+            <span key="bmw" className="text-base font-black tracking-tight whitespace-nowrap">BMW Premium</span>,
+            <span key="toyota" className="text-base font-black tracking-tight whitespace-nowrap">Toyota Elite</span>,
+            <span key="porsche" className="text-base font-black tracking-tight whitespace-nowrap">Porsche Service</span>,
+            <span key="volvo" className="text-base font-black tracking-tight whitespace-nowrap">Volvo Premium</span>,
+            <span key="mercedes" className="text-base font-black tracking-tight whitespace-nowrap">Mercedes-Benz</span>,
+            <span key="honda" className="text-base font-black tracking-tight whitespace-nowrap">Honda Vip</span>,
+            <span key="jac" className="text-base font-black tracking-tight whitespace-nowrap">JAC Motors</span>,
           ],
         }}
       />
