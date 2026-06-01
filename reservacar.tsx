@@ -2217,6 +2217,17 @@ function MobileClientView({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'veiculo' | 'ficha' | 'atividade'>('veiculo');
   const [selectedAtendente, setSelectedAtendente] = useState(data.vendedores ? data.vendedores.split(',')[0] : '');
+  const [animateTimeline, setAnimateTimeline] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'atividade') {
+      setAnimateTimeline(false);
+      const timer = setTimeout(() => setAnimateTimeline(true), 50);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimateTimeline(false);
+    }
+  }, [activeTab]);
   
   const economiaPct = Math.round((1 - (data.valorVenda / data.fipeValue)) * 100) || 6;
   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
@@ -2539,11 +2550,26 @@ function MobileClientView({
                   Linha do Tempo de Atividade
                 </h3>
                 
-                <div className="relative pl-6 border-l-2 border-slate-100 space-y-8 ml-2">
+                <div className="relative pl-6 ml-2 space-y-8">
+                  {/* Linha vertical cinza estática traseira */}
+                  <div className="absolute left-[3px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
+                  {/* Linha vertical azul animada frontal */}
+                  <div 
+                    className="absolute left-[3px] top-2 w-0.5 bg-blue-600 transition-all duration-[1200ms] ease-out origin-top"
+                    style={{ 
+                      height: animateTimeline ? '78%' : '0%' 
+                    }}
+                  ></div>
+
                   {/* 1. Vitrine Ativada */}
                   <div className="relative">
-                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
-                    <div className="flex justify-between items-start gap-2">
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white transition-all duration-500 transform ${
+                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                    }`} style={{ transitionDelay: '100ms' }}></div>
+                    
+                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
+                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                    }`} style={{ transitionDelay: '200ms' }}>
                       <div>
                         <h4 className="text-xs font-black text-slate-900">Vitrine Ativada</h4>
                         <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
@@ -2556,8 +2582,13 @@ function MobileClientView({
 
                   {/* 2. Tabela FIPE */}
                   <div className="relative">
-                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
-                    <div className="flex justify-between items-start gap-2">
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white transition-all duration-500 transform ${
+                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                    }`} style={{ transitionDelay: '400ms' }}></div>
+                    
+                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
+                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                    }`} style={{ transitionDelay: '500ms' }}>
                       <div>
                         <h4 className="text-xs font-black text-slate-900">Atualização da Tabela FIPE</h4>
                         <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
@@ -2570,8 +2601,13 @@ function MobileClientView({
 
                   {/* 3. Vídeo */}
                   <div className="relative">
-                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-blue-600 border-4 border-white"></div>
-                    <div className="flex justify-between items-start gap-2">
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white transition-all duration-500 transform ${
+                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                    }`} style={{ transitionDelay: '700ms' }}></div>
+                    
+                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
+                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                    }`} style={{ transitionDelay: '800ms' }}>
                       <div>
                         <h4 className="text-xs font-black text-slate-900">Tour de Vídeo Adicionado</h4>
                         <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
@@ -2584,8 +2620,13 @@ function MobileClientView({
 
                   {/* 4. Eventos Futuros */}
                   <div className="relative">
-                    <div className="absolute -left-[32.5px] top-1 w-3.5 h-3.5 rounded-full bg-slate-200 border-4 border-white"></div>
-                    <div>
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-slate-200 border-2 border-white transition-all duration-500 transform ${
+                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                    }`} style={{ transitionDelay: '1000ms' }}></div>
+                    
+                    <div className={`transition-all duration-500 transform ${
+                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                    }`} style={{ transitionDelay: '1100ms' }}>
                       <h4 className="text-xs font-bold text-slate-400 italic">Eventos Futuros Agendados pelo Lojista...</h4>
                       <p className="text-[10.5px] text-slate-400 font-medium mt-1 leading-relaxed italic font-semibold">
                         Automatizações complementares estão escalonadas baseadas no seu tempo ativo.
