@@ -1425,6 +1425,25 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
 
+  // Estados e efeito para o ticker vertical animado de logs de atividades
+  const [activeLogIndex, setActiveLogIndex] = useState(0);
+  const [animateLog, setAnimateLog] = useState(true);
+
+  useEffect(() => {
+    if (!liveNotifications || liveNotifications.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      setAnimateLog(false);
+      
+      setTimeout(() => {
+        setActiveLogIndex((prev) => (prev + 1) % Math.min(liveNotifications.length, 5));
+        setAnimateLog(true);
+      }, 300);
+    }, 4500);
+    
+    return () => clearInterval(interval);
+  }, [liveNotifications]);
+
   // Cálculos dinâmicos com histórico simulado (Opção 2)
   const concluidasSessao = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
 
@@ -1545,25 +1564,32 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
-      {/* Logs de Atividade Recentes em formato de ticker horizontal */}
+      {/* Logs de Atividade Recentes em formato de ticker rotativo vertical */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0 md:border-r border-slate-100 md:pr-4">
             <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Atividade Recente</h4>
           </div>
-          <div className="flex-1 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
-            <div className="flex gap-6 min-w-max">
-              {liveNotifications.slice(0, 5).map((log, index) => (
-                <div key={index} className="flex items-center gap-2 text-xs border-r border-slate-100 pr-6 last:border-0 last:pr-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-slate-700">{log.text}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">{log.time}</span>
-                  </div>
+          
+          <div className="flex-1 overflow-hidden h-5 relative flex items-center md:justify-end">
+            {liveNotifications && liveNotifications.length > 0 ? (
+              <div 
+                className={`flex items-center gap-2 text-xs transition-all duration-300 ease-out transform ${
+                  animateLog 
+                    ? 'translate-y-0 opacity-100' 
+                    : 'translate-y-2 opacity-0'
+                }`}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-slate-700">{liveNotifications[activeLogIndex]?.text}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{liveNotifications[activeLogIndex]?.time}</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <span className="text-xs text-slate-400">Nenhuma atividade recente</span>
+            )}
           </div>
         </div>
       </div>
