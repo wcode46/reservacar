@@ -268,6 +268,8 @@ export default function App() {
           empresaLogada={empresaLogada}
           isOpen={mobileSidebarOpen}
           setIsOpen={setMobileSidebarOpen}
+          reservasUsadas={reservasUsadas}
+          totalReservasPlano={totalReservasPlano}
         />
       )}
       
@@ -562,7 +564,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
 }
 
 // --- SIDEBAR ---
-function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen }) {
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30 }) {
   const menuItems = [
     { id: 'hub', label: 'Painel Central', icon: Laptop },
     { id: 'sales-stats', label: 'Painel da Loja', icon: BarChart2 },
@@ -624,6 +626,43 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen })
             );
           })}
         </nav>
+      </div>
+
+      {/* Widget de Uso de Créditos (Flat & Premium) */}
+      <div className="px-6 py-5 border-t border-slate-150 bg-slate-50/50 text-left">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Uso do Plano</span>
+          <span className="text-[11px] font-black text-slate-900">{reservasUsadas} / {totalReservasPlano} links</span>
+        </div>
+        
+        {/* Barra de Progresso Flat */}
+        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+          <div 
+            className="bg-blue-600 h-full transition-all duration-[800ms] ease-out-expo origin-left transform"
+            style={{ 
+              width: `${Math.min(100, (reservasUsadas / totalReservasPlano) * 100)}%` 
+            }}
+          ></div>
+        </div>
+        
+        {/* Botão de Upgrade contextual */}
+        {reservasUsadas >= totalReservasPlano ? (
+          <button 
+            onClick={() => handleNavigate('configuracoes')} 
+            className="mt-3.5 w-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 text-center font-bold text-[10px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider"
+          >
+            <Sparkles size={11} className="animate-pulse" />
+            Limite Atingido! Upgrade
+          </button>
+        ) : (
+          <button 
+            onClick={() => handleNavigate('configuracoes')} 
+            className="mt-3.5 w-full bg-white text-blue-600 border border-slate-200 hover:bg-blue-50 text-center font-bold text-[10px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider"
+          >
+            <Sparkles size={11} />
+            Fazer Upgrade do Plano
+          </button>
+        )}
       </div>
 
       {/* Footer Section */}
