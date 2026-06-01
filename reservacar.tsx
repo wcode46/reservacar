@@ -875,6 +875,144 @@ function NumberTicker({ value, className = "" }) {
   return <span className={className}>+{formatted}</span>;
 }
 
+// --- PRICING LANDING HERO ---
+function PricingLandingHero({
+  title,
+  description,
+  phone,
+  price,
+  availability,
+  primaryAction,
+  secondaryAction,
+  trustedBy
+}) {
+  return (
+    <div className="relative w-full bg-[#f8f9fa] border-b border-slate-200 py-16 lg:py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 w-full grid lg:grid-cols-12 gap-16 lg:gap-8 items-center text-left">
+        
+        {/* Lado Esquerdo: Textos, Preços e Ações */}
+        <div className="lg:col-span-7 flex flex-col items-start max-w-2xl">
+          {availability && (
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-6 text-blue-700 select-none font-bold text-xs uppercase tracking-wider">
+              <Sparkles size={14} className="text-blue-600" />
+              <span>{availability}</span>
+            </div>
+          )}
+
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.08] text-slate-900 tracking-tighter mb-6">
+            {title}
+          </h1>
+          
+          <p className="text-base md:text-lg font-medium text-slate-500 mb-8 leading-relaxed max-w-lg">
+            {description}
+          </p>
+
+          {price && (
+            <div className="flex flex-col gap-1 mb-8">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assinatura Mensal</span>
+              <div className="flex items-baseline gap-3">
+                <span className="text-sm font-medium text-slate-400 line-through">{price.original}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tight">{price.current}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-12">
+            {primaryAction && (
+              <button 
+                onClick={primaryAction.onClick}
+                className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-sm font-bold hover:bg-blue-700 transition duration-250 border border-transparent shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+              >
+                {primaryAction.label}
+              </button>
+            )}
+            {secondaryAction && (
+              <button 
+                onClick={secondaryAction.onClick}
+                className="w-full sm:w-auto bg-white text-slate-900 hover:bg-slate-50 px-8 py-4 rounded-xl text-sm font-bold transition duration-250 border border-slate-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-350 focus-visible:ring-offset-2"
+              >
+                {secondaryAction.label}
+              </button>
+            )}
+          </div>
+
+          {trustedBy && (
+            <div className="border-t border-slate-200 pt-8 w-full">
+              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4">
+                {trustedBy.heading}
+              </h4>
+              <div className="flex flex-wrap gap-x-8 gap-y-4 items-center">
+                {trustedBy.logos}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Lado Direito: Simulador de Celular (iPhone Mockup) */}
+        <div className="lg:col-span-5 flex justify-center lg:justify-end">
+          <div className="relative w-[300px] h-[550px] bg-slate-950 rounded-[44px] border-[8px] border-slate-900 shadow-xl flex flex-col overflow-hidden select-none">
+            {/* Notch superior do iPhone */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-slate-900 rounded-b-2xl z-30 flex items-center justify-center">
+              <div className="w-2.5 h-2.5 bg-slate-950 rounded-full mr-2" />
+              <div className="w-6 h-0.5 bg-slate-950 rounded-full" />
+            </div>
+
+            {/* Tela Interna */}
+            <div className="relative flex-1 bg-slate-50 flex flex-col pt-9 px-4 pb-4">
+              {/* Barra de Status */}
+              <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 px-1 mb-6">
+                <span>{phone?.time || "9:41"}</span>
+                <div className="flex items-center gap-1">
+                  <Smartphone size={9} className="text-slate-500" />
+                  <span className="w-3.5 h-2 border border-slate-400 rounded-sm bg-slate-500" />
+                </div>
+              </div>
+
+              {/* Título do Celular */}
+              <div className="text-center mb-6">
+                <span className="text-[8px] font-black text-blue-600 tracking-[0.2em] uppercase block mb-1">
+                  Painel de Simulação
+                </span>
+                <h3 className="text-base font-black text-slate-900 tracking-tight">
+                  Status de Reservas
+                </h3>
+              </div>
+
+              {/* Lista Animada de Carros Reservados (Push) */}
+              <div className="flex-1 flex flex-col gap-2.5 justify-start overflow-hidden h-[240px]">
+                {phone?.items && phone.items.map((item, index) => (
+                  <div
+                    key={item.key || index}
+                    className="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center justify-between text-left text-slate-900 w-full animate-slide-in-top transition-all duration-300 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div 
+                        className="w-8 h-8 text-white rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: item.color || "#00C9A7" }}
+                      >
+                        <CircleDollarSign size={16} className="text-white" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-800 block leading-tight">{item.name}</span>
+                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-slate-900 tracking-tight">{item.price}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Home indicator bar do iOS na base */}
+              <div className="w-24 h-1 bg-slate-300 rounded-full mx-auto mt-auto" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // --- HOME VIEW ---
 function HomeView({ navigateTo }) {
   const [visibleNotifications, setVisibleNotifications] = useState<any[]>([]);
@@ -905,7 +1043,7 @@ function HomeView({ navigateTo }) {
   }, []);
 
   return (
-    <div className="overflow-hidden relative bg-[#030712]">
+    <div className="overflow-hidden relative bg-[#f8f9fa]">
       {/* Estilos específicos para a lista animada da Hero */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes slideInTop {
@@ -928,101 +1066,53 @@ function HomeView({ navigateTo }) {
         }
       `}} />
       
-      {/* 1. Hero Area (Estilo Revolut) */}
-      <div className="relative w-full min-h-[750px] lg:h-[700px] bg-[#030712] flex items-center justify-center overflow-hidden py-24 lg:py-0">
-        {/* Fundo de Vídeo (ShaderEffects em loop) */}
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
-        >
-          <source src="/video/ShaderEffects-1780198452770_202605310047.mp4" type="video/mp4" />
-          Seu navegador não suporta vídeos HTML5.
-        </video>
-        {/* Overlay escuro de leitura na esquerda e transição na base */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/25 to-transparent z-10" />
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#f8f9fa] to-transparent z-10" />
-
-        {/* Grid de Conteúdo */}
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 z-20 w-full grid lg:grid-cols-12 gap-16 lg:gap-8 items-center text-left">
-          
-          {/* Lado Esquerdo: Textos e CTAs */}
-          <div className="lg:col-span-7 flex flex-col items-start max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 text-slate-300 select-none backdrop-blur-md">
-              <Sparkles size={14} className="text-blue-400" />
-              <span className="text-xs font-semibold tracking-wider uppercase">NOVA VERSÂO 2026 DISPONIVEL</span>
-            </div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-[64px] font-extrabold leading-[1.08] text-white tracking-tighter mb-6">
-              Seu ingresso para o <br />
-              showroom digital
-            </h1>
-            
-            <p className="text-base md:text-lg font-medium text-slate-300 mb-10 leading-relaxed max-w-lg">
-              Crie páginas de propostas exclusivas e personalizadas para cada lead. Receba o sinal por Pix e trave o negócio em minutos antes mesmo do cliente chegar ao showroom.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-              <button 
-                onClick={() => navigateTo('cadastrar-reserva')}
-                className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-sm font-bold hover:bg-blue-700 transition duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-              >
-                Simular Reserva (Cliente)
-              </button>
-              <button 
-                onClick={() => navigateTo('assinar')}
-                className="w-full sm:w-auto bg-white text-slate-900 hover:bg-slate-50 px-8 py-4 rounded-xl text-sm font-bold transition duration-250 border border-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-350 focus-visible:ring-offset-2"
-              >
-                Assinar Reservacar
-              </button>
-            </div>
-          </div>
-
-          {/* Lado Direito: Retângulo Frame Translúcido */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end pb-12 lg:pb-0">
-            <div className="relative w-[320px] md:w-[360px] h-[480px] rounded-[36px] border border-white/20 bg-white/5 backdrop-blur-[4px] flex flex-col items-center justify-start pt-20 px-8 select-none">
-              
-              <span className="text-[10px] font-bold text-slate-400 tracking-[0.25em] uppercase mb-4">APLICATIVO</span>
-              
-              <h3 className="text-5xl md:text-6xl font-black text-white tracking-tighter mb-8">
-                <NumberTicker value={46911} />
-              </h3>
-              
-              <div className="border border-white/25 bg-transparent px-6 py-2.5 rounded-lg text-[10px] font-bold tracking-widest text-white uppercase">
-                CARROS RESERVADOS
-              </div>
-
-              {/* Card de Push de Preço Horizontal Interno Animado */}
-              <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2.5 overflow-hidden h-[165px] justify-end z-30 pointer-events-none">
-                {visibleNotifications.map((item) => (
-                  <div
-                    key={item.key}
-                    className="bg-[#dcdcdc] border border-white/10 p-4 rounded-3xl flex items-center justify-between text-left text-slate-900 w-full animate-slide-in-top transition-all duration-300 pointer-events-auto"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 text-white rounded-full flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: item.color }}
-                      >
-                        <CircleDollarSign size={20} className="text-white" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-extrabold text-slate-900 block leading-tight">{item.name}</span>
-                        <span className="text-[9px] text-slate-500 block mt-0.5">{item.time}</span>
-                      </div>
-                    </div>
-                    <span className="text-sm font-black text-slate-900 tracking-tight">{item.price}</span>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </div>
+      <PricingLandingHero
+        title={
+          <>
+            Seu showroom digital
+            <br />
+            em minutos
+          </>
+        }
+        description="Crie páginas de propostas exclusivas e personalizadas para cada lead. Receba o sinal por Pix e trave o negócio em minutos antes mesmo do cliente chegar ao showroom."
+        phone={{
+          time: "9:41",
+          items: visibleNotifications
+        }}
+        price={{ current: "R$ 159/mês", original: "R$ 399/mês" }}
+        availability="Oferta de lançamento — por tempo limitado"
+        primaryAction={{ 
+          label: "Simular Reserva (Cliente)", 
+          onClick: () => navigateTo('cadastrar-reserva') 
+        }}
+        secondaryAction={{ 
+          label: "Assinar Reservacar", 
+          onClick: () => navigateTo('assinar') 
+        }}
+        trustedBy={{
+          heading: "Usado por concessionárias e lojistas em todo o Brasil",
+          logos: [
+            <span
+              key="audi"
+              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+            >
+              Audi Center
+            </span>,
+            <span
+              key="bmw"
+              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+            >
+              BMW Premium
+            </span>,
+            <span
+              key="toyota"
+              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+            >
+              Toyota Elite
+            </span>,
+          ],
+        }}
+      />
 
       {/* 2. Seção "Propostas Exclusivas" (Cartões para chamar de seus) */}
       <div className="py-24 bg-white border-t border-b border-slate-200 overflow-hidden">
