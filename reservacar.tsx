@@ -323,6 +323,7 @@ export default function App() {
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
             empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
             previewOrigin={previewOrigin}
           />
         )}
@@ -338,6 +339,7 @@ export default function App() {
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
             empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
             previewOrigin={previewOrigin}
           />
         )}
@@ -1888,6 +1890,7 @@ function PreviewView({
   reservasUsadas = 0, 
   totalReservasPlano = 30,
   empresaLogada,
+  setEmpresaLogada,
   previewOrigin
 }) {
   const data = reservation || {
@@ -1920,6 +1923,23 @@ function PreviewView({
     }
     setRecentReservations([reservation, ...recentReservations]);
     setReservasUsadas((prev: any) => prev + 1);
+
+    // Incrementa linksGerados do vendedor associado à proposta
+    if (setEmpresaLogada && reservation?.vendedores) {
+      setEmpresaLogada((prevEmpresa: any) => {
+        const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+          if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
+            return {
+              ...v,
+              linksGerados: (v.linksGerados || 0) + 1
+            };
+          }
+          return v;
+        });
+        return { ...prevEmpresa, vendedores: vendedoresAtualizados };
+      });
+    }
+
     showToast('Link de reserva criado e publicado com sucesso!', 'success');
     navigateTo('dashboard');
   };
@@ -2183,7 +2203,45 @@ function PreviewView({
       </div>
 
       {showPixModal && (
-        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={selectedVendedor} showToast={showToast} />
+        <PixModal 
+          onClose={() => setShowPixModal(false)} 
+          sinal={data.sinal} 
+          vendedor={selectedVendedor} 
+          showToast={showToast} 
+          onConfirm={() => {
+            // 1. Atualizar proposta em recentReservations
+            setRecentReservations((prev: any) => prev.map((res: any) => {
+              if (res.id === data.id) {
+                return { ...res, status: 'Completed', paidSignal: true };
+              }
+              return res;
+            }));
+            
+            // 2. Incrementar reservasUsadas se necessário
+            if (data.status !== 'Completed') {
+              setReservasUsadas((prev: any) => Math.min(totalReservasPlano, prev + 1));
+            }
+            
+            // 3. Atualizar estatísticas do vendedor
+            if (setEmpresaLogada && selectedVendedor) {
+              setEmpresaLogada((prevEmpresa: any) => {
+                const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+                  if (v.nome.trim().toLowerCase() === selectedVendedor.trim().toLowerCase()) {
+                    const totalLinks = v.linksGerados > 0 ? v.linksGerados : 1;
+                    const vendasAtuais = Math.round(totalLinks * (v.conversao / 100)) + 1;
+                    const novaConversao = Math.min(100, Math.round((vendasAtuais / totalLinks) * 100));
+                    return {
+                      ...v,
+                      conversao: novaConversao
+                    };
+                  }
+                  return v;
+                });
+                return { ...prevEmpresa, vendedores: vendedoresAtualizados };
+              });
+            }
+          }}
+        />
       )}
     </div>
   );
@@ -2200,6 +2258,7 @@ function MobileClientView({
   reservasUsadas = 0, 
   totalReservasPlano = 30,
   empresaLogada,
+  setEmpresaLogada,
   previewOrigin
 }) {
   const data = reservation || {
@@ -2241,6 +2300,23 @@ function MobileClientView({
     }
     setRecentReservations([reservation, ...recentReservations]);
     setReservasUsadas((prev: any) => prev + 1);
+
+    // Incrementa linksGerados do vendedor associado à proposta
+    if (setEmpresaLogada && reservation?.vendedores) {
+      setEmpresaLogada((prevEmpresa: any) => {
+        const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+          if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
+            return {
+              ...v,
+              linksGerados: (v.linksGerados || 0) + 1
+            };
+          }
+          return v;
+        });
+        return { ...prevEmpresa, vendedores: vendedoresAtualizados };
+      });
+    }
+
     showToast('Link de reserva criado e publicado com sucesso!', 'success');
     navigateTo('dashboard');
   };
@@ -2673,7 +2749,46 @@ function MobileClientView({
       </div>
       
       {showPixModal && (
-        <PixModal onClose={() => setShowPixModal(false)} sinal={data.sinal} vendedor={selectedAtendente || 'Consultor'} showToast={showToast} />
+        <PixModal 
+          onClose={() => setShowPixModal(false)} 
+          sinal={data.sinal} 
+          vendedor={selectedAtendente || 'Consultor'} 
+          showToast={showToast} 
+          onConfirm={() => {
+            // 1. Atualizar proposta em recentReservations
+            setRecentReservations((prev: any) => prev.map((res: any) => {
+              if (res.id === data.id) {
+                return { ...res, status: 'Completed', paidSignal: true };
+              }
+              return res;
+            }));
+            
+            // 2. Incrementar reservasUsadas se necessário
+            if (data.status !== 'Completed') {
+              setReservasUsadas((prev: any) => Math.min(totalReservasPlano, prev + 1));
+            }
+            
+            // 3. Atualizar estatísticas do vendedor
+            const atendenteNome = selectedAtendente || 'Consultor';
+            if (setEmpresaLogada && atendenteNome !== 'Consultor') {
+              setEmpresaLogada((prevEmpresa: any) => {
+                const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+                  if (v.nome.trim().toLowerCase() === atendenteNome.trim().toLowerCase()) {
+                    const totalLinks = v.linksGerados > 0 ? v.linksGerados : 1;
+                    const vendasAtuais = Math.round(totalLinks * (v.conversao / 100)) + 1;
+                    const novaConversao = Math.min(100, Math.round((vendasAtuais / totalLinks) * 100));
+                    return {
+                      ...v,
+                      conversao: novaConversao
+                    };
+                  }
+                  return v;
+                });
+                return { ...prevEmpresa, vendedores: vendedoresAtualizados };
+              });
+            }
+          }}
+        />
       )}
     </div>
   );
@@ -2751,7 +2866,7 @@ function LiveChatSimulator({ sellerName, showToast, embeddedInMobile = false }) 
 }
 
 // --- MODAL DE PIX ---
-function PixModal({ onClose, sinal, vendedor, showToast }) {
+function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState('waiting'); 
   const pixHash = "00020101021226840014br.gov.bcb.pix2562reservacar_sinal_exclusivo_bmw_showroom_premium_token_secure_uuid_9921_04";
@@ -2845,6 +2960,7 @@ function PixModal({ onClose, sinal, vendedor, showToast }) {
               onClick={() => {
                 setStatus('success');
                 showToast('Sinal processado e reserva garantida com sucesso!', 'success');
+                if (onConfirm) onConfirm();
               }}
               className="w-full bg-white hover:bg-slate-50 text-slate-850 border border-slate-200 font-bold text-xs rounded-xl py-3.5 transition"
             >
