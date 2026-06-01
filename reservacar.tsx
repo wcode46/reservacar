@@ -888,8 +888,21 @@ function PricingLandingHero({
 }) {
   return (
     <div className="relative w-full bg-black border-b border-white/10 pt-28 lg:pt-36 pb-20 overflow-hidden text-center flex flex-col items-center">
-      {/* Estilos locais para o carrossel de logos */}
+      {/* Estilos locais para carrossel de logos e marquee de toasts */}
       <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scrollUp {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+        .animate-scroll-up {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          animation: scrollUp 18s linear infinite;
+        }
+        .animate-scroll-up:hover {
+          animation-play-state: paused;
+        }
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
@@ -907,7 +920,7 @@ function PricingLandingHero({
       <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center">
         
         {/* Mockup do Celular centralizado no topo */}
-        <div className="relative w-[280px] h-[220px] bg-[#09090b] rounded-t-[36px] border-t-[8px] border-x-[8px] border-slate-800/80 shadow-2xl overflow-hidden mb-12 select-none flex flex-col">
+        <div className="relative w-[280px] h-[230px] bg-black rounded-t-[40px] border-t-[8px] border-x-[8px] border-slate-900 shadow-2xl overflow-hidden mb-12 select-none flex flex-col">
           {/* Notch superior do iPhone */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-b-2xl z-30 flex items-center justify-center">
             <div className="w-2 h-2 bg-slate-950 rounded-full mr-1.5" />
@@ -917,7 +930,7 @@ function PricingLandingHero({
           {/* Tela Interna */}
           <div className="relative flex-1 flex flex-col pt-7 px-3 bg-black">
             {/* Barra de Status */}
-            <div className="flex justify-between items-center text-[8px] font-bold text-slate-500 px-1 mb-4">
+            <div className="flex justify-between items-center text-[8px] font-bold text-slate-500 px-1 mb-4 z-20">
               <span>{phone?.time || "9:41"}</span>
               <div className="flex items-center gap-1">
                 <Smartphone size={8} className="text-slate-500" />
@@ -925,31 +938,50 @@ function PricingLandingHero({
               </div>
             </div>
 
-            {/* Conteúdo do Celular da foto */}
-            <div className="flex-1 flex flex-col gap-2 overflow-hidden items-center justify-start">
-              {/* Notificação fixa superior estilo a foto */}
-              <div className="w-full bg-[#121214]/90 border border-white/5 p-3 rounded-2xl text-center flex flex-col items-center justify-center min-h-[70px] shadow-lg">
-                <span className="text-[11px] font-bold text-white block mb-0.5">Vitrine Ativa</span>
-                <span className="text-[8px] text-slate-400 block">O link exclusivo do veículo foi gerado e enviado.</span>
-              </div>
+            {/* Pista do Carrossel Vertical com máscara de fade */}
+            <div className="relative flex-1 overflow-hidden pb-4">
+              {/* Fade inferior da tela do celular */}
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none" />
 
-              {/* Notificação Animada Rotativa (carros reservados) */}
-              <div className="w-full h-[60px] relative overflow-hidden mt-1">
+              {/* Lista Animada de Carros Reservados (Push) subindo continuamente */}
+              <div className="flex flex-col gap-3 animate-scroll-up">
+                {/* Primeira metade */}
                 {phone?.items && phone.items.map((item, index) => (
                   <div
-                    key={item.key || index}
-                    className="absolute inset-x-0 top-0 bg-[#121214]/95 border border-white/5 p-2.5 rounded-2xl flex items-center justify-between text-left text-white w-full animate-slide-in-top transition-all duration-300"
+                    key={`phone-orig-${item.id || index}`}
+                    className="bg-[#0c0c0e] border border-white/5 p-3 rounded-2xl flex items-center justify-between text-left text-white w-full shadow-lg shrink-0"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <div 
-                        className="w-6 h-6 text-white rounded-full flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: item.color || "#00C9A7" }}
+                        className="w-7 h-7 text-white rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: item.color || "#8B5CF6" }}
                       >
-                        <CircleDollarSign size={13} className="text-white" />
+                        <CircleDollarSign size={14} className="text-white" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-white block leading-tight">{item.name}</span>
-                        <span className="text-[7px] text-slate-400 block mt-0.5">{item.time}</span>
+                        <span className="text-[10px] font-bold text-white block leading-tight">{item.name || "Veiculo Reservado"}</span>
+                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black text-white tracking-tight">{item.price}</span>
+                  </div>
+                ))}
+                {/* Segunda metade duplicada */}
+                {phone?.items && phone.items.map((item, index) => (
+                  <div
+                    key={`phone-dup-${item.id || index}`}
+                    className="bg-[#0c0c0e] border border-white/5 p-3 rounded-2xl flex items-center justify-between text-left text-white w-full shadow-lg shrink-0"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div 
+                        className="w-7 h-7 text-white rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: item.color || "#8B5CF6" }}
+                      >
+                        <CircleDollarSign size={14} className="text-white" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-white block leading-tight">{item.name || "Veiculo Reservado"}</span>
+                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
                       </div>
                     </div>
                     <span className="text-[10px] font-black text-white tracking-tight">{item.price}</span>
@@ -1045,32 +1077,13 @@ function PricingLandingHero({
 
 // --- HOME VIEW ---
 function HomeView({ navigateTo }) {
-  const [visibleNotifications, setVisibleNotifications] = useState<any[]>([]);
-
-  useEffect(() => {
-    const staticNotifications = [
-      { id: 1, name: "Veiculo Reservado", time: "Hoje as 11:28", price: "+R$ 17.850", color: "#00C9A7" },
-      { id: 2, name: "Veiculo Reservado", time: "Hoje as 11:15", price: "+R$ 24.500", color: "#FFB800" },
-      { id: 3, name: "Veiculo Reservado", time: "Hoje as 11:02", price: "+R$ 15.000", color: "#FF3D71" },
-      { id: 4, name: "Veiculo Reservado", time: "Hoje as 10:48", price: "+R$ 31.200", color: "#1E86FF" },
-      { id: 5, name: "Veiculo Reservado", time: "Hoje as 10:30", price: "+R$ 12.850", color: "#8B5CF6" },
-    ];
-
-    setVisibleNotifications([
-      { ...staticNotifications[0], key: Math.random() }
-    ]);
-
-    let currentIdx = 0;
-    const interval = setInterval(() => {
-      currentIdx = (currentIdx + 1) % staticNotifications.length;
-      setVisibleNotifications(prev => {
-        const newItem = { ...staticNotifications[currentIdx], key: Math.random() };
-        return [newItem, ...prev].slice(0, 2);
-      });
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const staticNotifications = [
+    { id: 1, name: "Veiculo Reservado", time: "Hoje as 11:28", price: "+R$ 17.850", color: "#00C9A7" },
+    { id: 2, name: "Veiculo Reservado", time: "Hoje as 11:15", price: "+R$ 24.500", color: "#FFB800" },
+    { id: 3, name: "Veiculo Reservado", time: "Hoje as 11:02", price: "+R$ 15.000", color: "#FF3D71" },
+    { id: 4, name: "Veiculo Reservado", time: "Hoje as 10:48", price: "+R$ 31.200", color: "#1E86FF" },
+    { id: 5, name: "Veiculo Reservado", time: "Hoje as 10:30", price: "+R$ 12.850", color: "#8B5CF6" },
+  ];
 
   return (
     <div className="overflow-hidden relative bg-[#f8f9fa]">
@@ -1099,15 +1112,15 @@ function HomeView({ navigateTo }) {
       <PricingLandingHero
         title={
           <>
-            Ative seu showroom
+            Transforme seu estoque
             <br />
-            em minutos
+            em uma máquina de vendas
           </>
         }
         description="Uma vitrine digital para cada veículo com Pix e FIPE integrados. Poupe horas de negociação e feche vendas mais rápido."
         phone={{
           time: "9:41",
-          items: visibleNotifications
+          items: staticNotifications
         }}
         price={{ current: "R$ 159", original: "R$ 399" }}
         availability="Oferta de lançamento — por tempo limitado"
