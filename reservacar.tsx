@@ -887,126 +887,119 @@ function PricingLandingHero({
   trustedBy
 }) {
   return (
-    <div className="relative w-full bg-[#f8f9fa] border-b border-slate-200 py-16 lg:py-24 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 w-full grid lg:grid-cols-12 gap-16 lg:gap-8 items-center text-left">
+    <div className="relative w-full bg-black border-b border-white/10 pt-16 pb-20 overflow-hidden text-center flex flex-col items-center">
+      <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center">
         
-        {/* Lado Esquerdo: Textos, Preços e Ações */}
-        <div className="lg:col-span-7 flex flex-col items-start max-w-2xl">
-          {availability && (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-6 text-blue-700 select-none font-bold text-xs uppercase tracking-wider">
-              <Sparkles size={14} className="text-blue-600" />
-              <span>{availability}</span>
-            </div>
-          )}
-
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.08] text-slate-900 tracking-tighter mb-6">
-            {title}
-          </h1>
-          
-          <p className="text-base md:text-lg font-medium text-slate-500 mb-8 leading-relaxed max-w-lg">
-            {description}
-          </p>
-
-          {price && (
-            <div className="flex flex-col gap-1 mb-8">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assinatura Mensal</span>
-              <div className="flex items-baseline gap-3">
-                <span className="text-sm font-medium text-slate-400 line-through">{price.original}</span>
-                <span className="text-2xl font-black text-slate-900 tracking-tight">{price.current}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-12">
-            {primaryAction && (
-              <button 
-                onClick={primaryAction.onClick}
-                className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-sm font-bold hover:bg-blue-700 transition duration-250 border border-transparent shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-              >
-                {primaryAction.label}
-              </button>
-            )}
-            {secondaryAction && (
-              <button 
-                onClick={secondaryAction.onClick}
-                className="w-full sm:w-auto bg-white text-slate-900 hover:bg-slate-50 px-8 py-4 rounded-xl text-sm font-bold transition duration-250 border border-slate-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-350 focus-visible:ring-offset-2"
-              >
-                {secondaryAction.label}
-              </button>
-            )}
+        {/* Mockup do Celular centralizado no topo */}
+        <div className="relative w-[280px] h-[220px] bg-[#09090b] rounded-t-[36px] border-t-[8px] border-x-[8px] border-slate-800/80 shadow-2xl overflow-hidden mb-12 select-none flex flex-col">
+          {/* Notch superior do iPhone */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-b-2xl z-30 flex items-center justify-center">
+            <div className="w-2 h-2 bg-slate-950 rounded-full mr-1.5" />
+            <div className="w-5 h-0.5 bg-slate-950 rounded-full" />
           </div>
 
-          {trustedBy && (
-            <div className="border-t border-slate-200 pt-8 w-full">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4">
-                {trustedBy.heading}
-              </h4>
-              <div className="flex flex-wrap gap-x-8 gap-y-4 items-center">
-                {trustedBy.logos}
+          {/* Tela Interna */}
+          <div className="relative flex-1 flex flex-col pt-7 px-3 bg-black">
+            {/* Barra de Status */}
+            <div className="flex justify-between items-center text-[8px] font-bold text-slate-500 px-1 mb-4">
+              <span>{phone?.time || "9:41"}</span>
+              <div className="flex items-center gap-1">
+                <Smartphone size={8} className="text-slate-500" />
+                <span className="w-3 h-1.5 border border-slate-500 rounded-sm bg-slate-500" />
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Lado Direito: Simulador de Celular (iPhone Mockup) */}
-        <div className="lg:col-span-5 flex justify-center lg:justify-end">
-          <div className="relative w-[300px] h-[550px] bg-slate-950 rounded-[44px] border-[8px] border-slate-900 shadow-xl flex flex-col overflow-hidden select-none">
-            {/* Notch superior do iPhone */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-slate-900 rounded-b-2xl z-30 flex items-center justify-center">
-              <div className="w-2.5 h-2.5 bg-slate-950 rounded-full mr-2" />
-              <div className="w-6 h-0.5 bg-slate-950 rounded-full" />
-            </div>
-
-            {/* Tela Interna */}
-            <div className="relative flex-1 bg-slate-50 flex flex-col pt-9 px-4 pb-4">
-              {/* Barra de Status */}
-              <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 px-1 mb-6">
-                <span>{phone?.time || "9:41"}</span>
-                <div className="flex items-center gap-1">
-                  <Smartphone size={9} className="text-slate-500" />
-                  <span className="w-3.5 h-2 border border-slate-400 rounded-sm bg-slate-500" />
-                </div>
+            {/* Conteúdo do Celular da foto */}
+            <div className="flex-1 flex flex-col gap-2 overflow-hidden items-center justify-start">
+              {/* Notificação fixa superior estilo a foto */}
+              <div className="w-full bg-[#121214]/90 border border-white/5 p-3 rounded-2xl text-center flex flex-col items-center justify-center min-h-[70px] shadow-lg">
+                <span className="text-[11px] font-bold text-white block mb-0.5">Live by Monday</span>
+                <span className="text-[8px] text-slate-400 block">Your MVP online before the next standup.</span>
               </div>
 
-              {/* Título do Celular */}
-              <div className="text-center mb-6">
-                <span className="text-[8px] font-black text-blue-600 tracking-[0.2em] uppercase block mb-1">
-                  Painel de Simulação
-                </span>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">
-                  Status de Reservas
-                </h3>
-              </div>
-
-              {/* Lista Animada de Carros Reservados (Push) */}
-              <div className="flex-1 flex flex-col gap-2.5 justify-start overflow-hidden h-[240px]">
+              {/* Notificação Animada Rotativa (carros reservados) */}
+              <div className="w-full h-[60px] relative overflow-hidden mt-1">
                 {phone?.items && phone.items.map((item, index) => (
                   <div
                     key={item.key || index}
-                    className="bg-white border border-slate-200/80 p-3 rounded-2xl flex items-center justify-between text-left text-slate-900 w-full animate-slide-in-top transition-all duration-300 shadow-sm"
+                    className="absolute inset-x-0 top-0 bg-[#121214]/95 border border-white/5 p-2.5 rounded-2xl flex items-center justify-between text-left text-white w-full animate-slide-in-top transition-all duration-300"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       <div 
-                        className="w-8 h-8 text-white rounded-full flex items-center justify-center shrink-0"
+                        className="w-6 h-6 text-white rounded-full flex items-center justify-center shrink-0"
                         style={{ backgroundColor: item.color || "#00C9A7" }}
                       >
-                        <CircleDollarSign size={16} className="text-white" />
+                        <CircleDollarSign size={13} className="text-white" />
                       </div>
                       <div>
-                        <span className="text-[11px] font-bold text-slate-800 block leading-tight">{item.name}</span>
-                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
+                        <span className="text-[10px] font-bold text-white block leading-tight">{item.name}</span>
+                        <span className="text-[7px] text-slate-400 block mt-0.5">{item.time}</span>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-slate-900 tracking-tight">{item.price}</span>
+                    <span className="text-[10px] font-black text-white tracking-tight">{item.price}</span>
                   </div>
                 ))}
               </div>
-
-              {/* Home indicator bar do iOS na base */}
-              <div className="w-24 h-1 bg-slate-300 rounded-full mx-auto mt-auto" />
             </div>
           </div>
         </div>
+
+        {/* Textos, Preços e Ações */}
+        <h1 className="text-4xl md:text-5xl lg:text-[56px] font-extrabold leading-[1.1] text-white tracking-tighter mb-4 max-w-2xl">
+          {title}
+        </h1>
+        
+        <p className="text-sm md:text-base font-medium text-slate-400 mb-8 leading-relaxed max-w-xl">
+          {description}
+        </p>
+
+        {/* Preço e Escassez */}
+        {price && (
+          <div className="flex flex-col items-center gap-1 mb-2">
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-3xl md:text-4xl font-black text-white tracking-tight">{price.current}</span>
+              <span className="text-sm font-medium text-slate-500 line-through">{price.original}</span>
+            </div>
+          </div>
+        )}
+
+        {availability && (
+          <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-8">
+            {availability}
+          </div>
+        )}
+
+        {/* Botões CTAs */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+          {primaryAction && (
+            <button 
+              onClick={primaryAction.onClick}
+              className="w-full sm:w-auto bg-white text-black hover:bg-slate-100 px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-transparent shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              {primaryAction.label}
+            </button>
+          )}
+          {secondaryAction && (
+            <button 
+              onClick={secondaryAction.onClick}
+              className="w-full sm:w-auto bg-transparent text-white hover:bg-white/5 px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-white/20 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-350 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              {secondaryAction.label}
+            </button>
+          )}
+        </div>
+
+        {/* Trusted By */}
+        {trustedBy && (
+          <div className="mt-16 w-full opacity-60">
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-4">
+              {trustedBy.heading}
+            </h4>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 items-center justify-center">
+              {trustedBy.logos}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
@@ -1069,46 +1062,46 @@ function HomeView({ navigateTo }) {
       <PricingLandingHero
         title={
           <>
-            Seu showroom digital
+            Ship your SaaS
             <br />
-            em minutos
+            in a weekend
           </>
         }
-        description="Crie páginas de propostas exclusivas e personalizadas para cada lead. Receba o sinal por Pix e trave o negócio em minutos antes mesmo do cliente chegar ao showroom."
+        description="A production-ready React boilerplate with auth, billing, and email flows. Skip 200 hours of setup and start shipping."
         phone={{
           time: "9:41",
           items: visibleNotifications
         }}
-        price={{ current: "R$ 159/mês", original: "R$ 399/mês" }}
-        availability="Oferta de lançamento — por tempo limitado"
+        price={{ current: "$149", original: "$399" }}
+        availability="Lifetime deal — ends Sunday"
         primaryAction={{ 
-          label: "Simular Reserva (Cliente)", 
-          onClick: () => navigateTo('cadastrar-reserva') 
-        }}
-        secondaryAction={{ 
-          label: "Assinar Reservacar", 
+          label: "Grab the boilerplate", 
           onClick: () => navigateTo('assinar') 
         }}
+        secondaryAction={{ 
+          label: "See what's inside", 
+          onClick: () => navigateTo('cadastrar-reserva') 
+        }}
         trustedBy={{
-          heading: "Usado por concessionárias e lojistas em todo o Brasil",
+          heading: "Used by builders shipping at",
           logos: [
             <span
-              key="audi"
-              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+              key="linear"
+              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              Audi Center
+              Linear
             </span>,
             <span
-              key="bmw"
-              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+              key="vercel"
+              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              BMW Premium
+              ▲ Vercel
             </span>,
             <span
-              key="toyota"
-              className="text-sm font-extrabold tracking-tight text-slate-400 whitespace-nowrap"
+              key="raycast"
+              className="text-sm font-extrabold tracking-tight text-slate-500 whitespace-nowrap"
             >
-              Toyota Elite
+              Raycast
             </span>,
           ],
         }}
