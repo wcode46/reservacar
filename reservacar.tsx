@@ -1013,7 +1013,7 @@ function PricingLandingHero({
             </h4>
             
             {/* Contêiner do Carrossel com máscara de fade nas laterais */}
-            <div className="relative w-full overflow-hidden py-2 select-none">
+            <div className="relative w-full overflow-hidden py-4 select-none">
               {/* Fade Esquerdo */}
               <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-black via-black/85 to-transparent z-10 pointer-events-none" />
               {/* Fade Direito */}
@@ -1122,14 +1122,14 @@ function HomeView({ navigateTo }) {
         trustedBy={{
           heading: "Usado por concessionárias e lojistas em todo o Brasil",
           logos: [
-            <span key="audi" className="text-base font-black tracking-tight whitespace-nowrap">Audi Center</span>,
-            <span key="bmw" className="text-base font-black tracking-tight whitespace-nowrap">BMW Premium</span>,
-            <span key="toyota" className="text-base font-black tracking-tight whitespace-nowrap">Toyota Elite</span>,
-            <span key="porsche" className="text-base font-black tracking-tight whitespace-nowrap">Porsche Service</span>,
-            <span key="volvo" className="text-base font-black tracking-tight whitespace-nowrap">Volvo Premium</span>,
-            <span key="mercedes" className="text-base font-black tracking-tight whitespace-nowrap">Mercedes-Benz</span>,
-            <span key="honda" className="text-base font-black tracking-tight whitespace-nowrap">Honda Vip</span>,
-            <span key="jac" className="text-base font-black tracking-tight whitespace-nowrap">JAC Motors</span>,
+            <span key="audi" className="text-3xl font-black tracking-tight whitespace-nowrap">Audi Center</span>,
+            <span key="bmw" className="text-3xl font-black tracking-tight whitespace-nowrap">BMW Premium</span>,
+            <span key="toyota" className="text-3xl font-black tracking-tight whitespace-nowrap">Toyota Elite</span>,
+            <span key="porsche" className="text-3xl font-black tracking-tight whitespace-nowrap">Porsche Service</span>,
+            <span key="volvo" className="text-3xl font-black tracking-tight whitespace-nowrap">Volvo Premium</span>,
+            <span key="mercedes" className="text-3xl font-black tracking-tight whitespace-nowrap">Mercedes-Benz</span>,
+            <span key="honda" className="text-3xl font-black tracking-tight whitespace-nowrap">Honda Vip</span>,
+            <span key="jac" className="text-3xl font-black tracking-tight whitespace-nowrap">JAC Motors</span>,
           ],
         }}
       />
