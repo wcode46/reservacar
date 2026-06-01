@@ -4182,7 +4182,9 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
     nome: empresaLogada.nome || '',
     telefone: empresaLogada.telefone || '',
     valorMinimoSinal: empresaLogada.valorMinimoSinal || 1500,
-    plano: empresaLogada.planoAtivo || 'Plus'
+    plano: empresaLogada.planoAtivo || 'Plus',
+    endereco: empresaLogada.endereco || '',
+    cep: empresaLogada.cep || ''
   });
 
   const planosNivel = { 'Basic': 1, 'Plus': 2, 'Premium': 3 };
@@ -4196,6 +4198,14 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
         finalValue = clean.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
       } else {
         finalValue = clean.substring(0, 11).replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+      }
+    }
+    if (name === 'cep') {
+      const clean = value.replace(/\D/g, '');
+      if (clean.length <= 5) {
+        finalValue = clean;
+      } else {
+        finalValue = `${clean.substring(0, 5)}-${clean.substring(5, 8)}`;
       }
     }
     setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -4220,12 +4230,22 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
       showToast('Por favor, informe o telefone de WhatsApp.', 'error');
       return;
     }
+    if (!formData.endereco.trim()) {
+      showToast('Por favor, informe o endereço comercial.', 'error');
+      return;
+    }
+    if (!formData.cep.trim()) {
+      showToast('Por favor, informe o CEP.', 'error');
+      return;
+    }
 
     setEmpresaLogada(prev => ({
       ...prev,
       nome: formData.nome,
       telefone: formData.telefone,
-      valorMinimoSinal: Number(formData.valorMinimoSinal)
+      valorMinimoSinal: Number(formData.valorMinimoSinal),
+      endereco: formData.endereco,
+      cep: formData.cep
     }));
     
     showToast('Configurações salvas com sucesso!', 'success');
@@ -4304,6 +4324,37 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                     placeholder="Ex: (11) 99999-8822"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
                   />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <label htmlFor="endereco" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      Endereço Comercial da Loja
+                    </label>
+                    <input
+                      type="text"
+                      id="endereco"
+                      name="endereco"
+                      value={formData.endereco}
+                      onChange={handleInputChange}
+                      placeholder="Ex: Av. das Nações Unidas, 12345"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="cep" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      CEP
+                    </label>
+                    <input
+                      type="text"
+                      id="cep"
+                      name="cep"
+                      value={formData.cep}
+                      onChange={handleInputChange}
+                      placeholder="Ex: 04578-000"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                    />
+                  </div>
                 </div>
 
                 <div>
