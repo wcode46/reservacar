@@ -5,7 +5,7 @@ import {
   MessageCircle, Phone, Heart, Share, ArrowRight, ArrowUpRight, ArrowLeft, Shield,
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
-  CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus
+  CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText
 } from 'lucide-react';
 
 
@@ -148,6 +148,60 @@ export default function App() {
     cep: '04578-000',
     ramos: ['Luxo', 'Zero Kilômetro'],
     estoque: 120,
+    creditosConsulta: 12,
+    consultasHistorico: [
+      {
+        id: '1',
+        placa: 'ABC1D23',
+        marca: 'BMW',
+        modelo: '320i Sport GP 2.0 Turbo',
+        ano: '2023',
+        data: '01/06/2026 14:32',
+        status: 'Aprovado',
+        debitos: 1250.00,
+        restricoes: 'Alienação Fiduciária ativa',
+        leilao: false,
+        fipe: 245000,
+        chassi: '9BW CA45X 2P9 123456',
+        renavam: '12345678901',
+        motor: 'B48B20A',
+        cor: 'Preto'
+      },
+      {
+        id: '2',
+        placa: 'XYZ9K87',
+        marca: 'Porsche',
+        modelo: 'Taycan 4S Elétrico',
+        ano: '2022',
+        data: '31/05/2026 10:15',
+        status: 'Sem Restrições',
+        debitos: 0,
+        restricoes: 'Nenhuma restrição encontrada',
+        leilao: false,
+        fipe: 310000,
+        chassi: 'WP0 AA2Y1 3NS 987654',
+        renavam: '98765432101',
+        motor: 'E-MOTOR',
+        cor: 'Cinza'
+      },
+      {
+        id: '3',
+        placa: 'ZZZ0X99',
+        marca: 'Audi',
+        modelo: 'A3 Sedan Prestige 2.0 TFSI',
+        ano: '2024',
+        data: '30/05/2026 17:45',
+        status: 'Alerta',
+        debitos: 4500.00,
+        restricoes: 'Histórico de Leilão / Sinistro recuperado',
+        leilao: true,
+        fipe: 285000,
+        chassi: 'WAU ZZZ8V 5HA 555666',
+        renavam: '55566677788',
+        motor: 'EA888',
+        cor: 'Vermelho'
+      }
+    ],
     vendedores: [
       { id: 1, nome: 'Carla Silva', cargo: 'Consultora Premium', ativo: true, dataCadastro: '31/05/2026', linksGerados: 14, conversao: 64 },
       { id: 2, nome: 'Roberto Oliveira', cargo: 'Gerente de Vendas', ativo: true, dataCadastro: '24/05/2026', linksGerados: 28, conversao: 71 },
@@ -228,7 +282,7 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva', 'vendedores'].includes(currentRoute);
+  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'consultas'].includes(currentRoute);
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 transition-colors duration-200">
@@ -392,6 +446,15 @@ export default function App() {
 
         {currentRoute === 'vendedores' && (
           <VendedoresView 
+            navigateTo={navigateTo} 
+            showToast={showToast}
+            empresaLogada={empresaLogada}
+            setEmpresaLogada={setEmpresaLogada}
+          />
+        )}
+
+        {currentRoute === 'consultas' && (
+          <ConsultasView 
             navigateTo={navigateTo} 
             showToast={showToast}
             empresaLogada={empresaLogada}
@@ -570,6 +633,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
     { id: 'sales-stats', label: 'Painel da Loja', icon: BarChart2 },
     { id: 'dashboard', label: 'Minhas Propostas', icon: LinkIcon },
     { id: 'vendedores', label: 'Vendedores', icon: Users },
+    { id: 'consultas', label: 'Consultar Veículos', icon: Search },
     { id: 'cadastrar-reserva', label: 'Nova Proposta', icon: PlusCircle },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
   ];
@@ -5367,3 +5431,634 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
     </div>
   );
 }
+
+// --- HELPER DE SIMULAÇÃO DE DADOS VEICULARES POR PLACA ---
+const obterDadosVeiculoPorPlaca = (placa: string) => {
+  const p = placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const hasAuction = p.startsWith('L') || p.startsWith('S') || p.startsWith('Z') || p.includes('9');
+  
+  // Veículo padrão
+  let marca = 'Chevrolet';
+  let modelo = 'Tracker Premier 1.2 Turbo';
+  let ano = '2023';
+  let cor = 'Branco';
+  let fipe = 132000;
+  let chassi = '9BG DS78Y 4PA ' + Math.floor(100000 + Math.random() * 900000);
+  let renavam = '246' + Math.floor(10000000 + Math.random() * 90000000);
+  let motor = '1.2T-Ecotec';
+  
+  if (p.includes('BMW') || p.startsWith('A') || p.includes('320')) {
+    marca = 'BMW';
+    modelo = '320i Sport GP 2.0 Turbo';
+    ano = '2023';
+    cor = 'Preto Safira';
+    fipe = 245000;
+    chassi = '9BW CA45X 2P9 ' + Math.floor(100000 + Math.random() * 900000);
+    renavam = '123' + Math.floor(10000000 + Math.random() * 90000000);
+    motor = 'B48B20A';
+  } else if (p.includes('POR') || p.startsWith('X') || p.includes('911')) {
+    marca = 'Porsche';
+    modelo = 'Taycan 4S Elétrico';
+    ano = '2022';
+    cor = 'Cinza Vulcano';
+    fipe = 310000;
+    chassi = 'WP0 AA2Y1 3NS ' + Math.floor(100000 + Math.random() * 900000);
+    renavam = '987' + Math.floor(10000000 + Math.random() * 90000000);
+    motor = 'E-MOTOR-REAR';
+  } else if (p.includes('AUD') || p.startsWith('Z') || p.includes('A3')) {
+    marca = 'Audi';
+    modelo = 'A3 Sedan Prestige 2.0 TFSI';
+    ano = '2024';
+    cor = 'Vermelho Tango';
+    fipe = 285000;
+    chassi = 'WAU ZZZ8V 5HA ' + Math.floor(100000 + Math.random() * 900000);
+    renavam = '555' + Math.floor(10000000 + Math.random() * 90000000);
+    motor = 'EA888';
+  } else if (p.includes('FOR') || p.startsWith('F') || p.includes('MUS')) {
+    marca = 'Ford';
+    modelo = 'Mustang Mach 1 5.0 V8';
+    ano = '2022';
+    cor = 'Laranja Cyber';
+    fipe = 345000;
+    chassi = '1FA 6P8CF 5N5 ' + Math.floor(100000 + Math.random() * 900000);
+    renavam = '444' + Math.floor(10000000 + Math.random() * 90000000);
+    motor = 'Coyote-5.0L';
+  }
+  
+  let debitos = 0;
+  let restricoes = 'Nenhuma restrição encontrada';
+  let status = 'Sem Restrições';
+  
+  if (hasAuction) {
+    status = 'Alerta';
+    debitos = Math.floor(1000 + Math.random() * 5000);
+    restricoes = 'Histórico de Leilão / Sinistro recuperado';
+  } else if (Math.random() > 0.6) {
+    status = 'Aprovado';
+    debitos = Math.floor(100 + Math.random() * 1500);
+    restricoes = 'Alienação Fiduciária ativa (Gravame)';
+  }
+  
+  // Formata a placa de exibição
+  let formattedPlaca = placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (formattedPlaca.length === 7) {
+    if (/^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(formattedPlaca)) {
+      // Mercosul: AAA1A23
+      formattedPlaca = formattedPlaca.substring(0, 3) + formattedPlaca.substring(3);
+    } else {
+      // Antigo: AAA-1234
+      formattedPlaca = formattedPlaca.substring(0, 3) + '-' + formattedPlaca.substring(3);
+    }
+  }
+  
+  return {
+    placa: formattedPlaca,
+    marca,
+    modelo,
+    ano,
+    cor,
+    fipe,
+    chassi,
+    renavam,
+    motor,
+    debitos,
+    restricoes,
+    leilao: hasAuction,
+    status
+  };
+};
+
+// --- NEW COMPONENT: CONSULTAS VIEW (HISTÓRICO E CONSULTA DE PROCEDÊNCIA) ---
+function ConsultasView({ navigateTo, showToast, empresaLogada, setEmpresaLogada }) {
+  const [activeTab, setActiveTab] = useState<'nova' | 'historico'>('nova');
+  const [placa, setPlaca] = useState('');
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [showLaudoModal, setShowLaudoModal] = useState(false);
+  const [laudoSelecionado, setLaudoSelecionado] = useState<any>(null);
+  const [showRecargaModal, setShowRecargaModal] = useState(false);
+
+  const creditos = empresaLogada?.creditosConsulta ?? 0;
+  const historico = empresaLogada?.consultasHistorico || [];
+
+  // Passos do carregamento simulado
+  const loadingSteps = [
+    'Conectando à base de dados do DETRAN...',
+    'Acessando histórico nacional de leilões...',
+    'Consultando registros de sinistros e roubo/furto...',
+    'Buscando cotação atualizada na Tabela FIPE...',
+    'Consolidando informações e gerando laudo técnico...'
+  ];
+
+  useEffect(() => {
+    let intervalId: any;
+    if (showProgressModal) {
+      setLoadingProgress(0);
+      intervalId = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev >= 5) {
+            clearInterval(intervalId);
+            setTimeout(() => {
+              finalizarConsulta();
+            }, 500);
+            return 5;
+          }
+          return prev + 1;
+        });
+      }, 900);
+    }
+    return () => clearInterval(intervalId);
+  }, [showProgressModal]);
+
+  const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.toUpperCase();
+    val = val.replace(/[^A-Z0-9-]/g, '');
+    if (val.length > 8) return;
+    setPlaca(val);
+  };
+
+  const handleConsultar = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanPlaca = placa.replace(/[^A-Z0-9]/g, '');
+    if (cleanPlaca.length < 7) {
+      showToast('A placa deve ter no mínimo 7 caracteres alfanuméricos.', 'error');
+      return;
+    }
+    if (creditos <= 0) {
+      showToast('Saldo insuficiente! Adicione créditos de consulta.', 'error');
+      setShowRecargaModal(true);
+      return;
+    }
+
+    setShowProgressModal(true);
+  };
+
+  const finalizarConsulta = () => {
+    const dados = obterDadosVeiculoPorPlaca(placa);
+    const novaConsulta = {
+      id: Date.now().toString(),
+      ...dados,
+      data: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+    };
+
+    setEmpresaLogada((prev: any) => {
+      const novosCreditos = Math.max(0, (prev.creditosConsulta ?? 12) - 1);
+      const novoHistorico = [novaConsulta, ...(prev.consultasHistorico || [])];
+      return {
+        ...prev,
+        creditosConsulta: novosCreditos,
+        consultasHistorico: novoHistorico
+      };
+    });
+
+    setShowProgressModal(false);
+    setLaudoSelecionado(novaConsulta);
+    setShowLaudoModal(true);
+    showToast(`Consulta da placa ${novaConsulta.placa} realizada! 1 crédito consumido.`, 'success');
+    setPlaca('');
+  };
+
+  const handleOpenLaudo = (item: any) => {
+    setLaudoSelecionado(item);
+    setShowLaudoModal(true);
+  };
+
+  const handleRecarga = (quantidade: number, valor: number) => {
+    setEmpresaLogada((prev: any) => ({
+      ...prev,
+      creditosConsulta: (prev.creditosConsulta ?? 0) + quantidade
+    }));
+    setShowRecargaModal(false);
+    showToast(`Recarga de +${quantidade} créditos realizada com sucesso!`, 'success');
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Sem Restrições':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'Aprovado':
+        return 'bg-amber-50 text-amber-700 border-amber-100';
+      case 'Alerta':
+        return 'bg-rose-50 text-rose-700 border-rose-100';
+      default:
+        return 'bg-slate-50 text-slate-700 border-slate-100';
+    }
+  };
+
+  const inputClass = "w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-semibold text-slate-800 outline-none focus:border-slate-900 transition";
+  const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5";
+
+  return (
+    <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
+      
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <Search size={32} className="text-blue-600" /> Consulta de Veículos
+          </h1>
+          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Verifique a procedência de leilão, sinistros, roubo, débitos e restrições de veículos.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Coluna Lateral: Créditos */}
+        <div className="space-y-6">
+          <div className="bg-white border-2 border-slate-900 rounded-[24px] p-6 shadow-sm">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Créditos de Consulta</span>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-5xl font-black text-slate-900 font-mono">{creditos}</span>
+              <span className="text-sm font-bold text-slate-500">créditos</span>
+            </div>
+            
+            <p className="text-slate-550 text-xs mt-4 leading-relaxed">
+              Cada consulta detalhada consome exatamente <strong>1 crédito</strong>. Consultas realizadas ficam salvas no seu histórico.
+            </p>
+
+            <button
+              onClick={() => setShowRecargaModal(true)}
+              className="mt-6 w-full bg-blue-600 hover:bg-blue-750 text-white font-bold py-3.5 px-4 rounded-xl text-xs transition uppercase tracking-wider flex items-center justify-center gap-2"
+            >
+              <CreditCard size={14} /> Adicionar Créditos
+            </button>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-xs text-slate-650 space-y-3">
+            <div className="flex items-start gap-2.5">
+              <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <p>
+                <strong>Dica de Teste:</strong> Placas contendo <strong>BMW</strong>, <strong>POR</strong> ou <strong>AUD</strong> simulam a busca de veículos específicos.
+              </p>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <p>
+                Placas contendo a letra <strong>L</strong>, <strong>S</strong> ou <strong>Z</strong> ou o número <strong>9</strong> simulam passagem por leilão (status <strong>Alerta</strong>).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna Principal: Formulário / Histórico */}
+        <div className="lg:col-span-2">
+          
+          {/* Tabs Navigation */}
+          <div className="flex bg-slate-100 border border-slate-200 p-1.5 rounded-2xl mb-6 max-w-sm">
+            <button
+              onClick={() => setActiveTab('nova')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === 'nova'
+                  ? 'bg-white text-slate-900 border border-slate-200/60 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Search size={14} /> Nova Consulta
+            </button>
+            <button
+              onClick={() => setActiveTab('historico')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
+                activeTab === 'historico'
+                  ? 'bg-white text-slate-900 border border-slate-200/60 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <FileText size={14} /> Consultas Realizadas ({historico.length})
+            </button>
+          </div>
+
+          {/* Conteúdo da Tab */}
+          {activeTab === 'nova' ? (
+            <div className="bg-white border-2 border-slate-200 rounded-[28px] p-6 md:p-8 text-left shadow-sm">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Consultar Veículo</h3>
+              <p className="text-slate-500 text-xs mb-6">Insira a placa do veículo para puxar o relatório completo de procedência na hora.</p>
+
+              <form onSubmit={handleConsultar} className="space-y-6">
+                <div className="text-center">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Placa do Veículo *</label>
+                  <input
+                    type="text"
+                    value={placa}
+                    onChange={handlePlacaChange}
+                    className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-4 text-2xl font-mono text-center tracking-widest max-w-[280px] mx-auto block uppercase outline-none focus:border-slate-900 transition"
+                    placeholder="AAA-1234"
+                    required
+                  />
+                  <span className="block text-[10px] text-slate-400 mt-2">Aceita formato Mercosul (AAA1A23) ou antigo (AAA-1234)</span>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="submit"
+                    className="bg-slate-900 hover:bg-black text-white font-bold py-4 px-8 rounded-xl text-xs transition uppercase tracking-wider flex items-center gap-2"
+                  >
+                    <Search size={14} /> Realizar Consulta (1 Crédito)
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-white border-2 border-slate-200 rounded-[28px] overflow-hidden shadow-sm">
+              {historico.length > 0 ? (
+                <div className="overflow-x-auto text-left">
+                  <table className="w-full text-xs font-semibold">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase text-[9px] tracking-wider">
+                        <th className="py-4 px-6">Veículo</th>
+                        <th className="py-4 px-6 text-center">Placa</th>
+                        <th className="py-4 px-6">Data</th>
+                        <th className="py-4 px-6 text-center">Status</th>
+                        <th className="py-4 px-6 text-right">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {historico.map((item: any) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition">
+                          <td className="py-4 px-6">
+                            <span className="font-extrabold text-slate-900 uppercase block">{item.marca} {item.modelo}</span>
+                            <span className="text-[10px] text-slate-450 uppercase">{item.ano} • {item.cor}</span>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <span className="font-mono bg-slate-100 border border-slate-200 px-2.5 py-1 rounded text-slate-800 font-extrabold">{item.placa}</span>
+                          </td>
+                          <td className="py-4 px-6 text-slate-550 font-mono">{item.data}</td>
+                          <td className="py-4 px-6 text-center">
+                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold border ${getStatusBadge(item.status)}`}>
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <button
+                              onClick={() => handleOpenLaudo(item)}
+                              className="text-blue-650 hover:text-blue-800 font-extrabold py-2 px-3 hover:bg-blue-50 rounded-lg transition"
+                            >
+                              Visualizar Laudo
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-16 px-6">
+                  <FileText size={48} className="mx-auto text-slate-350 mb-3" />
+                  <h4 className="text-sm font-bold text-slate-800">Nenhuma consulta realizada</h4>
+                  <p className="text-slate-500 text-xs mt-1">As consultas que você fizer serão exibidas nesta lista.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* MODAL DE PROGRESSO DE CONSULTA */}
+      {showProgressModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-slate-900 rounded-3xl p-6 md:p-8 max-w-md w-full text-center shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Processando Consulta</h3>
+            <p className="text-slate-550 text-xs mb-6 font-semibold">Consultando base de dados nacional para a placa <span className="font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">{placa.toUpperCase()}</span>.</p>
+
+            {/* Custom Progress Bar */}
+            <div className="w-full bg-slate-100 h-3 rounded-full border border-slate-200 overflow-hidden mb-6 relative">
+              <div 
+                className="bg-blue-600 h-full transition-all duration-300"
+                style={{ width: `${(loadingProgress / 5) * 100}%` }}
+              />
+            </div>
+
+            {/* Steps List */}
+            <div className="space-y-3.5 text-left bg-slate-50 border border-slate-150 rounded-2xl p-4">
+              {loadingSteps.map((step, idx) => {
+                const isActive = loadingProgress === idx;
+                const isCompleted = loadingProgress > idx;
+                return (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div className="shrink-0">
+                      {isCompleted ? (
+                        <CheckCircle2 size={16} className="text-emerald-500 animate-in zoom-in-50" />
+                      ) : isActive ? (
+                        <RefreshCw size={14} className="text-blue-605 animate-spin" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
+                      )}
+                    </div>
+                    <span className={`text-xs font-semibold ${
+                      isCompleted ? 'text-slate-800' : isActive ? 'text-blue-650 font-bold' : 'text-slate-400'
+                    }`}>
+                      {step}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE RECARGA SIMULADA */}
+      {showRecargaModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-slate-900 rounded-3xl p-6 md:p-8 max-w-md w-full text-left relative shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowRecargaModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-950 transition"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Adicionar Créditos</h3>
+            <p className="text-slate-550 text-xs mb-6">Escolha o pacote de créditos de consulta que melhor atende à sua loja.</p>
+
+            <div className="space-y-3.5">
+              {[
+                { qtd: 5, valor: 49, desc: 'Ideal para testes rápidos e consultas pontuais.' },
+                { qtd: 15, valor: 119, desc: 'Melhor custo-benefício para lojistas de pequeno porte.' },
+                { qtd: 50, valor: 299, desc: 'Volume profissional com maior desconto por consulta.' }
+              ].map((pack) => (
+                <button
+                  key={pack.qtd}
+                  onClick={() => handleRecarga(pack.qtd, pack.valor)}
+                  className="w-full bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 hover:border-slate-900 p-4 rounded-2xl flex items-center justify-between transition text-left"
+                >
+                  <div className="space-y-1">
+                    <span className="block text-sm font-extrabold text-slate-900">+{pack.qtd} Créditos</span>
+                    <span className="block text-[10px] text-slate-500 leading-tight font-semibold">{pack.desc}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-xs text-slate-400 font-semibold line-through">R$ {Math.round(pack.valor * 1.3)},00</span>
+                    <span className="block text-base font-extrabold text-blue-600 font-mono">R$ {pack.valor},00</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE LAUDO DETALHADO */}
+      {showLaudoModal && laudoSelecionado && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-slate-50 border-2 border-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="bg-white border-b-2 border-slate-900 p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+              <div className="text-left">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Relatório de Procedência</span>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase">
+                  {laudoSelecionado.marca} {laudoSelecionado.modelo}
+                </h3>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <span className="font-mono bg-slate-900 text-white border border-slate-900 px-3 py-1.5 rounded-lg text-sm font-black font-semibold">
+                  {laudoSelecionado.placa}
+                </span>
+                <span className={`px-3 py-1.5 rounded-lg text-xs font-black border uppercase ${getStatusBadge(laudoSelecionado.status)}`}>
+                  {laudoSelecionado.status}
+                </span>
+                <button
+                  onClick={() => setShowLaudoModal(false)}
+                  className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 text-left">
+              
+              {/* Leilão Alerta Card */}
+              {laudoSelecionado.leilao ? (
+                <div className="bg-rose-50 border-2 border-rose-600 rounded-2xl p-5 flex items-start gap-4">
+                  <ShieldAlert size={28} className="text-rose-600 shrink-0 mt-0.5 animate-bounce" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-extrabold text-rose-800 uppercase tracking-tight">Registro de Leilão / Sinistro Detectado</h4>
+                    <p className="text-xs text-rose-700 leading-relaxed font-semibold">
+                      Este veículo possui passagem por leilão classificada como <strong>Média Monta</strong>. Há histórico de sinistro associado no banco de dados da seguradora parceira.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-250 rounded-2xl p-4 flex items-start gap-3">
+                  <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black text-emerald-800 uppercase tracking-wider">Histórico de Leilão Limpo</h4>
+                    <p className="text-[11px] text-emerald-700 leading-relaxed font-semibold">
+                      Não foram encontrados registros de passagens por leilão ou sinistros estruturais para este chassi nas bases consultadas.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Ficha Cadastral */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">Ficha Técnica e Cadastro</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-6 text-xs font-semibold">
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Marca/Modelo</span>
+                    <strong className="text-slate-800 font-extrabold uppercase">{laudoSelecionado.marca} {laudoSelecionado.modelo}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Ano Fabricação/Modelo</span>
+                    <strong className="text-slate-800 font-extrabold">{laudoSelecionado.ano}/{laudoSelecionado.ano}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Cor Predominante</span>
+                    <strong className="text-slate-800 font-extrabold uppercase">{laudoSelecionado.cor}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Chassi</span>
+                    <strong className="text-slate-800 font-mono font-extrabold">{laudoSelecionado.chassi}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Renavam</span>
+                    <strong className="text-slate-800 font-mono font-extrabold">{laudoSelecionado.renavam}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold mb-1">Número do Motor</span>
+                    <strong className="text-slate-800 font-mono font-extrabold">{laudoSelecionado.motor}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Precificação e Fipe */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 font-semibold">
+                <div>
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Valor de Referência FIPE</h4>
+                  <div className="flex items-baseline gap-1 mt-1 bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                    <span className="text-slate-500 font-bold text-xs">Preço Médio:</span>
+                    <strong className="text-2xl font-black text-blue-600 font-mono ml-2">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(laudoSelecionado.fipe)}
+                    </strong>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Histórico de Roubo e Furto</h4>
+                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-150 p-4 rounded-xl">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <strong className="text-slate-800 font-extrabold text-xs uppercase font-sans">Nada Consta (Status Regular)</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Débitos e Restrições */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 space-y-4">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Restrições e Débitos Estaduais</h4>
+                
+                <div className="divide-y divide-slate-100 text-xs font-semibold">
+                  <div className="py-3 flex justify-between">
+                    <span className="text-slate-550 font-bold">Gravame / Alienação Fiduciária</span>
+                    <strong className="text-slate-800 font-bold">
+                      {laudoSelecionado.debitos > 0 && !laudoSelecionado.leilao 
+                        ? 'Sim (Gravame Ativo)' 
+                        : laudoSelecionado.leilao 
+                          ? 'Gravame Baixado' 
+                          : 'Não Consta'}
+                    </strong>
+                  </div>
+                  <div className="py-3 flex justify-between">
+                    <span className="text-slate-550 font-bold">Restrição Judicial (Renajud)</span>
+                    <strong className="text-slate-800 font-bold">Não Consta</strong>
+                  </div>
+                  <div className="py-3 flex justify-between">
+                    <span className="text-slate-550 font-bold">Restrição Administrativa</span>
+                    <strong className="text-slate-800 font-bold">Não Consta</strong>
+                  </div>
+                  <div className="py-3 flex justify-between items-center">
+                    <span className="text-slate-550 font-bold">Multas e Débitos Pendentes</span>
+                    <strong className={`font-mono font-extrabold ${laudoSelecionado.debitos > 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(laudoSelecionado.debitos)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white border-t border-slate-200 p-5 md:p-6 flex justify-end gap-3 shrink-0">
+              <button
+                onClick={() => showToast('Laudo enviado para impressão.', 'success')}
+                className="bg-white border-2 border-slate-250 hover:bg-slate-50 text-slate-700 font-bold py-3.5 px-6 rounded-xl text-xs transition uppercase tracking-wider"
+              >
+                Imprimir Laudo
+              </button>
+              <button
+                onClick={() => setShowLaudoModal(false)}
+                className="bg-slate-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl text-xs transition uppercase tracking-wider"
+              >
+                Fechar Laudo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
