@@ -1574,8 +1574,8 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
       <div className="w-full max-w-[1600px] mb-8 text-left">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Olá, Marcos</h1>
-            <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-wider">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Olá, Marcos</h1>
+            <p className="text-slate-500 text-sm mt-1 font-medium">
               {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
             </p>
           </div>
@@ -1876,8 +1876,8 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       {/* Header (Print 2) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200 pb-6 text-left">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel da loja</h1>
-          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Atividade comercial em tempo real</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Painel da loja</h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs shadow-sm">
@@ -2144,8 +2144,8 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
     <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Gerador de Reservas</h1>
-          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Gere páginas exclusivas personalizadas para cada lead.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Gerador de Reservas</h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Gere páginas exclusivas personalizadas para cada lead.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -5440,8 +5440,8 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Equipe de Vendedores</h1>
-          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Equipe de Vendedores</h1>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -5821,10 +5821,10 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6 text-left">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <FileText size={32} className="text-blue-600" /> Relatório de Reservas
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <FileText size={28} className="text-blue-600" /> Relatório de Reservas
           </h1>
-          <p className="text-lg font-medium text-slate-550 mt-1 font-sans">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
         </div>
       </div>
 
