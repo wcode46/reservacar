@@ -299,6 +299,7 @@ export default function App() {
           setIsOpen={setMobileSidebarOpen}
           reservasUsadas={reservasUsadas}
           totalReservasPlano={totalReservasPlano}
+          recentReservations={recentReservations}
         />
       )}
       
@@ -645,7 +646,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
 }
 
 // --- SIDEBAR ---
-function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30 }) {
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [] }) {
   const operacoesItems = [
     { id: 'hub', label: 'Painel central', icon: Laptop },
     { id: 'sales-stats', label: 'Painel de vendas', icon: BarChart2 },
@@ -690,7 +691,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
             </div>
             {showBadge && (
               <span className="w-5 h-5 bg-blue-100/80 text-blue-700 text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                7
+                {recentReservations.length}
               </span>
             )}
           </button>
@@ -1783,27 +1784,19 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   // Estados de Filtro e Ordenação
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'aguardando' | 'urgentes' | 'confirmados'>('todos');
 
-  // Cálculos dinâmicos com histórico simulado (Opção 2)
-  const concluidasSessao = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
-
-  // 1. Resgates Ativos: 4 histórico + novos concluidos
-  const totalResgatesAtivos = 4 + concluidasSessao;
-
-  // 2. Conversão Líquida: 5 pagos / 7 criados de histórico + sessão
-  const totalCriadasSessao = recentReservations.length;
-  const totalCriadasAcumulado = 7 + totalCriadasSessao;
-  const concluidasAcumuladas = 5 + concluidasSessao;
+  // Cálculos 100% dinâmicos baseados no estado real das reservas
+  const totalResgatesAtivos = recentReservations.filter(r => r.status === 'Active').length;
+  const totalCriadasAcumulado = recentReservations.length;
+  const concluidasAcumuladas = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
   const conversaoLiquida = totalCriadasAcumulado > 0 
     ? Math.round((concluidasAcumuladas / totalCriadasAcumulado) * 100) 
     : 0;
 
-  // 3. Sinal em Caixa: R$ 37k histórico + novos sinais recebidos
-  const somaSinaisNovos = recentReservations
+  const totalSinalCaixa = recentReservations
     .filter(r => r.status === 'Completed' || r.paidSignal)
-    .reduce((acc, r) => acc + (Number(r.sinal) || 0), 0);
-  const totalSinalCaixa = 37000 + somaSinaisNovos;
+    .reduce((acc, r) => acc + (Number(r.signal || r.sinal) || 0), 0);
   const formatSinalCaixa = totalSinalCaixa >= 1000 
-    ? `R$ ${(totalSinalCaixa / 1000).toFixed(0)}k` 
+    ? `R$ ${(totalSinalCaixa / 1000).toFixed(1)}k` 
     : `R$ ${totalSinalCaixa}`;
 
   // 4. Velocidade Média: elapsedSeconds médio das propostas pagas, com 1h 48m de fallback
@@ -3549,6 +3542,24 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     'Freio ABS', 'Central Multimídia', 'Sensores de Estacionamento'
   ];
 
+  const [customOpcionais, setCustomOpcionais] = useState<string[]>([]);
+  const [newOpcional, setNewOpcional] = useState('');
+
+  const handleAddCustomOpcional = () => {
+    const value = newOpcional.trim();
+    if (!value) return;
+    if (!opcionaisPool.includes(value) && !customOpcionais.includes(value)) {
+      setCustomOpcionais(prev => [...prev, value]);
+    }
+    if (!vehicleData.selectedOpcionais.includes(value)) {
+      setVehicleData(prev => ({
+        ...prev,
+        selectedOpcionais: [...prev.selectedOpcionais, value]
+      }));
+    }
+    setNewOpcional('');
+  };
+
   // Carrega as marcas na inicialização
   useEffect(() => {
     setIsFipeLoading(true);
@@ -3861,14 +3872,25 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     </div>
                     <div>
                       <label className={labelClass}>Cor do Veículo</label>
-                      <input 
-                        type="text" 
+                      <select 
                         name="color" 
                         value={vehicleData.color} 
                         onChange={handleInputChange} 
-                        className={inputClass} 
-                        placeholder="Ex: Branco"
-                      />
+                        className={inputClass}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="Amarelo">Amarelo</option>
+                        <option value="Azul">Azul</option>
+                        <option value="Bege">Bege</option>
+                        <option value="Branco">Branco</option>
+                        <option value="Cinza">Cinza</option>
+                        <option value="Marrom">Marrom</option>
+                        <option value="Prata">Prata</option>
+                        <option value="Preto">Preto</option>
+                        <option value="Verde">Verde</option>
+                        <option value="Vermelho">Vermelho</option>
+                        <option value="Vinho">Vinho</option>
+                      </select>
                     </div>
                     <div>
                       <label className={labelClass}>Preço de Venda (R$)</label>
@@ -3876,7 +3898,10 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         type="text" 
                         name="price" 
                         value={vehicleData.price} 
-                        onChange={handleInputChange} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setVehicleData(prev => ({ ...prev, price: val }));
+                        }} 
                         className={inputClass} 
                         placeholder="Ex: 85000"
                       />
@@ -3890,7 +3915,11 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         type="text" 
                         name="sinal" 
                         value={sinal} 
-                        onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setSinal(val);
+                          setVehicleData(prev => ({ ...prev, sinal: val }));
+                        }} 
                         className={inputClass} 
                         placeholder="Ex: 1500"
                       />
@@ -3925,33 +3954,15 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     </div>
                   </div>
 
-                  {/* Webmotors evaluation chart */}
-                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Comparativo de Média Webmotors</h4>
-                    
-                    <div className="flex justify-around items-end h-28 mb-4 pt-4 relative">
-                      <div className="flex flex-col items-center w-20">
-                        <span className="text-[9px] font-bold text-slate-500 mb-1">{formatCurrency(vehicleData.webmotorsMin)}</span>
-                        <div className="w-8 bg-slate-300 rounded-t-md h-12"></div>
-                        <span className="text-[10px] font-bold text-slate-500 mt-2">Mínimo</span>
-                      </div>
-
-                      <div className="flex flex-col items-center w-20">
-                        <span className="text-[9px] font-black text-blue-600 mb-1">{formatCurrency(vehicleData.webmotorsMed)}</span>
-                        <div className="w-8 bg-blue-600 rounded-t-md h-20"></div>
-                        <span className="text-[10px] font-black text-blue-600 mt-2">Médio</span>
-                      </div>
-
-                      <div className="flex flex-col items-center w-20">
-                        <span className="text-[9px] font-bold text-slate-500 mb-1">{formatCurrency(vehicleData.webmotorsMax)}</span>
-                        <div className="w-8 bg-slate-400 rounded-t-md h-24"></div>
-                        <span className="text-[10px] font-bold text-slate-500 mt-2">Máximo</span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center border-t border-slate-200 pt-3 text-xs font-semibold text-slate-600">
+                  {/* Resumo financeiro limpo */}
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+                    <div className="flex justify-between items-center text-xs font-semibold text-slate-600">
                       <span>Preço FIPE Lido</span>
-                      <span className="font-bold text-black">{formatCurrency(vehicleData.fipePrice)}</span>
+                      <span className="font-bold text-black font-mono">{formatCurrency(vehicleData.fipePrice || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-slate-200 pt-3 text-xs font-semibold text-slate-600">
+                      <span>Preço do Veículo Escolhido</span>
+                      <span className="font-black text-blue-600 text-sm font-mono">{formatCurrency(parseFloat(vehicleData.price) || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -3965,7 +3976,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                 <p className="text-slate-500 text-xs mb-8 font-medium">Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.</p>
                 
                 <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl mx-auto">
-                  {opcionaisPool.map((opc, idx) => {
+                  {[...opcionaisPool, ...customOpcionais].map((opc, idx) => {
                     const isSelected = vehicleData.selectedOpcionais.includes(opc);
                     return (
                       <button
@@ -3983,6 +3994,30 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Input para Opcional Personalizado */}
+                <div className="w-full flex items-center justify-center gap-2 mt-8">
+                  <input 
+                    type="text" 
+                    value={newOpcional}
+                    onChange={(e) => setNewOpcional(e.target.value)}
+                    placeholder="Ex: Teto solar panorâmico"
+                    className="max-w-xs bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-blue-600 transition"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomOpcional();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomOpcional}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition uppercase tracking-wider"
+                  >
+                    + Adicionar
+                  </button>
                 </div>
               </div>
             )}
