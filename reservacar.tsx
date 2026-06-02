@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Car, Clock, ShieldCheck, ChevronRight, CheckCircle2, 
   Play, ChevronLeft, X, LogIn, BarChart2, Link as LinkIcon, 
@@ -175,7 +175,7 @@ export default function App() {
       opcionais: 'Ar Condicionado, Vidro Elétrico, Alarme',
       fotos: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
       sinal: 1500, expiracao: 60, vendedores: 'Roberto Oliveira', video: '',
-      laudoAprovado: true, status: 'Active', elapsedSeconds: 3328, // 60m - 4m32s = 3328s passados
+      laudoAprovado: true, status: 'Active', elapsedSeconds: 1200, // 60m - 20m = 1200s passados (40m restantes)
       clienteNome: 'Carlos Andrade', visualizandoAgora: true,
       logs: [
         { time: '12:12:33 de 24/05/2026', text: 'Proposta criada por Roberto Oliveira' },
@@ -210,6 +210,20 @@ export default function App() {
         { time: '12:14:52 de 24/05/2026', text: 'Link de sinal ativado: R$ 5.000,00' },
         { time: 'Acesso', text: 'Visualizado via celular pelo Lead: Comprador' },
         { time: '12:18:14 de 24/05/2026', text: 'Sinal de R$ 5.000,00 pago via PIX.' }
+      ]
+    },
+    { 
+      id: 4, title: 'Mercedes-Benz C200 2.0 Avantgarde 2018', signal: 3000, duration: '60', created: '12:15:00 de 24/05/2026',
+      anoText: '2018', corText: 'Azul', motorText: '2.0 Turbo', fipeValue: 145000, valorVenda: 139900, km: '48.000', cambio: 'Automático',
+      opcionais: 'Teto Solar, Bancos de Couro, Sensor de Estacionamento',
+      fotos: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80',
+      sinal: 3000, expiracao: 60, vendedores: 'Marcos Souza', video: '',
+      laudoAprovado: true, status: 'Active', elapsedSeconds: 3345, // 60m - 55m45s = 3345s passados (255s restantes = 4m 15s)
+      clienteNome: 'Fernanda Lima',
+      logs: [
+        { time: '12:15:00 de 24/05/2026', text: 'Proposta criada por Marcos Souza' },
+        { time: '12:15:00 de 24/05/2026', text: 'Link de sinal ativado: R$ 3.000,00' },
+        { time: 'Acesso', text: 'Visualizado via celular pelo Lead: Comprador' }
       ]
     }
   ]);
@@ -1742,7 +1756,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               }
               
               return (
-                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col gap-1 relative hover:border-slate-350 transition">
+                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col gap-1 relative hover:border-slate-300 transition-colors duration-200 animate-fade-in-down">
                   <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider">
                     <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
                   </div>
@@ -1761,6 +1775,31 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 // --- SALES STATS VIEW (LIVE FEED) ---
 function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
+
+  // Acha a proposta ativa mais urgente para exibir no cabeçalho
+  const urgenteReserva = useMemo(() => {
+    const ativas = recentReservations.filter((r: any) => r.status === 'Active');
+    if (ativas.length === 0) return null;
+    
+    return ativas.reduce((maisUrgente: any, atual: any) => {
+      const restMaisUrgente = maisUrgente.expiracao * 60 - (maisUrgente.elapsedSeconds || 0);
+      const restAtual = atual.expiracao * 60 - (atual.elapsedSeconds || 0);
+      return restAtual < restMaisUrgente ? atual : maisUrgente;
+    });
+  }, [recentReservations]);
+
+  const tempoRestanteSegundos = urgenteReserva 
+    ? (urgenteReserva.expiracao * 60 - (urgenteReserva.elapsedSeconds || 0)) 
+    : 0;
+
+  const obterNomeSimplificado = (title: string) => {
+    if (!title) return '';
+    const partes = title.split(' ');
+    let p1 = partes[0] === 'Mercedes-Benz' ? 'Mercedes' : partes[0];
+    let p2 = partes[1] || '';
+    return `${p1} ${p2}`.trim();
+  };
+
 
   // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas
   useEffect(() => {
@@ -1873,10 +1912,23 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           <p className="text-slate-500 text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            <span className="font-bold text-slate-700">Link da Mercedes C200 expira em menos de 5 min</span>
-          </div>
+          {urgenteReserva && tempoRestanteSegundos > 0 ? (
+            <div className={`px-4 py-2 rounded-full flex items-center gap-2 text-xs transition-all duration-300 border ${
+              tempoRestanteSegundos < 300 
+                ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold' 
+                : 'bg-white border-slate-200 text-slate-700'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-blue-500'}`}></span>
+              <span className="font-bold">
+                Link do {obterNomeSimplificado(urgenteReserva.title)} expira em {Math.floor(tempoRestanteSegundos / 60)} min e {tempoRestanteSegundos % 60} seg
+              </span>
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs text-slate-500">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span className="font-bold">Todos os links de sinal seguros</span>
+            </div>
+          )}
           <div className="bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider">
             {reservasDisponiveis} créditos livres
           </div>
