@@ -5,7 +5,8 @@ import {
   MessageCircle, Phone, Heart, Share, ArrowRight, ArrowUpRight, ArrowLeft, Shield,
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
-  CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText
+  CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
+  ArrowUp, TrendingDown, Eye
 } from 'lucide-react';
 
 
@@ -159,21 +160,37 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Real-time live notifications (makes the dashboard dynamic!)
-  const [liveNotifications, setLiveNotifications] = useState([
-    { id: 1, type: 'view', text: 'Cliente Carlos S. acabou de abrir a proposta da Audi RS4.', time: 'Agora' },
-    { id: 2, type: 'pix', text: 'Sinal recebido! R$5.000 pagos por Rafael Mendes (BMW 320i).', time: 'Há 4 min' },
-    { id: 3, type: 'create', text: 'Vendedor Carla Silva gerou um link para JAC iEV 20.', time: 'Há 12 min' },
+  const [liveNotifications, setLiveNotifications] = useState<any[]>([
+    { id: 1, type: 'pix', label: 'PIX RECEBIDO', color: 'text-emerald-600', text: 'Sinal de R$ 5.000 pago por Rafael Mendes — BMW 320i.', time: 'Há 4 min' },
+    { id: 2, type: 'view', label: 'VISUALIZAÇÃO', color: 'text-blue-600', text: 'Carlos S. abriu a proposta da Audi RS4 — terceira visita.', time: 'Agora' },
+    { id: 3, type: 'urgente', label: 'URGÊNCIA', color: 'text-amber-700', text: 'Link da Mercedes C200 expira em menos de 5 min.', time: 'Agora' },
+    { id: 4, type: 'create', label: 'NOVA PROPOSTA', color: 'text-purple-600', text: 'Carla Silva gerou um link para JAC iEV 20.', time: 'Há 12 min' },
   ]);
 
-  // Initial Seed for Reservations
+  // Initial Seed for Reservations (idêntico aos prints!)
   const [recentReservations, setRecentReservations] = useState([
     { 
-      id: 1, title: 'JAC iEV 20 68cv 5p Aut. (Elétrico)', signal: 1500, duration: '60', created: '12:16:33 de 24/05/2026',
+      id: 1, title: 'Audi A3 1.6 3p 2002 Gasolina', signal: 1500, duration: '60', created: '12:12:33 de 24/05/2026',
+      anoText: '2002', corText: 'Prata', motorText: '1.6 Gasolina', fipeValue: 22000, valorVenda: 19780, km: '185.000', cambio: 'Manual',
+      opcionais: 'Ar Condicionado, Vidro Elétrico, Alarme',
+      fotos: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
+      sinal: 1500, expiracao: 60, vendedores: 'Roberto Oliveira', video: '',
+      laudoAprovado: true, status: 'Active', elapsedSeconds: 3328, // 60m - 4m32s = 3328s passados
+      clienteNome: 'Carlos Andrade', visualizandoAgora: true,
+      logs: [
+        { time: '12:12:33 de 24/05/2026', text: 'Proposta criada por Roberto Oliveira' },
+        { time: '12:12:33 de 24/05/2026', text: 'Link de sinal ativado: R$ 1.500,00' },
+        { time: 'Acesso', text: 'Visualizado via celular pelo Lead: Comprador' }
+      ]
+    },
+    { 
+      id: 2, title: 'JAC iEV 20 68cv 5p Aut. (Elétrico)', signal: 1500, duration: '60', created: '12:16:33 de 24/05/2026',
       anoText: '2022', corText: 'Branco', motorText: '1.0 Elétrico', fipeValue: 81262, valorVenda: 78262, km: '8.200', cambio: 'Automático',
       opcionais: 'Ar Condicionado, Direção Elétrica, Vidro Elétrico, Airbag, Freio ABS, Central Multimídia',
       fotos: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
-      sinal: 1500, expiracao: 60, vendedores: 'Carla Silva, Roberto Oliveira, Marcos Souza', video: '',
-      laudoAprovado: true, status: 'Active', elapsedSeconds: 3200, // in seconds
+      sinal: 1500, expiracao: 60, vendedores: 'Carla Silva', video: '',
+      laudoAprovado: true, status: 'Active', elapsedSeconds: 1306, // 60m - 38m14s = 1306s passados
+      clienteNome: 'Não informado',
       logs: [
         { time: '12:16:33 de 24/05/2026', text: 'Proposta criada por Carla Silva' },
         { time: '12:16:33 de 24/05/2026', text: 'Link de sinal ativado: R$ 1.500,00' },
@@ -181,17 +198,20 @@ export default function App() {
       ]
     },
     { 
-      id: 2, title: 'Audi RS4 2.9 Avant V6 TFSI Quattro', signal: 5000, duration: '30', created: '12:14:52 de 24/05/2026',
-      anoText: '2024', corText: 'Azul Navarra', motorText: '2.9 V6 Twin-Turbo', fipeValue: 650000, valorVenda: 630000, km: '1.500', cambio: 'Tiptronic 8v',
-      opcionais: 'Teto Solar Panorâmico, Sistema Bang & Olufsen, Bancos RS, Escapamento Esportivo',
-      fotos: 'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&w=800&q=80',
-      sinal: 5000, expiracao: 30, vendedores: 'Roberto Oliveira, Marcos Souza', video: '',
-      laudoAprovado: true, status: 'Pending', elapsedSeconds: 800,
+      id: 3, title: 'BMW 320i 2.0 Turbo 2023', signal: 5000, duration: '30', created: '12:14:52 de 24/05/2026',
+      anoText: '2023', corText: 'Preto', motorText: '2.0 Turbo', fipeValue: 230000, valorVenda: 214900, km: '12.000', cambio: 'Automático',
+      opcionais: 'Teto Solar, Ar Condicionado Dual Zone, Bancos de Couro',
+      fotos: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
+      sinal: 5000, expiracao: 30, vendedores: 'Marcos Souza', video: '',
+      laudoAprovado: true, status: 'Completed', paidSignal: true, elapsedSeconds: 1800, // concluído
+      clienteNome: 'Rafael Mendes',
       logs: [
-        { time: '12:14:52 de 24/05/2026', text: 'Proposta criada por Roberto Oliveira' },
-        { time: '12:14:52 de 24/05/2026', text: 'Link de sinal ativado: R$ 5.000,00' }
+        { time: '12:14:52 de 24/05/2026', text: 'Proposta criada por Marcos Souza' },
+        { time: '12:14:52 de 24/05/2026', text: 'Link de sinal ativado: R$ 5.000,00' },
+        { time: 'Acesso', text: 'Visualizado via celular pelo Lead: Comprador' },
+        { time: '12:18:14 de 24/05/2026', text: 'Sinal de R$ 5.000,00 pago via PIX.' }
       ]
-    },
+    }
   ]);
 
   const showToast = (msg, type = 'info') => {
@@ -626,13 +646,15 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
 
 // --- SIDEBAR ---
 function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30 }) {
-  const menuItems = [
-    { id: 'hub', label: 'Painel Central', icon: Laptop },
-    { id: 'sales-stats', label: 'Painel da Loja', icon: BarChart2 },
-    { id: 'dashboard', label: 'Minhas Propostas', icon: LinkIcon },
+  const operacoesItems = [
+    { id: 'hub', label: 'Painel central', icon: Laptop },
+    { id: 'sales-stats', label: 'Painel de vendas', icon: BarChart2 },
+    { id: 'dashboard', label: 'Nova proposta', icon: LinkIcon },
+  ];
+
+  const gestaoItems = [
     { id: 'vendedores', label: 'Vendedores', icon: Users },
     { id: 'relatorios', label: 'Relatórios', icon: FileText },
-    { id: 'cadastrar-reserva', label: 'Nova Proposta', icon: PlusCircle },
     { id: 'configuracoes', label: 'Configurações', icon: Settings },
   ];
 
@@ -642,6 +664,40 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
   };
 
   const activePlano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
+  const linksDisponiveis = totalReservasPlano - reservasUsadas;
+
+  const renderNavGroup = (title: string, items: any[]) => (
+    <div className="space-y-1.5 px-4 pt-4">
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">{title}</span>
+      {items.map((item) => {
+        const Icon = item.icon;
+        const isActive = currentRoute === item.id || (item.id === 'configuracoes' && currentRoute === 'checkout-plano');
+        const showBadge = item.id === 'sales-stats';
+        
+        return (
+          <button
+            key={item.id}
+            onClick={() => handleNavigate(item.id)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 ${
+              isActive 
+                ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50 border border-transparent'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-500'} />
+              <span>{item.label}</span>
+            </div>
+            {showBadge && (
+              <span className="w-5 h-5 bg-blue-100/80 text-blue-700 text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+                7
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   const sidebarContent = (
     <div className="h-full flex flex-col justify-between bg-white text-slate-800">
@@ -667,26 +723,9 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
         </div>
 
         {/* Navigation Items */}
-        <nav className="px-4 py-6 space-y-1.5">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2 block">Operações</span>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentRoute === item.id || (item.id === 'configuracoes' && currentRoute === 'checkout-plano');
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-                    : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50 border border-transparent'
-                }`}
-              >
-                <Icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-500'} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+        <nav className="divide-y divide-slate-100 space-y-4">
+          {renderNavGroup('Operações', operacoesItems)}
+          {renderNavGroup('Gestão', gestaoItems)}
         </nav>
       </div>
 
@@ -694,7 +733,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
       <div className="px-6 py-5 border-t border-slate-150 bg-slate-50/50 text-left">
         <div className="flex justify-between items-center mb-2">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Uso do Plano</span>
-          <span className="text-[11px] font-black text-slate-900">{reservasUsadas} / {totalReservasPlano} links</span>
+          <span className="text-[11px] font-black text-slate-900">{reservasUsadas}/{totalReservasPlano}</span>
         </div>
         
         {/* Barra de Progresso Flat */}
@@ -706,25 +745,9 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
             }}
           ></div>
         </div>
-        
-        {/* Botão de Upgrade contextual */}
-        {reservasUsadas >= totalReservasPlano ? (
-          <button 
-            onClick={() => handleNavigate('configuracoes')} 
-            className="mt-3.5 w-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 text-center font-bold text-[10px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider"
-          >
-            <Sparkles size={11} className="animate-pulse" />
-            Limite Atingido! Upgrade
-          </button>
-        ) : (
-          <button 
-            onClick={() => handleNavigate('configuracoes')} 
-            className="mt-3.5 w-full bg-white text-blue-600 border border-slate-200 hover:bg-blue-50 text-center font-bold text-[10px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider"
-          >
-            <Sparkles size={11} />
-            Fazer Upgrade do Plano
-          </button>
-        )}
+        <p className="text-[10px] text-slate-450 mt-2 font-bold uppercase tracking-wide">
+          {linksDisponiveis} links disponíveis
+        </p>
       </div>
 
       {/* Footer Section */}
@@ -1547,119 +1570,186 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
   const percentagemUso = Math.min((reservasUsadas / totalReservasPlano) * 100, 100);
 
   return (
-    <div className="min-h-screen pt-32 pb-20 px-6 bg-[#f8f9fa] flex flex-col items-center">
-      <div className="w-full max-w-5xl mb-8">
+    <div className="min-h-screen pt-32 pb-20 px-6 md:px-12 bg-[#f8f9fa] flex flex-col items-center">
+      <div className="w-full max-w-[1600px] mb-8 text-left">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Olá, Marcos</h1>
-            <p className="text-lg font-medium text-slate-550 mt-1">Central de Vendas</p>
+            <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-wider">
+              {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
+            </p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-            <span className="font-semibold text-slate-700">Showroom Conectado</span>
+          <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-xs shadow-sm">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="font-extrabold text-slate-700 uppercase tracking-wider">Showroom conectado</span>
           </div>
         </div>
 
         {/* Credit System Visual Widget */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
-          
+        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden shadow-sm">
           {/* Left Column: Plano Info */}
           <div className="flex flex-col min-w-[200px]">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <span className="text-3xl font-black text-slate-900 tracking-tight">
                 {empresaLogada?.planoAtivo || 'Plus'}
               </span>
-              <span className="border border-blue-200 bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+              <span className="border border-emerald-250 bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
                 ATIVO
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-semibold">Renova-se a 10/06/2026</p>
+            <p className="text-xs text-slate-500 font-bold">Renova-se em 10/06/2026</p>
           </div>
 
           {/* Middle Column: Credits Progress */}
           <div className="w-full md:max-w-md flex-1">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-500 mb-2">
-              <span className="tracking-wider">CRÉDITOS UTILIZADOS</span>
-              <span className="text-slate-950 text-sm font-bold">{reservasUsadas} / {totalReservasPlano}</span>
+            <div className="flex justify-between items-center text-[10px] font-black text-slate-400 mb-2">
+              <span className="tracking-widest uppercase">CRÉDITOS UTILIZADOS</span>
+              <span className="text-slate-950 text-xs font-black">{reservasUsadas} / {totalReservasPlano}</span>
             </div>
-            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2 border border-slate-200/50">
               <div 
-                className={`h-full rounded-full transition-all duration-1000 ${percentagemUso > 80 ? 'bg-amber-500' : 'bg-blue-600'}`} 
+                className="h-full rounded-full transition-all duration-1000 bg-blue-600" 
                 style={{ width: `${percentagemUso}%` }}
               ></div>
             </div>
-            {percentagemUso > 80 ? (
-              <p className="text-xs font-semibold text-amber-600 mt-1 flex flex-wrap items-center gap-1.5">
-                <span>{reservasDisponiveis} links disponíveis</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 animate-pulse uppercase tracking-wider">Sugerimos upgrade</span>
-              </p>
-            ) : (
-              <p className="text-xs text-slate-500 mt-1 font-semibold">
-                {reservasDisponiveis} links disponíveis
-              </p>
-            )}
+            <p className="text-xs text-slate-500 font-bold">
+              {reservasDisponiveis} links disponíveis · excelente margem
+            </p>
           </div>
 
           {/* Right Column: Upgrade Button */}
           <div className="w-full md:w-auto flex justify-end md:justify-start">
             <button 
               onClick={() => navigateTo('configuracoes')}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 group whitespace-nowrap"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-6 py-4 rounded-2xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm"
             >
-              Fazer Upgrade
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowUp size={14} className="stroke-[3px]" /> Fazer upgrade
             </button>
           </div>
-
         </div>
       </div>
 
-      <div className="w-full max-w-5xl grid md:grid-cols-3 gap-6">
+      {/* Grid of Key Performance Indicators (SaaS Style) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full max-w-[1600px] text-left">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
+            <LinkIcon size={16} className="text-blue-650" />
+          </div>
+          <span className="block text-4xl font-black text-slate-900 mb-1">7</span>
+          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[3px]" /> 3 novas hoje
+          </span>
+        </div>
         
-        {/* Module Choice Left */}
-        <div className="md:col-span-2 grid sm:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
+            <TrendingUp size={16} className="text-emerald-650" />
+          </div>
+          <span className="block text-4xl font-black text-slate-900 mb-1">71%</span>
+          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[3px]" /> +8% vs mês anterior
+          </span>
+        </div>
+
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
+            <DollarSign size={16} className="text-blue-650" />
+          </div>
+          <span className="block text-4xl font-black text-slate-900 mb-1">R$ 42k</span>
+          <span className="text-xs text-slate-400 font-bold">Este mês</span>
+        </div>
+
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
+            <Clock size={16} className="text-blue-650" />
+          </div>
+          <span className="block text-4xl font-black text-slate-900 mb-1">1h 48m</span>
+          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[3px]" /> Fechamento rápido
+          </span>
+        </div>
+      </div>
+
+      <div className="w-full max-w-[1600px] grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
+        
+        {/* Module Choice Column (Spans 2 columns on desktop) */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
           <button 
             onClick={() => navigateTo('sales-stats')}
-            className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center hover:border-blue-600 transition duration-200 group relative overflow-hidden"
+            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group relative text-left"
           >
-            <div className="absolute top-4 right-4 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md text-[10px] font-bold">ATIVIDADE AO VIVO</div>
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200">
-              <BarChart2 size={32} className="text-blue-600 group-hover:text-white transition duration-200" />
+            <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-250 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              Atividade ao vivo
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Painel de Vendas</h2>
-            <p className="text-slate-500 font-medium text-sm px-2">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos.</p>
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200">
+              <BarChart2 size={24} className="text-blue-600 group-hover:text-white transition duration-200" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Painel de vendas</h2>
+            <p className="text-slate-500 font-semibold text-xs leading-relaxed mb-8">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.</p>
+            <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
+              <ArrowRight size={16} />
+            </div>
           </button>
 
           <button 
             onClick={() => navigateTo('dashboard')}
-            className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col items-center text-center hover:border-blue-600 transition duration-200 group"
+            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group text-left"
           >
-            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200">
-              <LinkIcon size={32} className="text-blue-600 group-hover:text-white transition duration-200" />
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200 mt-[46px]">
+              <LinkIcon size={24} className="text-blue-600 group-hover:text-white transition duration-200" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Gerador de Links</h2>
-            <p className="text-slate-500 font-medium text-sm px-2">Crie novas páginas de reserva instantâneas, consulte FIPE e monte checklists.</p>
+            <h2 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Nova proposta</h2>
+            <p className="text-slate-500 font-semibold text-xs leading-relaxed mb-8">Crie páginas de reserva instantâneas, consulte tabela FIPE e monte checklists por lead.</p>
+            <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
+              <ArrowRight size={16} />
+            </div>
           </button>
         </div>
 
         {/* Live Notification Activity Ticker */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col h-full min-h-[350px]">
-          <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+        <div className="bg-white border border-slate-200 rounded-[32px] p-6 flex flex-col h-full min-h-[350px] shadow-sm">
+          <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               <Bell size={14} className="text-blue-600" />
-              Notificações do Showroom
+              Notificações
             </h3>
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Ao vivo
+            </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-4 max-h-[250px] pr-1">
-            {liveNotifications.map(notif => (
-              <div key={notif.id} className="text-xs bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col gap-1">
-                <p className="font-semibold text-slate-800">{notif.text}</p>
-                <span className="text-[10px] text-slate-500 font-medium self-end">{notif.time}</span>
-              </div>
-            ))}
+          <div className="flex-1 overflow-y-auto space-y-4 max-h-[360px] pr-1">
+            {liveNotifications.map(notif => {
+              let labelColor = 'text-blue-600';
+              let bgColor = 'bg-blue-50/50';
+              if (notif.type === 'pix') {
+                labelColor = 'text-emerald-600';
+                bgColor = 'bg-emerald-50/30';
+              } else if (notif.type === 'urgente') {
+                labelColor = 'text-amber-700';
+                bgColor = 'bg-amber-50/30';
+              } else if (notif.type === 'create') {
+                labelColor = 'text-purple-600';
+                bgColor = 'bg-purple-50/30';
+              }
+              
+              return (
+                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-200/60 p-4 rounded-2xl flex flex-col gap-1 relative shadow-sm hover:shadow transition">
+                  <div className="flex items-center gap-1.5 font-black uppercase text-[9px] tracking-wider">
+                    <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
+                  </div>
+                  <p className="font-extrabold text-slate-800 text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
+                  <span className="text-[9px] text-slate-400 font-bold absolute bottom-3 right-4">{notif.time}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1671,24 +1761,27 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
 
-  // Estados e efeito para o ticker vertical animado de logs de atividades
-  const [activeLogIndex, setActiveLogIndex] = useState(0);
-  const [animateLog, setAnimateLog] = useState(true);
-
+  // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas
   useEffect(() => {
-    if (!liveNotifications || liveNotifications.length <= 1) return;
-    
-    const interval = setInterval(() => {
-      setAnimateLog(false);
-      
-      setTimeout(() => {
-        setActiveLogIndex((prev) => (prev + 1) % Math.min(liveNotifications.length, 5));
-        setAnimateLog(true);
-      }, 300);
-    }, 4500);
-    
-    return () => clearInterval(interval);
-  }, [liveNotifications]);
+    const timer = setInterval(() => {
+      setRecentReservations((prev: any) => prev.map((res: any) => {
+        if (res.status === 'Active') {
+          const limit = res.expiracao * 60;
+          if ((res.elapsedSeconds || 0) < limit) {
+            return {
+              ...res,
+              elapsedSeconds: (res.elapsedSeconds || 0) + 1
+            };
+          }
+        }
+        return res;
+      }));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [setRecentReservations]);
+
+  // Estados de Filtro e Ordenação
+  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'aguardando' | 'urgentes' | 'confirmados'>('todos');
 
   // Cálculos dinâmicos com histórico simulado (Opção 2)
   const concluidasSessao = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
@@ -1727,213 +1820,318 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   };
   const velocidadeMediaText = formatVelocidadeMedia(mediaSegundos);
 
-  // Simulator helper to let vendors mock real scenarios instantly
+  // Contadores para os badges das abas
+  const countTodos = recentReservations.length;
+  const countAguardando = recentReservations.filter(r => r.status === 'Active' && (r.expiracao * 60 - (r.elapsedSeconds || 0)) >= 300).length;
+  const countUrgentes = recentReservations.filter(r => r.status === 'Active' && (r.expiracao * 60 - (r.elapsedSeconds || 0)) < 300).length;
+  const countConfirmados = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
+
+  // Filtragem da lista
+  const filteredReservations = recentReservations.filter((res) => {
+    const isCompleted = res.status === 'Completed' || res.paidSignal;
+    const totalSeconds = res.expiracao * 60;
+    const remainingSeconds = totalSeconds - (res.elapsedSeconds || 0);
+    const isUrgente = res.status === 'Active' && remainingSeconds < 300;
+    const isAguardando = res.status === 'Active' && remainingSeconds >= 300;
+
+    if (filtroStatus === 'aguardando') return isAguardando;
+    if (filtroStatus === 'urgentes') return isUrgente;
+    if (filtroStatus === 'confirmados') return isCompleted;
+    return true; // 'todos'
+  });
+
+  // Simulator helpers
   const handleSimulatePayment = (resId, clientName) => {
-    setRecentReservations(prev => 
-      prev.map(item => {
-        if (item.id === resId) {
-          return { ...item, status: 'Completed', paidSignal: true };
-        }
-        return item;
-      })
-    );
-    showToast(`Simulador: Pagamento registrado com sucesso para ${clientName}!`, 'success');
+    setRecentReservations((prev: any) => prev.map(item => {
+      if (item.id === resId) {
+        const novosLogs = [...(item.logs || [])];
+        novosLogs.push({
+          time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+          text: `Sinal de R$ ${Number(item.sinal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} pago via PIX.`
+        });
+        return { ...item, status: 'Completed', paidSignal: true, logs: novosLogs };
+      }
+      return item;
+    }));
+    showToast(`Pagamento do sinal confirmado para ${clientName}!`, 'success');
   };
 
   const handleSimulateTimeExpiration = (resId) => {
-    setRecentReservations(prev => 
-      prev.map(item => {
-        if (item.id === resId) {
-          return { ...item, status: 'Expired', elapsedSeconds: item.expiracao * 60 };
-        }
-        return item;
-      })
-    );
-    showToast(`Simulador: Proposta expirada.`, 'info');
+    setRecentReservations((prev: any) => prev.map(item => {
+      if (item.id === resId) {
+        const novosLogs = [...(item.logs || [])];
+        novosLogs.push({
+          time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+          text: 'Link de proposta expirado por inatividade.'
+        });
+        return { ...item, status: 'Expired', elapsedSeconds: item.expiracao * 60, logs: novosLogs };
+      }
+      return item;
+    }));
+    showToast(`Proposta expirada.`, 'info');
   };
 
   return (
-    <div className="pt-28 pb-20 px-6 lg:px-8 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-200 pb-6">
+    <div className="pt-32 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto">
+      {/* Header (Print 2) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200 pb-6 text-left">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel da Loja</h1>
-          <p className="text-sm font-medium text-slate-550 mt-1">Atividade Comercial</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Painel da loja</h1>
+          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Atividade comercial em tempo real</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl flex items-center gap-3">
-            <span className="text-xl font-bold text-slate-900 leading-none">{reservasDisponiveis}</span>
-            <span className="text-xs font-semibold text-slate-555 leading-none">créditos de links livres</span>
+          <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            <span className="font-bold text-slate-700">Link da Mercedes C200 expira em menos de 5 min</span>
+          </div>
+          <div className="bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-sm uppercase tracking-wider">
+            {reservasDisponiveis} créditos livres
           </div>
         </div>
       </div>
 
       {/* Grid of Key Performance Indicators (SaaS Style) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Resgates Ativos</span>
-            <Users size={16} className="text-blue-600" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
+            <Users size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{totalResgatesAtivos}</span>
-          <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-            <ArrowUpRight size={14}/> 3 novos hoje
+          <span className="block text-4xl font-black text-slate-900 mb-1">{totalResgatesAtivos}</span>
+          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[3px]"/> 3 novos hoje
           </span>
         </div>
         
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Conversão Líquida</span>
-            <TrendingUp size={16} className="text-emerald-600" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
+            <TrendingUp size={16} className="text-emerald-650" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{conversaoLiquida}%</span>
-          <span className="text-xs text-slate-500 font-semibold flex items-center gap-1">
+          <span className="block text-4xl font-black text-slate-900 mb-1">{conversaoLiquida}%</span>
+          <span className="text-xs text-slate-400 font-bold">
             Baseado em {totalCriadasAcumulado} propostas
           </span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sinal em Caixa</span>
-            <DollarSign size={16} className="text-blue-600" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
+            <DollarSign size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{formatSinalCaixa}</span>
-          <span className="text-xs text-slate-550 font-semibold">Este mês corrente</span>
+          <span className="block text-4xl font-black text-slate-900 mb-1">{formatSinalCaixa}</span>
+          <span className="text-xs text-slate-450 font-bold">Este mês corrente</span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Velocidade Média</span>
-            <Clock size={16} className="text-blue-600" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
+            <Clock size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-extrabold text-slate-900 mb-1">{velocidadeMediaText}</span>
-          <span className="text-xs text-emerald-600 font-semibold">Fechamento rápido</span>
-        </div>
-      </div>
-
-      {/* Logs de Atividade Recentes em formato de ticker rotativo vertical */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 shrink-0 md:border-r border-slate-100 md:pr-4">
-            <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Atividade Recente</h4>
-          </div>
-          
-          <div className="flex-1 overflow-hidden h-5 relative flex items-center md:justify-end">
-            {liveNotifications && liveNotifications.length > 0 ? (
-              <div 
-                className={`flex items-center gap-2 text-xs transition-all duration-300 ease-out transform ${
-                  animateLog 
-                    ? 'translate-y-0 opacity-100' 
-                    : 'translate-y-2 opacity-0'
-                }`}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-slate-700">{liveNotifications[activeLogIndex]?.text}</span>
-                  <span className="text-[10px] text-slate-400 font-mono">{liveNotifications[activeLogIndex]?.time}</span>
-                </div>
-              </div>
-            ) : (
-              <span className="text-xs text-slate-400">Nenhuma atividade recente</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Feed (Full Width) */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Links em Tempo Real</h3>
-          
-          {/* Quick Demo Simulator Instructions */}
-          <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-            Módulo de Teste de Vendas
+          <span className="block text-4xl font-black text-slate-900 mb-1">{velocidadeMediaText}</span>
+          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[3px]"/> Fechamento rápido
           </span>
         </div>
+      </div>
+
+      {/* Tabs Filtros e Ordenação (Print 2) */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-wrap gap-2">
+          <button 
+            onClick={() => setFiltroStatus('todos')}
+            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+              filtroStatus === 'todos' 
+                ? 'bg-slate-900 text-white' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+            }`}
+          >
+            Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
+          </button>
+          <button 
+            onClick={() => setFiltroStatus('aguardando')}
+            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+              filtroStatus === 'aguardando' 
+                ? 'bg-slate-900 text-white' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+            }`}
+          >
+            Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
+          </button>
+          <button 
+            onClick={() => setFiltroStatus('urgentes')}
+            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+              filtroStatus === 'urgentes' 
+                ? 'bg-slate-900 text-white' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+            }`}
+          >
+            Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
+          </button>
+          <button 
+            onClick={() => setFiltroStatus('confirmados')}
+            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+              filtroStatus === 'confirmados' 
+                ? 'bg-slate-900 text-white' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+            }`}
+          >
+            Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
+          </button>
+        </div>
         
-        {recentReservations.map((res) => {
-          const isCompleted = res.status === 'Completed' || res.paidSignal;
-          const isExpired = res.status === 'Expired';
-          
-          return (
-            <div key={res.id} className="bg-white border border-slate-200 rounded-2xl p-4 transition hover:border-slate-350">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-bold text-base text-slate-900 tracking-tight">{res.title}</h4>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-                    Assinado para: <strong className="text-slate-800">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
-                  </p>
-                </div>
-                
-                {isCompleted ? (
-                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
-                    <CheckCircle2 size={11} /> PIX RECEBIDO
-                  </span>
-                ) : isExpired ? (
-                  <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-full border border-rose-100 flex items-center gap-1">
-                    <X size={11} /> EXPIRADO
-                  </span>
-                ) : (
-                  <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full border border-amber-100 flex items-center gap-1">
-                    <Clock size={11} /> AGUARDANDO SINAL
-                  </span>
-                )}
-              </div>
+        <button className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm">
+          <TrendingDown size={14} /> Ordenar por expiração
+        </button>
+      </div>
 
-              {/* Progress Visual Timer */}
-              {!isCompleted && !isExpired && (
-                <div className="flex items-center gap-3 mb-4 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-                  <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 w-[65%]"></div>
+      {/* Main Feed (Full Width Horizontal Cards) */}
+      <div className="space-y-6 text-left">
+        {filteredReservations.length > 0 ? (
+          filteredReservations.map((res) => {
+            const isCompleted = res.status === 'Completed' || res.paidSignal;
+            const isExpired = res.status === 'Expired';
+            
+            // Cálculos do timer regressivo
+            const totalSeconds = res.expiracao * 60;
+            const remainingSeconds = Math.max(0, totalSeconds - (res.elapsedSeconds || 0));
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            const timerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const progressPercent = (remainingSeconds / totalSeconds) * 100;
+            
+            const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300; // menos de 5 minutos
+
+            return (
+              <div key={res.id} className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-slate-300 transition duration-200">
+                {/* Top Row: Vehicle title, Vendor Assigned and Badge Status */}
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                  <div>
+                    <h4 className="font-black text-xl text-slate-900 tracking-tight uppercase leading-tight">{res.title}</h4>
+                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                      Atribuído a <strong className="text-slate-700">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
+                    </p>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-550 font-mono">Simulado Regressivo</span>
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pt-3 border-t border-slate-100">
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">PROPOSTA COMERCIAL</span>
-                  <div className="font-extrabold text-lg text-slate-900">{formatCurrency(res.valorVenda)}</div>
-                  <div className="text-[11px] font-medium text-slate-500 mt-0.5">Sinal Exigido: <span className="text-blue-600 font-semibold">{formatCurrency(res.signal)}</span></div>
-                </div>
-                
-                {/* Real interactive simulations */}
-                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
-                  {!isCompleted && !isExpired && (
-                    <>
-                      <button 
-                        onClick={() => handleSimulatePayment(res.id, 'Cliente Simulado')}
-                        className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition"
-                      >
-                        Confirmar PIX
-                      </button>
-                      <button 
-                        onClick={() => handleSimulateTimeExpiration(res.id)}
-                        className="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 font-bold text-[11px] px-3 py-2 rounded-lg transition border border-slate-200"
-                      >
-                        Expirar Link
-                      </button>
-                    </>
+                  
+                  {isCompleted ? (
+                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 uppercase tracking-wide">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sinal confirmado
+                    </span>
+                  ) : isExpired ? (
+                    <span className="bg-rose-50 text-rose-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Link expirado
+                    </span>
+                  ) : isUrgente ? (
+                    <span className="bg-rose-50 text-rose-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Expirando em breve
+                    </span>
+                  ) : (
+                    <span className="bg-amber-50 text-amber-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-amber-250 flex items-center gap-1.5 uppercase tracking-wide">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Aguardando sinal
+                    </span>
                   )}
-                  <button 
-                    onClick={() => {
-                      window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20está%20pronta!`, '_blank');
-                    }}
-                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition flex items-center justify-center gap-1"
-                  >
-                    <Share size={11} /> WhatsApp
-                  </button>
-                  <button 
-                    onClick={() => setReservaParaGerenciar(res)}
-                    className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-950 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition flex items-center justify-center gap-1"
-                  >
-                    <Settings size={11} /> Gerenciar
-                  </button>
+                </div>
+
+                {/* Banner: Visualizando Agora Banner (Print 2) */}
+                {res.visualizandoAgora && !isCompleted && !isExpired && (
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-2xl px-5 py-3 flex items-center gap-3 mt-1 mb-5">
+                    <Eye size={16} className="text-blue-600 shrink-0" />
+                    <p className="text-xs font-bold text-blue-750">
+                      {res.clienteNome || 'Cliente'} está visualizando a proposta agora
+                    </p>
+                  </div>
+                )}
+
+                {/* Progress bar visual timer */}
+                <div className="mb-6">
+                  {!isCompleted && !isExpired ? (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <span>Tempo restante do link</span>
+                        <span className="font-mono text-xs text-slate-700">{timerText}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-1000 origin-left transform ${isUrgente ? 'bg-rose-600' : 'bg-amber-500'}`} 
+                          style={{ width: `${progressPercent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <span>Link expirou após confirmação</span>
+                        <span className="font-mono text-slate-500">-</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-blue-600 rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer details & real interactive simulations */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pt-5 border-t border-slate-100">
+                  <div>
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROPOSTA COMERCIAL</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-black text-2xl text-slate-900 tracking-tight">
+                        {formatCurrency(res.valorVenda)}
+                      </span>
+                      {isCompleted ? (
+                        <span className="text-xs font-extrabold text-emerald-600 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
+                          Sinal recebido: {formatCurrency(res.signal)} ✓
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-500">
+                          Sinal exigido: <span className="text-blue-650 font-black">{formatCurrency(res.signal)}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Action buttons (Print 2 alignment) */}
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                    {!isCompleted && !isExpired && (
+                      <>
+                        <button 
+                          onClick={() => handleSimulatePayment(res.id, res.clienteNome || 'Cliente')}
+                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition uppercase tracking-wider whitespace-nowrap"
+                        >
+                          Confirmar PIX
+                        </button>
+                        <button 
+                          onClick={() => handleSimulateTimeExpiration(res.id)}
+                          className="flex-1 sm:flex-none bg-white border border-slate-250 text-slate-700 hover:bg-slate-50 font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition uppercase tracking-wider whitespace-nowrap"
+                        >
+                          Expirar link
+                        </button>
+                      </>
+                    )}
+                    <button 
+                      onClick={() => {
+                        window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20para%20o%20veículo%20${encodeURIComponent(res.title)}%20está%20pronta!`, '_blank');
+                      }}
+                      className="flex-1 sm:flex-none bg-[#25D366] hover:bg-[#20BA5A] text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      WhatsApp
+                    </button>
+                    <button 
+                      onClick={() => setReservaParaGerenciar(res)}
+                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-black text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      Gerenciar
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center shadow-sm">
+            <Clock size={48} className="mx-auto text-slate-300 mb-4" />
+            <h4 className="text-lg font-bold text-slate-800">Nenhuma proposta encontrada</h4>
+            <p className="text-slate-500 text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1943,7 +2141,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 function DashboardView({ navigateTo, setActiveReservation, recentReservations, setRecentReservations, showToast, reservasUsadas, totalReservasPlano, setReservaParaGerenciar }) {
   const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
   return (
-    <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Gerador de Reservas</h1>
@@ -4553,8 +4751,8 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 md:px-12">
+      <div className="max-w-[1600px] mx-auto">
         <div className="mb-8 text-left">
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Configurações do Lojista</h2>
           <p className="text-slate-500 text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
@@ -5237,7 +5435,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
   const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5";
 
   return (
-    <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
@@ -5618,7 +5816,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
   const labelClass = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2.5";
 
   return (
-    <div className="pt-28 pb-16 px-6 lg:px-8 max-w-7xl mx-auto">
+    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6 text-left">
@@ -5740,37 +5938,39 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   {/* Proposal History Logs */}
                   <div>
                     <label className={labelClass}>Histórico da Proposta</label>
-                    <div className="space-y-4 bg-slate-50 border border-slate-200 p-5 rounded-[22px] max-h-56 overflow-y-auto">
+                    <div className="space-y-4 bg-[#f8fafc] border border-slate-200 p-5 rounded-[22px] max-h-56 overflow-y-auto">
                       {selectedRes.logs && selectedRes.logs.length > 0 ? (
                         selectedRes.logs.map((log: any, idx: number) => {
                           const isAccess = log.time.toLowerCase().includes('acesso') || log.text.toLowerCase().includes('visualizada') || log.text.toLowerCase().includes('visualizado');
                           return (
-                            <div key={idx} className="flex items-start gap-4 text-xs">
-                              <span className={`text-[10px] font-mono shrink-0 mt-0.5 font-bold ${
-                                isAccess ? 'text-blue-500' : 'text-slate-400'
+                            <div key={idx} className="flex items-start gap-4">
+                              <span className={`text-[10px] font-mono shrink-0 w-36 mt-0.5 font-bold ${
+                                isAccess ? 'text-[#94a3b8]' : 'text-slate-400'
                               }`}>
                                 {log.time}
                               </span>
-                              <p className="font-semibold text-slate-700 leading-snug">{log.text}</p>
+                              <p className={`text-xs leading-snug font-bold ${
+                                isAccess ? 'text-[#1e3a8a]' : 'text-slate-800'
+                              }`}>{log.text}</p>
                             </div>
                           );
                         })
                       ) : (
                         // Fallback logs generated on the fly if logs array is not present yet
                         <>
-                          <div className="flex items-start gap-4 text-xs">
-                            <span className="text-[10px] font-mono text-slate-400 shrink-0 mt-0.5 font-bold">
+                          <div className="flex items-start gap-4">
+                            <span className="text-[10px] font-mono text-slate-400 shrink-0 w-36 mt-0.5 font-bold">
                               {selectedRes.created || 'Hoje'}
                             </span>
-                            <p className="font-semibold text-slate-700 leading-snug">
+                            <p className="text-xs font-bold text-slate-800 leading-snug">
                               Proposta criada por {selectedRes.vendedores ? selectedRes.vendedores.split(',')[0] : 'Consultor'}
                             </p>
                           </div>
-                          <div className="flex items-start gap-4 text-xs">
-                            <span className="text-[10px] font-mono text-slate-400 shrink-0 mt-0.5 font-bold">
+                          <div className="flex items-start gap-4">
+                            <span className="text-[10px] font-mono text-slate-400 shrink-0 w-36 mt-0.5 font-bold">
                               {selectedRes.created || 'Hoje'}
                             </span>
-                            <p className="font-semibold text-slate-700 leading-snug">
+                            <p className="text-xs font-bold text-slate-800 leading-snug">
                               Link de sinal de R$ {Number(selectedRes.signal || selectedRes.sinal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ativado
                             </p>
                           </div>
