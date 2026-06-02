@@ -1579,14 +1579,14 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
             </p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-xs shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-full px-4 py-2 flex items-center gap-2 text-xs">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="font-extrabold text-slate-700 uppercase tracking-wider">Showroom conectado</span>
           </div>
         </div>
 
         {/* Credit System Visual Widget */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden shadow-sm">
+        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
           {/* Left Column: Plano Info */}
           <div className="flex flex-col min-w-[200px]">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
@@ -1622,7 +1622,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:w-auto flex justify-end md:justify-start">
             <button 
               onClick={() => navigateTo('configuracoes')}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               <ArrowUp size={14} className="stroke-[2.5px]" /> Fazer upgrade
             </button>
@@ -1632,7 +1632,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 
       {/* Grid of Key Performance Indicators (SaaS Style) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full max-w-[1600px] text-left">
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
             <LinkIcon size={16} className="text-blue-600" />
@@ -1643,7 +1643,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           </span>
         </div>
         
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
             <TrendingUp size={16} className="text-emerald-600" />
@@ -1654,7 +1654,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           </span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
             <DollarSign size={16} className="text-blue-600" />
@@ -1663,7 +1663,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <span className="text-xs text-slate-400 font-medium">Este mês</span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
             <Clock size={16} className="text-blue-600" />
@@ -1681,7 +1681,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
           <button 
             onClick={() => navigateTo('sales-stats')}
-            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group text-left"
+            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-slate-400 transition duration-200 group text-left"
           >
             <div className="flex items-center gap-1.5 text-emerald-750 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -1699,7 +1699,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 
           <button 
             onClick={() => navigateTo('dashboard')}
-            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group text-left"
+            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-slate-400 transition duration-200 group text-left"
           >
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200 mt-[46px]">
               <LinkIcon size={24} className="text-blue-600 group-hover:text-white transition duration-200" />
@@ -1713,7 +1713,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         </div>
 
         {/* Live Notification Activity Ticker */}
-        <div className="bg-white border border-slate-200 rounded-[32px] p-6 flex flex-col h-full min-h-[350px] shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-[32px] p-6 flex flex-col h-full min-h-[350px]">
           <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               <Bell size={14} className="text-blue-600" />
@@ -1741,7 +1741,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               }
               
               return (
-                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col gap-1 relative shadow-sm hover:shadow transition">
+                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col gap-1 relative hover:border-slate-350 transition">
                   <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider">
                     <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
                   </div>
@@ -1880,11 +1880,11 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           <p className="text-slate-500 text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs shadow-sm">
+          <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
             <span className="font-bold text-slate-700">Link da Mercedes C200 expira em menos de 5 min</span>
           </div>
-          <div className="bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-sm uppercase tracking-wider">
+          <div className="bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider">
             {reservasDisponiveis} créditos livres
           </div>
         </div>
@@ -1892,21 +1892,21 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
       {/* Grid of Key Performance Indicators (SaaS Style) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
-            <Users size={16} className="text-blue-650" />
+            <Users size={16} className="text-blue-655" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalResgatesAtivos}</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novos hoje
+            <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novas hoje
           </span>
         </div>
         
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
-            <TrendingUp size={16} className="text-emerald-650" />
+            <TrendingUp size={16} className="text-emerald-655" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{conversaoLiquida}%</span>
           <span className="text-xs text-slate-400 font-medium">
@@ -1914,19 +1914,19 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <DollarSign size={16} className="text-blue-650" />
+            <DollarSign size={16} className="text-blue-655" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
           <span className="text-xs text-slate-400 font-medium">Este mês corrente</span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
-            <Clock size={16} className="text-blue-650" />
+            <Clock size={16} className="text-blue-655" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{velocidadeMediaText}</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -1980,7 +1980,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </button>
         </div>
         
-        <button className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm">
+        <button className="bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2">
           <TrendingDown size={14} /> Ordenar por expiração
         </button>
       </div>
@@ -2003,7 +2003,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300; // menos de 5 minutos
 
             return (
-              <div key={res.id} className="bg-white border border-slate-200/70 rounded-[32px] p-6 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-slate-300 transition duration-200">
+              <div key={res.id} className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 flex flex-col justify-between relative hover:border-slate-400 transition duration-200">
                 {/* Top Row: Vehicle title, Vendor Assigned and Badge Status */}
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div>
@@ -2094,13 +2094,13 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       <>
                         <button 
                           onClick={() => handleSimulatePayment(res.id, res.clienteNome || 'Cliente')}
-                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition uppercase tracking-wider whitespace-nowrap"
+                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-3.5 rounded-2xl transition uppercase tracking-wider whitespace-nowrap"
                         >
                           Confirmar PIX
                         </button>
                         <button 
                           onClick={() => handleSimulateTimeExpiration(res.id)}
-                          className="flex-1 sm:flex-none bg-white border border-slate-250 text-slate-700 hover:bg-slate-50 font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition uppercase tracking-wider whitespace-nowrap"
+                          className="flex-1 sm:flex-none bg-white border border-slate-250 text-slate-700 hover:bg-slate-50 font-black text-xs px-5 py-3.5 rounded-2xl transition uppercase tracking-wider whitespace-nowrap"
                         >
                           Expirar link
                         </button>
@@ -2110,13 +2110,13 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       onClick={() => {
                         window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20para%20o%20veículo%20${encodeURIComponent(res.title)}%20está%20pronta!`, '_blank');
                       }}
-                      className="flex-1 sm:flex-none bg-[#25D366] hover:bg-[#20BA5A] text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
+                      className="flex-1 sm:flex-none bg-[#25D366] hover:bg-[#20BA5A] text-white font-black text-xs px-5 py-3.5 rounded-2xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
                     >
                       WhatsApp
                     </button>
                     <button 
                       onClick={() => setReservaParaGerenciar(res)}
-                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-black text-white font-black text-xs px-5 py-3.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
+                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-black text-white font-black text-xs px-5 py-3.5 rounded-2xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
                     >
                       Gerenciar
                     </button>
@@ -2126,7 +2126,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             );
           })
         ) : (
-          <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center">
             <Clock size={48} className="mx-auto text-slate-300 mb-4" />
             <h4 className="text-lg font-bold text-slate-800">Nenhuma proposta encontrada</h4>
             <p className="text-slate-500 text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
@@ -2184,7 +2184,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
         {recentReservations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentReservations.map((res: any) => (
-              <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-blue-600 transition-colors duration-200">
+              <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-slate-400 transition-colors duration-200">
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <span className="bg-slate-50 border border-slate-200 text-[9px] font-bold text-slate-500 px-2.5 py-1 rounded-md uppercase tracking-wider">
@@ -2271,7 +2271,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA (F4) */}
       {showConfirmClearModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-2 border-slate-900 rounded-3xl p-8 max-w-sm w-full text-center relative">
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-sm w-full text-center relative">
             <h3 className="text-lg font-black text-slate-900 mb-2">Confirmar Limpeza</h3>
             <p className="text-slate-550 text-xs mb-6 font-medium leading-relaxed">
               Tem certeza de que deseja apagar permanentemente todas as propostas de reserva? Esta ação não pode ser desfeita.
@@ -5445,7 +5445,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+          className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl transition flex items-center gap-1.5"
         >
           <UserPlus size={14} /> Adicionar Vendedor
         </button>
@@ -5457,8 +5457,8 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
           {vendedores.map((v) => (
             <div 
               key={v.id} 
-              className={`bg-white border rounded-[24px] p-6 shadow-sm hover:shadow-md transition relative flex flex-col justify-between ${
-                v.ativo ? 'border-slate-200' : 'border-slate-100 opacity-60'
+              className={`bg-white border rounded-[24px] p-6 transition relative flex flex-col justify-between ${
+                v.ativo ? 'border-slate-200 hover:border-slate-400' : 'border-slate-100 opacity-60'
               }`}
             >
               {/* Top Tag & Date Row */}
@@ -5540,7 +5540,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       {/* MODAL ADICIONAR VENDEDOR */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left shadow-xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1">Adicionar Vendedor</h3>
             <p className="text-slate-500 text-xs mb-6 font-medium">Cadastre um novo atendente para habilitá-lo na criação de reservas.</p>
 
@@ -5595,7 +5595,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       {/* MODAL GERENCIAR VENDEDOR (EDITAR / EXCLUIR) */}
       {vendedorParaGerenciar && (
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left shadow-xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start mb-1">
               <h3 className="text-xl font-black text-slate-900 tracking-tight">Gerenciar Vendedor</h3>
               <button 
@@ -5842,7 +5842,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   key={res.id}
                   onClick={() => setSelectedId(res.id)}
                   className={`w-full text-left bg-white border p-5 rounded-[22px] transition flex flex-col gap-3.5 ${
-                    isSelected ? 'border-slate-800 shadow-sm' : 'border-slate-200 hover:border-slate-400'
+                    isSelected ? 'border-slate-800' : 'border-slate-200 hover:border-slate-400'
                   }`}
                 >
                   <div>
@@ -5866,7 +5866,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           {/* Right Column: Detailed Proposal Log Panel */}
           {selectedRes ? (
             <div className="lg:col-span-2">
-              <div className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 text-left shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 text-left">
                 
                 {/* Proposal Title Header */}
                 <div className="border-b border-slate-100 pb-5 mb-6">
