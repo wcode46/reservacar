@@ -536,7 +536,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border-2 border-slate-900 rounded-3xl p-6 md:p-8 max-w-lg w-full text-left relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-lg w-full text-left relative max-h-[90vh] overflow-y-auto">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 transition"
@@ -544,53 +544,53 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
           <X size={20} />
         </button>
 
-        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Gerenciar Reserva</h3>
+        <h3 className="text-xl font-bold text-slate-900 mb-1 tracking-tight">Gerenciar Reserva</h3>
         <p className="text-slate-500 text-xs mb-6 font-medium uppercase tracking-wider border-b border-slate-100 pb-2">
           {reserva.title}
         </p>
 
         <div className="space-y-5">
           {/* Info do Lead */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs">
+          <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-150 p-4 rounded-2xl text-xs">
             <div>
-              <span className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">Lead Associado</span>
-              <strong className="text-slate-800 text-sm font-extrabold">{reserva.clienteNome || 'Não informado'}</strong>
+              <span className="block text-[9px] text-slate-450 font-bold uppercase tracking-wider mb-1">Lead Associado</span>
+              <strong className="text-slate-800 text-sm font-semibold">{reserva.clienteNome || 'Não informado'}</strong>
             </div>
             <div>
-              <span className="block text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">Criado em</span>
-              <strong className="text-slate-800 text-sm font-semibold">{reserva.created}</strong>
+              <span className="block text-[9px] text-slate-450 font-bold uppercase tracking-wider mb-1">Criado em</span>
+              <strong className="text-slate-800 text-sm font-semibold font-mono">{reserva.created}</strong>
             </div>
           </div>
 
           {/* Valor do Sinal */}
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Valor do Sinal (R$)</label>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Valor do Sinal (R$)</label>
             <input 
               type="text" 
               value={sinal}
               onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
-              className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:border-black transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-blue-600 transition font-mono"
             />
           </div>
 
           {/* Vendedor */}
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Atendente Responsável</label>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Atendente Responsável</label>
             <input 
               type="text" 
               value={vendedor}
               onChange={(e) => setVendedor(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:border-black transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-blue-600 transition"
             />
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Status da Reserva</label>
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Status da Reserva</label>
             <select 
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:border-black transition"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-blue-600 transition"
             >
               <option value="Active">Aguardando Sinal</option>
               <option value="Completed">PIX Recebido</option>
@@ -1589,31 +1589,31 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden shadow-sm">
           {/* Left Column: Plano Info */}
           <div className="flex flex-col min-w-[200px]">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-3xl font-black text-slate-900 tracking-tight">
+              <span className="text-2xl font-bold text-slate-900 tracking-tight">
                 {empresaLogada?.planoAtivo || 'Plus'}
               </span>
-              <span className="border border-emerald-250 bg-emerald-50 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+              <span className="border border-emerald-250 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                 ATIVO
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-bold">Renova-se em 10/06/2026</p>
+            <p className="text-xs text-slate-400 font-medium">Renova-se em 10/06/2026</p>
           </div>
 
           {/* Middle Column: Credits Progress */}
           <div className="w-full md:max-w-md flex-1">
-            <div className="flex justify-between items-center text-[10px] font-black text-slate-400 mb-2">
+            <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400 mb-2">
               <span className="tracking-widest uppercase">CRÉDITOS UTILIZADOS</span>
-              <span className="text-slate-950 text-xs font-black">{reservasUsadas} / {totalReservasPlano}</span>
+              <span className="text-slate-900 text-xs font-bold font-mono">{reservasUsadas} / {totalReservasPlano}</span>
             </div>
-            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2 border border-slate-200/50">
+            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2 border border-slate-200/30">
               <div 
                 className="h-full rounded-full transition-all duration-1000 bg-blue-600" 
                 style={{ width: `${percentagemUso}%` }}
               ></div>
             </div>
-            <p className="text-xs text-slate-500 font-bold">
+            <p className="text-xs text-slate-400 font-medium">
               {reservasDisponiveis} links disponíveis · excelente margem
             </p>
           </div>
@@ -1622,9 +1622,9 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:w-auto flex justify-end md:justify-start">
             <button 
               onClick={() => navigateTo('configuracoes')}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black text-xs px-6 py-4 rounded-2xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm"
             >
-              <ArrowUp size={14} className="stroke-[3px]" /> Fazer upgrade
+              <ArrowUp size={14} className="stroke-[2.5px]" /> Fazer upgrade
             </button>
           </div>
         </div>
@@ -1634,43 +1634,43 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full max-w-[1600px] text-left">
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
-            <LinkIcon size={16} className="text-blue-650" />
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
+            <LinkIcon size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">7</span>
-          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[3px]" /> 3 novas hoje
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">7</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]" /> 3 novas hoje
           </span>
         </div>
         
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
-            <TrendingUp size={16} className="text-emerald-650" />
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
+            <TrendingUp size={16} className="text-emerald-600" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">71%</span>
-          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[3px]" /> +8% vs mês anterior
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">71%</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]" /> +8% vs mês anterior
           </span>
         </div>
 
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <DollarSign size={16} className="text-blue-650" />
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
+            <DollarSign size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">R$ 42k</span>
-          <span className="text-xs text-slate-400 font-bold">Este mês</span>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">R$ 42k</span>
+          <span className="text-xs text-slate-400 font-medium">Este mês</span>
         </div>
 
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
-            <Clock size={16} className="text-blue-650" />
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
+            <Clock size={16} className="text-blue-600" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">1h 48m</span>
-          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[3px]" /> Fechamento rápido
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">1h 48m</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]" /> Fechamento rápido
           </span>
         </div>
       </div>
@@ -1681,17 +1681,17 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
           <button 
             onClick={() => navigateTo('sales-stats')}
-            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group relative text-left"
+            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-blue-600 hover:shadow-md transition duration-200 group text-left"
           >
-            <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-250 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider mb-8">
+            <div className="flex items-center gap-1.5 text-emerald-750 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
               Atividade ao vivo
             </div>
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200">
               <BarChart2 size={24} className="text-blue-600 group-hover:text-white transition duration-200" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Painel de vendas</h2>
-            <p className="text-slate-500 font-semibold text-xs leading-relaxed mb-8">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition duration-200">Painel de vendas</h2>
+            <p className="text-slate-500 font-medium text-xs leading-relaxed mb-8">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.</p>
             <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
               <ArrowRight size={16} />
             </div>
@@ -1704,8 +1704,8 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition duration-200 mt-[46px]">
               <LinkIcon size={24} className="text-blue-600 group-hover:text-white transition duration-200" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-650 transition duration-200">Nova proposta</h2>
-            <p className="text-slate-500 font-semibold text-xs leading-relaxed mb-8">Crie páginas de reserva instantâneas, consulte tabela FIPE e monte checklists por lead.</p>
+            <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition duration-200">Nova proposta</h2>
+            <p className="text-slate-500 font-medium text-xs leading-relaxed mb-8">Crie páginas de reserva instantâneas, consulte tabela FIPE e monte checklists por lead.</p>
             <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
               <ArrowRight size={16} />
             </div>
@@ -1715,11 +1715,11 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         {/* Live Notification Activity Ticker */}
         <div className="bg-white border border-slate-200 rounded-[32px] p-6 flex flex-col h-full min-h-[350px] shadow-sm">
           <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               <Bell size={14} className="text-blue-600" />
               Notificações
             </h3>
-            <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+            <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-250">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               Ao vivo
             </span>
@@ -1741,12 +1741,12 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               }
               
               return (
-                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-200/60 p-4 rounded-2xl flex flex-col gap-1 relative shadow-sm hover:shadow transition">
-                  <div className="flex items-center gap-1.5 font-black uppercase text-[9px] tracking-wider">
+                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-150 p-4 rounded-2xl flex flex-col gap-1 relative shadow-sm hover:shadow transition">
+                  <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider">
                     <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
                   </div>
-                  <p className="font-extrabold text-slate-800 text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
-                  <span className="text-[9px] text-slate-400 font-bold absolute bottom-3 right-4">{notif.time}</span>
+                  <p className="font-semibold text-slate-800 text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
+                  <span className="text-[9px] text-slate-400 font-medium font-mono absolute bottom-3 right-4">{notif.time}</span>
                 </div>
               );
             })}
@@ -1894,43 +1894,43 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
             <Users size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">{totalResgatesAtivos}</span>
-          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[3px]"/> 3 novos hoje
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalResgatesAtivos}</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novos hoje
           </span>
         </div>
         
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
             <TrendingUp size={16} className="text-emerald-650" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">{conversaoLiquida}%</span>
-          <span className="text-xs text-slate-400 font-bold">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{conversaoLiquida}%</span>
+          <span className="text-xs text-slate-400 font-medium">
             Baseado em {totalCriadasAcumulado} propostas
           </span>
         </div>
 
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
             <DollarSign size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">{formatSinalCaixa}</span>
-          <span className="text-xs text-slate-450 font-bold">Este mês corrente</span>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
+          <span className="text-xs text-slate-400 font-medium">Este mês corrente</span>
         </div>
 
         <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
             <Clock size={16} className="text-blue-650" />
           </div>
-          <span className="block text-4xl font-black text-slate-900 mb-1">{velocidadeMediaText}</span>
-          <span className="text-xs text-emerald-600 font-extrabold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[3px]"/> Fechamento rápido
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{velocidadeMediaText}</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]"/> Fechamento rápido
           </span>
         </div>
       </div>
@@ -1940,47 +1940,47 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="flex flex-wrap gap-2">
           <button 
             onClick={() => setFiltroStatus('todos')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
               filtroStatus === 'todos' 
                 ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
             }`}
           >
-            Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
+            Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
           </button>
           <button 
             onClick={() => setFiltroStatus('aguardando')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
               filtroStatus === 'aguardando' 
                 ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
             }`}
           >
-            Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
+            Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
           </button>
           <button 
             onClick={() => setFiltroStatus('urgentes')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
               filtroStatus === 'urgentes' 
                 ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
             }`}
           >
-            Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
+            Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
           </button>
           <button 
             onClick={() => setFiltroStatus('confirmados')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition flex items-center gap-1.5 uppercase tracking-wider ${
+            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
               filtroStatus === 'confirmados' 
                 ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-350'
+                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
             }`}
           >
-            Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
+            Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
           </button>
         </div>
         
-        <button className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm">
+        <button className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 shadow-sm">
           <TrendingDown size={14} /> Ordenar por expiração
         </button>
       </div>
@@ -2003,30 +2003,30 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300; // menos de 5 minutos
 
             return (
-              <div key={res.id} className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-slate-300 transition duration-200">
+              <div key={res.id} className="bg-white border border-slate-200/70 rounded-[32px] p-6 md:p-8 flex flex-col justify-between shadow-sm relative hover:border-slate-300 transition duration-200">
                 {/* Top Row: Vehicle title, Vendor Assigned and Badge Status */}
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div>
-                    <h4 className="font-black text-xl text-slate-900 tracking-tight uppercase leading-tight">{res.title}</h4>
-                    <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                      Atribuído a <strong className="text-slate-700">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
+                    <h4 className="font-bold text-lg text-slate-900 tracking-tight leading-tight">{res.title}</h4>
+                    <p className="text-xs font-medium text-slate-455 mt-1">
+                      Atribuído a <strong className="text-slate-650 font-semibold">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
                     </p>
                   </div>
                   
                   {isCompleted ? (
-                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-emerald-250 flex items-center gap-1.5 uppercase tracking-wide">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sinal confirmado
                     </span>
                   ) : isExpired ? (
-                    <span className="bg-rose-50 text-rose-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Link expirado
                     </span>
                   ) : isUrgente ? (
-                    <span className="bg-rose-50 text-rose-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Expirando em breve
                     </span>
                   ) : (
-                    <span className="bg-amber-50 text-amber-700 text-[10px] font-black px-3 py-1.5 rounded-full border border-amber-250 flex items-center gap-1.5 uppercase tracking-wide">
+                    <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-amber-250 flex items-center gap-1.5 uppercase tracking-wide">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Aguardando sinal
                     </span>
                   )}
@@ -2187,25 +2187,25 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
               <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-blue-600 transition-colors duration-200">
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="bg-slate-50 border border-slate-200 text-[9px] font-black text-slate-500 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                    <span className="bg-slate-50 border border-slate-200 text-[9px] font-bold text-slate-500 px-2.5 py-1 rounded-md uppercase tracking-wider">
                       {res.marcaText || 'Veículo'}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-semibold">{res.created?.split(' ')[0] || 'Hoje'}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
                   </div>
                   
-                  <h4 className="font-extrabold text-lg text-slate-900 tracking-tight leading-snug mb-4 group-hover:text-blue-600 transition-colors uppercase">
+                  <h4 className="font-bold text-base text-slate-900 tracking-tight leading-snug mb-4 group-hover:text-blue-600 transition-colors">
                     {res.title || `${res.marcaText} ${res.modeloText}`}
                   </h4>
 
                   <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-slate-700 mb-6">
                     <div className="flex flex-col">
                       <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Sinal Requerido</span>
-                      <span className="text-sm font-black text-slate-900">{formatCurrency(res.signal || 1500)}</span>
+                      <span className="text-sm font-bold font-mono text-slate-900">{formatCurrency(res.signal || 1500)}</span>
                     </div>
                     <div className="w-px h-8 bg-slate-200"></div>
                     <div className="flex flex-col">
                       <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Tempo Limiar</span>
-                      <span className="text-sm font-black text-slate-800">{res.duration || 60}m</span>
+                      <span className="text-sm font-bold font-mono text-slate-800">{res.duration || 60}m</span>
                     </div>
                   </div>
                 </div>
@@ -2244,7 +2244,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
         ) : (
           <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center max-w-xl mx-auto">
             <Car className="text-slate-300 mx-auto mb-4 animate-bounce" size={42} />
-            <h4 className="font-extrabold text-slate-900 text-lg mb-2">Nenhum link ativo gerado</h4>
+            <h4 className="font-bold text-slate-900 text-lg mb-2">Nenhum link ativo gerado</h4>
             <p className="text-xs text-slate-500 leading-relaxed font-medium mb-6">
               Os links criados pelos clientes finais a partir da página inicial aparecerão aqui automaticamente.
             </p>
@@ -5431,7 +5431,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
     showToast('Vendedor removido com sucesso.', 'success');
   };
 
-  const inputClass = "w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-slate-900 transition";
+  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-blue-600 transition";
   const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5";
 
   return (
@@ -5457,13 +5457,13 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
           {vendedores.map((v) => (
             <div 
               key={v.id} 
-              className={`bg-white border-2 rounded-[24px] p-6 shadow-sm hover:shadow-md transition relative flex flex-col justify-between ${
+              className={`bg-white border rounded-[24px] p-6 shadow-sm hover:shadow-md transition relative flex flex-col justify-between ${
                 v.ativo ? 'border-slate-200' : 'border-slate-100 opacity-60'
               }`}
             >
               {/* Top Tag & Date Row */}
               <div className="flex justify-between items-center mb-5">
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 border border-slate-200 rounded-md">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 border border-slate-200 rounded-md">
                   {v.cargo || 'Consultor'}
                 </span>
                 <span className="text-[10px] font-bold text-slate-400 font-mono">
@@ -5473,7 +5473,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
 
               {/* Vendedor Name */}
               <div className="mb-4">
-                <h3 className="text-[17px] font-black text-blue-650 tracking-tight leading-snug uppercase">
+                <h3 className="text-[16px] font-bold text-blue-600 tracking-tight leading-snug uppercase">
                   {v.nome}
                 </h3>
                 <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-0.5">
@@ -5488,7 +5488,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                   <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
                     Links Gerados
                   </span>
-                  <span className="block text-base font-extrabold text-slate-900">
+                  <span className="block text-base font-bold font-mono text-slate-900">
                     {v.linksGerados !== undefined ? v.linksGerados : 0}
                   </span>
                 </div>
@@ -5496,7 +5496,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                   <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
                     Taxa Conversão
                   </span>
-                  <span className="block text-base font-extrabold text-slate-900 font-mono">
+                  <span className="block text-base font-bold text-slate-900 font-mono">
                     {v.conversao !== undefined ? `${v.conversao}%` : '0%'}
                   </span>
                 </div>
@@ -5812,8 +5812,8 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
     }
   };
 
-  const inputClass = "w-full bg-[#f8fafc] border-2 border-slate-200 rounded-2xl px-5 py-4 text-sm font-extrabold text-slate-800 outline-none focus:border-blue-600 transition";
-  const labelClass = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2.5";
+  const inputClass = "w-full bg-[#f8fafc] border border-slate-200 rounded-2xl px-5 py-4 text-sm font-semibold text-slate-800 outline-none focus:border-blue-600 transition";
+  const labelClass = "block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5";
 
   return (
     <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
@@ -5821,7 +5821,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6 text-left">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <FileText size={28} className="text-blue-600" /> Relatório de Reservas
           </h1>
           <p className="text-slate-500 text-sm mt-1 font-medium">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
@@ -5833,7 +5833,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           
           {/* Left Column: List of Reservations */}
           <div className="space-y-4 lg:col-span-1 text-left max-h-[80vh] overflow-y-auto pr-2">
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 px-1">Selecione uma Proposta</span>
+            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Selecione uma Proposta</span>
             {recentReservations.map((res: any) => {
               const isSelected = res.id === selectedId;
               const dateOnly = res.created ? res.created.split('de')[1] || res.created : 'Recente';
@@ -5841,12 +5841,12 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                 <button
                   key={res.id}
                   onClick={() => setSelectedId(res.id)}
-                  className={`w-full text-left bg-white border-2 p-5 rounded-[22px] transition flex flex-col gap-3.5 ${
-                    isSelected ? 'border-slate-900 shadow-sm' : 'border-slate-200 hover:border-slate-400'
+                  className={`w-full text-left bg-white border p-5 rounded-[22px] transition flex flex-col gap-3.5 ${
+                    isSelected ? 'border-slate-800 shadow-sm' : 'border-slate-200 hover:border-slate-400'
                   }`}
                 >
                   <div>
-                    <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-tight line-clamp-2">
+                    <h4 className="text-[13px] font-bold text-slate-900 tracking-tight leading-tight line-clamp-2">
                       {res.title}
                     </h4>
                     <span className="text-[10px] font-bold text-slate-400 block mt-1">{res.vendedores || 'Sem Atendente'}</span>
@@ -5854,7 +5854,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
 
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-1">
                     <span className="text-[10px] font-mono text-slate-400">{dateOnly.trim()}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black border uppercase ${getStatusBadge(res.status)}`}>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getStatusBadge(res.status)}`}>
                       {getStatusLabel(res.status)}
                     </span>
                   </div>
@@ -5866,12 +5866,12 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           {/* Right Column: Detailed Proposal Log Panel */}
           {selectedRes ? (
             <div className="lg:col-span-2">
-              <div className="bg-white border-2 border-slate-900 rounded-[32px] p-6 md:p-8 text-left shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 text-left shadow-sm">
                 
                 {/* Proposal Title Header */}
                 <div className="border-b border-slate-100 pb-5 mb-6">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight uppercase">Gerenciar Reserva</h3>
-                  <p className="text-[11px] font-extrabold text-slate-400 tracking-wide uppercase mt-1">
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">Gerenciar Reserva</h3>
+                  <p className="text-[11px] font-semibold text-slate-400 tracking-wide mt-1">
                     {selectedRes.title}
                   </p>
                 </div>
@@ -5986,7 +5986,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   {status === 'Active' ? (
                     <button
                       onClick={handleCancel}
-                      className="bg-rose-50 border-2 border-rose-200 text-rose-700 hover:bg-rose-100 font-black py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
+                      className="bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
                     >
                       Cancelar Reserva
                     </button>
@@ -5996,13 +5996,13 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="bg-white border-2 border-slate-200 text-slate-750 font-black py-4 px-6 rounded-2xl text-xs hover:bg-slate-50 transition uppercase tracking-wider"
+                      className="bg-white border border-slate-200 text-slate-750 font-bold py-4 px-6 rounded-2xl text-xs hover:bg-slate-50 transition uppercase tracking-wider"
                     >
                       Descartar
                     </button>
                     <button
                       onClick={handleSave}
-                      className="bg-blue-600 hover:bg-blue-750 text-white font-black py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
+                      className="bg-blue-600 hover:bg-blue-750 text-white font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
                     >
                       Salvar Alterações
                     </button>

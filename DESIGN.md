@@ -12,12 +12,12 @@ colors:
   accent-success: "#16a34a"
 typography:
   display:
-    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif"
     fontSize: "clamp(2rem, 5vw, 3rem)"
-    fontWeight: 900
+    fontWeight: 800
     lineHeight: 1.15
   body:
-    fontFamily: "'Sora', ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 500
     lineHeight: 1.5
@@ -47,7 +47,7 @@ components:
 
 O sistema de design do Reservacar adota uma estética contemporânea, limpa e de alto contraste, utilizando o **Tema Claro (Light Mode)** por padrão. Abandonando a saturação do tema escuro tradicional de tecnologia, o Reservacar projeta profissionalismo e clareza por meio de superfícies brancas puras, tons equilibrados de cinza e preto para contraste forte, e o uso cirúrgico de um **Azul Cobalto Vibrante** para botões e chamadas à ação (CTAs) principais. 
 
-A interface rejeita deliberadamente o uso de sombras decorativas e gradientes espalhafatosos, apoiando-se em uma filosofia **100% Flat (Plana)**. A hierarquia visual e a profundidade são estabelecidas através de espessuras de bordas sólidas finas, contrastes de cor de fundo e tipografia pesada.
+Laços e linhas de borda finos e sutis são usados no lugar de negritos muito pesados ou sombras decorativas, apoiando-se em uma filosofia **100% Flat (Plana)**. A hierarquia visual e a profundidade são estabelecidas através de contrastes de cor de fundo, espessuras de bordas de 1px e tipografia Geist leve.
 
 **Key Characteristics:**
 * **Contraste Extremo**: Texto preto sobre fundo branco puro, otimizando a leitura sob qualquer iluminação.
@@ -77,16 +77,17 @@ A paleta de cores é focada no contraste limpo e legibilidade.
 
 ## 3. Typography
 
-**Display Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
-**Body Font:** 'Sora', ui-sans-serif, system-ui, sans-serif
+**Display Font:** 'Geist', ui-sans-serif, system-ui, sans-serif
+**Body Font:** 'Geist', ui-sans-serif, system-ui, sans-serif
+**Mono Font:** 'Geist Mono', monospace (para valores, timers, logs e números)
 
-**Character:** Tipografia geométrica, moderna, limpa e com forte variação de peso para separar claramente títulos de parágrafos.
+**Character:** Tipografia neo-grotesca neutra, ultra-limpa e de alta legibilidade, com uso de pesos refinados e espaçamento adequado.
 
 ### Hierarchy
-- **Display** (ExtraBold (900), clamp(2rem, 5vw, 3rem), 1.15): Títulos principais das telas (Ex: "Gerador de Reservas").
+- **Display** (ExtraBold (800), clamp(2rem, 5vw, 3rem), 1.15): Títulos principais das telas (Ex: "Gerador de Reservas").
 - **Headline** (Bold (700), 24px, 1.25): Títulos de seções de cards e cabeçalhos de passos do wizard.
 - **Title** (SemiBold (600), 18px, 1.3): Títulos de itens de lista ou nomes de veículos nos cards.
-- **Body** (Medium (500), 14px, 1.5): Textos informativos, descrições de veículos (limite recomendado de 65–75ch).
+- **Body** (Regular (400) / Medium (500), 14px, 1.5): Textos informativos, descrições de veículos (limite recomendado de 65–75ch).
 - **Label** (Bold (700), 12px, tracking-wider, uppercase): Rótulos de campos de formulário e pequenas tags de status.
 
 ## 4. Elevation
