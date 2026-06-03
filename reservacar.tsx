@@ -768,7 +768,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
           onClick={() => handleNavigate('checkout-plano')}
           className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50/70 hover:bg-blue-100/90 hover:text-blue-800 transition duration-150 cursor-pointer"
         >
-          <Award size={14} className="stroke-[2.5px]" />
+          <ArrowUp size={14} className="stroke-[2.5px]" />
           <span>Fazer Upgrade de Plano</span>
         </button>
       </div>
