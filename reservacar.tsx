@@ -1417,6 +1417,18 @@ function HomeView({ navigateTo }) {
         .premium-shadow-dark {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          display: flex;
+          width: max-content;
+          animation: marquee 25s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
+        }
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
@@ -1587,14 +1599,42 @@ function HomeView({ navigateTo }) {
       {/* MARCAS PARCEIRAS */}
       <section className="py-12 bg-[#F9F9F6] border-y border-[rgba(11,27,23,0.08)]">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#6B7C77] mb-8">Utilizado por lojas de todas as marcas e capitais</p>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Audi Center</div>
-            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> BMW Premium</div>
-            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Toyota Elite</div>
-            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Porsche Service</div>
-            <div className="flex items-center gap-2 font-bold text-lg"><span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata</div>
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#6B7C77] mb-8">
+            Utilizado por lojas de todas as marcas e capitais
+          </p>
+          
+          {/* Contêiner do Carrossel com máscara de fade nas laterais */}
+          <div className="relative w-full overflow-hidden py-4 select-none">
+            {/* Fade Esquerdo */}
+            <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-[#F9F9F6] via-[#F9F9F6]/80 to-transparent z-10 pointer-events-none" />
+            {/* Fade Direito */}
+            <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-l from-[#F9F9F6] via-[#F9F9F6]/80 to-transparent z-10 pointer-events-none" />
+            
+            {/* Pista do Carrossel (itens duplicados para loop contínuo) */}
+            <div className="flex gap-16 md:gap-24 items-center animate-marquee whitespace-nowrap">
+              {/* Primeira metade */}
+              <div className="flex gap-16 md:gap-24 shrink-0">
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200">
+                  <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata
+                </div>
+              </div>
+              {/* Segunda metade duplicada para o loop perfeito */}
+              <div className="flex gap-16 md:gap-24 shrink-0">
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200">
+                  <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
       </section>
 
