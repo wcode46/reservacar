@@ -1880,6 +1880,37 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
     return true; // 'todos'
   });
 
+  const totalExpiradas = recentReservations.filter(r => r.status === 'Expired').length;
+
+  // Distribuição de receita pelos dias da semana baseado no caixa real para simular reatividade perfeita
+  const totalCaixaReal = totalSinalCaixa;
+  const diasSemana = useMemo(() => {
+    const proporcoes = [0.05, 0.10, 0.12, 0.15, 0.25, 0.30, 0.03];
+    const nomes = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const valores = nomes.map((label, idx) => {
+      const valor = totalCaixaReal * proporcoes[idx];
+      return { label, valor };
+    });
+    const maxVal = Math.max(...valores.map(v => v.valor), 1);
+    return valores.map(v => ({
+      ...v,
+      porcentagem: Math.max(8, Math.round((v.valor / maxVal) * 100))
+    }));
+  }, [totalCaixaReal]);
+
+  // Ranking de vendedores calculados dinamicamente
+  const rankingVendedores = useMemo(() => {
+    const nomes = ['Roberto Oliveira', 'Carla Silva', 'Marcos Souza'];
+    const dados = nomes.map(nome => {
+      const reservasDoVendedor = recentReservations.filter((r: any) => r.vendedores === nome || (r.vendedores && r.vendedores.includes(nome)));
+      const total = reservasDoVendedor.length;
+      const pagas = reservasDoVendedor.filter((r: any) => r.status === 'Completed' || r.paidSignal).length;
+      const conversao = total > 0 ? Math.round((pagas / total) * 100) : 0;
+      return { nome, total, pagas, conversao };
+    });
+    return dados.sort((a, b) => b.conversao - a.conversao);
+  }, [recentReservations]);
+
   // Simulator helpers
   const handleSimulatePayment = (resId, clientName) => {
     setRecentReservations((prev: any) => prev.map(item => {
@@ -1943,248 +1974,321 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
-      {/* Grid of Key Performance Indicators (SaaS Style) */}
+      {/* Grid Bento de KPIs (Estilo Dashboard-4 Commerce) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
+        {/* Card 1: Receita Real */}
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
+            <DollarSign size={16} className="text-blue-600 shrink-0" />
+          </div>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
+          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <ArrowUpRight size={14} className="stroke-[2.5px]"/> Este mês corrente
+          </span>
+        </div>
+
+        {/* Card 2: Clientes Ativos */}
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
-            <Users size={16} className="text-blue-655" />
+            <Users size={16} className="text-blue-600 shrink-0" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalResgatesAtivos}</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novas hoje
           </span>
         </div>
-        
+
+        {/* Card 3: Links Expirados */}
+        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">LINKS EXPIRADOS</span>
+            <ShieldAlert size={16} className="text-rose-600 shrink-0" />
+          </div>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalExpiradas}</span>
+          <span className="text-xs text-slate-400 font-medium">Por inatividade de leads</span>
+        </div>
+
+        {/* Card 4: Taxa de Conversão */}
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
-            <TrendingUp size={16} className="text-emerald-655" />
+            <TrendingUp size={16} className="text-emerald-600 shrink-0" />
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{conversaoLiquida}%</span>
           <span className="text-xs text-slate-400 font-medium">
             Baseado em {totalCriadasAcumulado} propostas
           </span>
         </div>
-
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <DollarSign size={16} className="text-blue-655" />
-          </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
-          <span className="text-xs text-slate-400 font-medium">Este mês corrente</span>
-        </div>
-
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
-            <Clock size={16} className="text-blue-655" />
-          </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{velocidadeMediaText}</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-            <ArrowUpRight size={14} className="stroke-[2.5px]"/> Fechamento rápido
-          </span>
-        </div>
       </div>
 
-      {/* Tabs Filtros e Ordenação (Print 2) */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex flex-wrap gap-2">
-          <button 
-            onClick={() => setFiltroStatus('todos')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
-              filtroStatus === 'todos' 
-                ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
-            }`}
-          >
-            Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
-          </button>
-          <button 
-            onClick={() => setFiltroStatus('aguardando')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
-              filtroStatus === 'aguardando' 
-                ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
-            }`}
-          >
-            Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
-          </button>
-          <button 
-            onClick={() => setFiltroStatus('urgentes')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
-              filtroStatus === 'urgentes' 
-                ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
-            }`}
-          >
-            Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
-          </button>
-          <button 
-            onClick={() => setFiltroStatus('confirmados')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
-              filtroStatus === 'confirmados' 
-                ? 'bg-slate-900 text-white' 
-                : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
-            }`}
-          >
-            Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
-          </button>
-        </div>
-        
-        <button className="bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2">
-          <TrendingDown size={14} /> Ordenar por expiração
-        </button>
-      </div>
-
-      {/* Main Feed (Full Width Horizontal Cards) */}
-      <div className="space-y-6 text-left">
-        {filteredReservations.length > 0 ? (
-          filteredReservations.map((res) => {
-            const isCompleted = res.status === 'Completed' || res.paidSignal;
-            const isExpired = res.status === 'Expired';
+      {/* Estrutura Bento de Duas Colunas (Principal + Lateral) */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-left">
+        {/* Coluna da Esquerda ( lg:col-span-3 ) */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Card do Gráfico de Tendências (CSS Puro) */}
+          <div className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[320px]">
+            <div>
+              <h3 className="font-bold text-slate-800 text-sm">Tendência de Receita Semanal</h3>
+              <p className="text-[10px] text-slate-400 font-medium">Sinais pagos distribuídos proporcionalmente nos dias da semana</p>
+            </div>
             
-            // Cálculos do timer regressivo
-            const totalSeconds = res.expiracao * 60;
-            const remainingSeconds = Math.max(0, totalSeconds - (res.elapsedSeconds || 0));
-            const mins = Math.floor(remainingSeconds / 60);
-            const secs = remainingSeconds % 60;
-            const timerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            const progressPercent = (remainingSeconds / totalSeconds) * 100;
+            {/* Gráfico de Barras CSS Puro */}
+            <div className="flex items-end justify-between gap-4 h-48 px-2 mt-4 border-b border-slate-100 pb-2">
+              {diasSemana.map((dia) => (
+                <div key={dia.label} className="flex flex-col items-center flex-1 group relative">
+                  {/* Tooltip com valor em hover */}
+                  <div className="absolute bottom-full mb-2 bg-slate-800 text-white text-[9px] font-mono font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 shadow-lg border border-slate-700">
+                    {formatCurrency(dia.valor)}
+                  </div>
+                  {/* Barra vertical com cor azul e altura dinâmica */}
+                  <div 
+                    className="w-full bg-blue-600 hover:bg-blue-700 rounded-t-md transition-all duration-500 cursor-pointer"
+                    style={{ height: `${dia.porcentagem}%` }}
+                  ></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase mt-2">{dia.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Abas e Filtros */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-slate-200 pt-6">
+            <div className="flex flex-wrap gap-2">
+              <button 
+                onClick={() => setFiltroStatus('todos')}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
+                  filtroStatus === 'todos' 
+                    ? 'bg-slate-900 text-white' 
+                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                }`}
+              >
+                Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
+              </button>
+              <button 
+                onClick={() => setFiltroStatus('aguardando')}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
+                  filtroStatus === 'aguardando' 
+                    ? 'bg-slate-900 text-white' 
+                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                }`}
+              >
+                Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
+              </button>
+              <button 
+                onClick={() => setFiltroStatus('urgentes')}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
+                  filtroStatus === 'urgentes' 
+                    ? 'bg-slate-900 text-white' 
+                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                }`}
+              >
+                Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
+              </button>
+              <button 
+                onClick={() => setFiltroStatus('confirmados')}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
+                  filtroStatus === 'confirmados' 
+                    ? 'bg-slate-900 text-white' 
+                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                }`}
+              >
+                Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
+              </button>
+            </div>
             
-            const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300; // menos de 5 minutos
+            <button className="bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer">
+              <TrendingDown size={14} /> Ordenar por expiração
+            </button>
+          </div>
 
-            return (
-              <div key={res.id} className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 flex flex-col justify-between relative hover:border-slate-400 transition duration-200">
-                {/* Top Row: Vehicle title, Vendor Assigned and Badge Status */}
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-                  <div>
-                    <h4 className="font-bold text-lg text-slate-900 tracking-tight leading-tight">{res.title}</h4>
-                    <p className="text-xs font-medium text-slate-455 mt-1">
-                      Atribuído a <strong className="text-slate-650 font-semibold">{res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}</strong>
-                    </p>
-                  </div>
-                  
-                  {isCompleted ? (
-                    <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-emerald-250 flex items-center gap-1.5 uppercase tracking-wide">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sinal confirmado
-                    </span>
-                  ) : isExpired ? (
-                    <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Link expirado
-                    </span>
-                  ) : isUrgente ? (
-                    <span className="bg-rose-50 text-rose-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-rose-250 flex items-center gap-1.5 uppercase tracking-wide">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Expirando em breve
-                    </span>
-                  ) : (
-                    <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-3 py-1.5 rounded-full border border-amber-250 flex items-center gap-1.5 uppercase tracking-wide">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Aguardando sinal
-                    </span>
-                  )}
-                </div>
+          {/* Lista de Transações/Propostas Remodeladas (Estilo E-commerce Linhas) */}
+          <div className="space-y-4">
+            {filteredReservations.length > 0 ? (
+              filteredReservations.map((res) => {
+                const isCompleted = res.status === 'Completed' || res.paidSignal;
+                const isExpired = res.status === 'Expired';
+                
+                // Timer
+                const totalSeconds = res.expiracao * 60;
+                const remainingSeconds = Math.max(0, totalSeconds - (res.elapsedSeconds || 0));
+                const mins = Math.floor(remainingSeconds / 60);
+                const secs = remainingSeconds % 60;
+                const timerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                const progressPercent = (remainingSeconds / totalSeconds) * 100;
+                const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300;
 
-                {/* Banner: Visualizando Agora Banner (Print 2) */}
-                {res.visualizandoAgora && !isCompleted && !isExpired && (
-                  <div className="bg-blue-50/50 border border-blue-100 rounded-2xl px-5 py-3 flex items-center gap-3 mt-1 mb-5">
-                    <Eye size={16} className="text-blue-600 shrink-0" />
-                    <p className="text-xs font-bold text-blue-750">
-                      {res.clienteNome || 'Cliente'} está visualizando a proposta agora
-                    </p>
-                  </div>
-                )}
-
-                {/* Progress bar visual timer */}
-                <div className="mb-6">
-                  {!isCompleted && !isExpired ? (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <span>Tempo restante do link</span>
-                        <span className="font-mono text-xs text-slate-700">{timerText}</span>
+                return (
+                  <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-5 hover:border-slate-300 transition duration-200 flex flex-col gap-4 text-left">
+                    {/* Info Vendedor e Status */}
+                    <div className="flex flex-wrap justify-between items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-slate-150 text-slate-600 px-2.5 py-1 rounded-md">
+                          Vendedor: {res.vendedores ? res.vendedores.split(' ')[0] : 'Consultor'}
+                        </span>
+                        {res.clienteNome && res.clienteNome !== 'Não informado' && (
+                          <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md">
+                            Cliente: {res.clienteNome}
+                          </span>
+                        )}
                       </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-1000 origin-left transform ${isUrgente ? 'bg-rose-600' : 'bg-amber-500'}`} 
-                          style={{ width: `${progressPercent}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <span>Link expirou após confirmação</span>
-                        <span className="font-mono text-slate-500">-</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-blue-600 rounded-full"></div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer details & real interactive simulations */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pt-5 border-t border-slate-100">
-                  <div>
-                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">PROPOSTA COMERCIAL</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-black text-2xl text-slate-900 tracking-tight">
-                        {formatCurrency(res.valorVenda)}
-                      </span>
+                      
+                      {/* Status Badge */}
                       {isCompleted ? (
-                        <span className="text-xs font-extrabold text-emerald-600 flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
-                          Sinal recebido: {formatCurrency(res.signal)} ✓
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PIX Recebido
+                        </span>
+                      ) : isExpired ? (
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Link Expirado
+                        </span>
+                      ) : isUrgente ? (
+                        <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Crítico
                         </span>
                       ) : (
-                        <span className="text-xs font-bold text-slate-500">
-                          Sinal exigido: <span className="text-blue-650 font-black">{formatCurrency(res.signal)}</span>
+                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Aguardando Sinal
                         </span>
                       )}
                     </div>
-                  </div>
-                  
-                  {/* Action buttons (Print 2 alignment) */}
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
-                    {!isCompleted && !isExpired && (
-                      <>
-                        <button 
-                          onClick={() => handleSimulatePayment(res.id, res.clienteNome || 'Cliente')}
-                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-3.5 rounded-2xl transition uppercase tracking-wider whitespace-nowrap"
-                        >
-                          Confirmar PIX
-                        </button>
-                        <button 
-                          onClick={() => handleSimulateTimeExpiration(res.id)}
-                          className="flex-1 sm:flex-none bg-white border border-slate-250 text-slate-700 hover:bg-slate-50 font-black text-xs px-5 py-3.5 rounded-2xl transition uppercase tracking-wider whitespace-nowrap"
-                        >
-                          Expirar link
-                        </button>
-                      </>
+
+                    {/* Bloco do Carro e Preço */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-t border-slate-100 pt-4">
+                      <div className="flex items-center gap-4">
+                        {res.fotos && (
+                          <img 
+                            src={res.fotos} 
+                            alt={res.title} 
+                            className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0 animate-fade-in-down" 
+                          />
+                        )}
+                        <div>
+                          <h4 className="font-bold text-base text-slate-900 tracking-tight leading-snug">{res.title}</h4>
+                          <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                            FIPE: {formatCurrency(res.fipeValue)} • Venda: <span className="font-bold text-slate-700">{formatCurrency(res.valorVenda)}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Valor do Sinal Exigido */}
+                      <div className="text-left md:text-right shrink-0">
+                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Sinal Exigido</span>
+                        <span className="font-black text-xl text-blue-655 tracking-tight">
+                          {formatCurrency(res.signal || res.sinal)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Banner de Visualização Ativa */}
+                    {res.visualizandoAgora && !isCompleted && !isExpired && (
+                      <div className="bg-blue-50/40 border border-blue-100 rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>
+                        <span className="font-bold text-blue-700 text-[10px] uppercase tracking-wider">Lead visualizando a proposta neste momento</span>
+                      </div>
                     )}
-                    <button 
-                      onClick={() => {
-                        window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20para%20o%20veículo%20${encodeURIComponent(res.title)}%20está%20pronta!`, '_blank');
-                      }}
-                      className="flex-1 sm:flex-none bg-[#25D366] hover:bg-[#20BA5A] text-white font-black text-xs px-5 py-3.5 rounded-2xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
-                    >
-                      WhatsApp
-                    </button>
-                    <button 
-                      onClick={() => setReservaParaGerenciar(res)}
-                      className="flex-1 sm:flex-none bg-slate-900 hover:bg-black text-white font-black text-xs px-5 py-3.5 rounded-2xl transition flex items-center justify-center gap-1.5 uppercase tracking-wider whitespace-nowrap"
-                    >
-                      Gerenciar
-                    </button>
+
+                    {/* Timer do Link se Ativo */}
+                    {!isCompleted && !isExpired && (
+                      <div className="space-y-1.5 border-t border-slate-100 pt-4">
+                        <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span>Expiração do Link</span>
+                          <span className={`font-mono text-[11px] font-bold ${isUrgente ? 'text-rose-600' : 'text-slate-650'}`}>{timerText}</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200/50">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-1000 origin-left transform ${isUrgente ? 'bg-rose-600' : 'bg-blue-600'}`} 
+                            style={{ width: `${progressPercent}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botões de Ação */}
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+                      {!isCompleted && !isExpired && (
+                        <>
+                          <button 
+                            onClick={() => handleSimulatePayment(res.id, res.clienteNome || 'Cliente')}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                          >
+                            Confirmar PIX
+                          </button>
+                          <button 
+                            onClick={() => handleSimulateTimeExpiration(res.id)}
+                            className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                          >
+                            Expirar
+                          </button>
+                        </>
+                      )}
+                      <button 
+                        onClick={() => {
+                          window.open(`https://api.whatsapp.com/send?text=Sua%20proposta%20exclusiva%20Reservacar%20para%20o%20veículo%20${encodeURIComponent(res.title)}%20está%20pronta!`, '_blank');
+                        }}
+                        className="bg-[#25D366] hover:bg-[#20BA5A] text-white font-bold text-[10px] px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 uppercase tracking-wider cursor-pointer"
+                      >
+                        WhatsApp
+                      </button>
+                      <button 
+                        onClick={() => setReservaParaGerenciar(res)}
+                        className="bg-slate-900 hover:bg-black text-white font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                      >
+                        Gerenciar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center">
+                <Clock size={48} className="mx-auto text-slate-300 mb-4" />
+                <h4 className="text-lg font-bold text-slate-800">Nenhuma proposta encontrada</h4>
+                <p className="text-slate-500 text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Coluna da Direita ( lg:col-span-1 - Ranking e Plano) */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Card de Ranking de Vendedores (Category Performance do Dashboard-4) */}
+          <div className="bg-white border border-slate-200 p-6 rounded-3xl text-left">
+            <h3 className="font-bold text-slate-800 text-sm mb-1">Ranking de Vendedores</h3>
+            <p className="text-[10px] text-slate-400 font-medium mb-4">Conversão real baseada em propostas</p>
+            
+            <div className="space-y-4">
+              {rankingVendedores.map((vend) => (
+                <div key={vend.nome} className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-slate-700">{vend.nome.split(' ')[0]}</span>
+                    <span className="font-mono text-slate-500 font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+                  </div>
+                  {/* Barra de Progresso Horizontal do Vendedor */}
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200/50">
+                    <div 
+                      className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${vend.conversao}%` }}
+                    ></div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center">
-            <Clock size={48} className="mx-auto text-slate-300 mb-4" />
-            <h4 className="text-lg font-bold text-slate-800">Nenhuma proposta encontrada</h4>
-            <p className="text-slate-500 text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
+              ))}
+            </div>
           </div>
-        )}
+
+          {/* Card Auxiliar: Velocidade Média de Vendas */}
+          <div className="bg-white border border-slate-200 p-6 rounded-3xl text-left">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800 text-sm">Velocidade Média</h3>
+              <Clock size={16} className="text-blue-600 shrink-0" />
+            </div>
+            <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{velocidadeMediaText}</span>
+            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+              Tempo médio de fechamento medido entre a ativação do link e a confirmação do sinal.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
