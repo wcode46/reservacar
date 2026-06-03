@@ -284,8 +284,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Hide standard navbar on logged-in routes and preview simulator layouts */}
-      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && (
+      {/* Hide standard navbar on logged-in routes, preview layouts and the home landing page */}
+      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && (
         <Navbar currentRoute={currentRoute} navigateTo={navigateTo} />
       )}
 
@@ -452,7 +452,7 @@ export default function App() {
           />
         )}
       </main>
-      {currentRoute === 'home' && <Footer navigateTo={navigateTo} />}
+      {/* O rodapé agora é embutido na própria HomeView */}
 
       {reservaParaGerenciar && (
         <GerenciarReservaModal
@@ -1183,290 +1183,867 @@ function PricingLandingHero({
   );
 }
 
-// --- HOME VIEW ---
 function HomeView({ navigateTo }) {
-  const staticNotifications = [
-    { id: 1, name: "Veiculo Reservado", time: "Hoje as 11:28", price: "+R$ 17.850", color: "#00C9A7" },
-    { id: 2, name: "Veiculo Reservado", time: "Hoje as 11:15", price: "+R$ 24.500", color: "#FFB800" },
-    { id: 3, name: "Veiculo Reservado", time: "Hoje as 11:02", price: "+R$ 15.000", color: "#FF3D71" },
-    { id: 4, name: "Veiculo Reservado", time: "Hoje as 10:48", price: "+R$ 31.200", color: "#1E86FF" },
-    { id: 5, name: "Veiculo Reservado", time: "Hoje as 10:30", price: "+R$ 12.850", color: "#8B5CF6" },
-  ];
+  const [profile, setProfile] = useState('lojista'); // 'lojista' ou 'cliente'
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Simulador de Economia
+  const [carPrice, setCarPrice] = useState(120000); // R$ 120.000
+  const [reservasMes, setReservasMes] = useState(10); // 10 reservas/mês
+  const [payoutMethod, setPayoutMethod] = useState('pix_direto'); // pix_direto vs gateway
+  
+  // Gerador de Fatura/Proposta Interativo
+  const [invoiceCarName, setInvoiceCarName] = useState('BMW 320i M Sport 2024');
+  const [invoiceSinal, setInvoiceSinal] = useState(5000);
+  const [invoiceCurrency, setInvoiceCurrency] = useState('BRL');
+  const [invoiceSendStatus, setInvoiceSendStatus] = useState('enviar'); // 'enviar', 'enviando', 'enviado'
 
-  return (
-    <div className="overflow-hidden relative bg-[#f8f9fa]">
-      {/* Estilos específicos para a lista animada da Hero */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes slideInTop {
-          0% {
-            opacity: 0;
-            transform: translateY(-16px) scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .animate-slide-in-top {
-          animation: slideInTop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-slide-in-top {
-            animation: none !important;
-          }
-        }
-      `}} />
-      
-      <PricingLandingHero
-        title={
-          <>
-            Transforme seu estoque
-            <br />
-            em uma máquina de vendas
-          </>
-        }
-        description="Uma vitrine digital para cada veículo com Pix e FIPE integrados. Poupe horas de negociação e feche vendas mais rápido."
-        phone={{
-          time: "9:41",
-          items: staticNotifications
-        }}
-        price={{ current: "R$ 159", original: "R$ 399" }}
-        availability="Oferta de lançamento — por tempo limitado"
-        primaryAction={{ 
-          label: "Simular Reserva (Cliente)", 
-          onClick: () => navigateTo('cadastrar-reserva') 
-        }}
-        secondaryAction={{ 
-          label: "Assinar Reservacar", 
-          onClick: () => navigateTo('assinar') 
-        }}
-        trustedBy={{
-          heading: "Usado por concessionárias e lojistas em todo o Brasil",
-          logos: [
-            <span key="audi" className="text-3xl font-black tracking-tight whitespace-nowrap">Audi Center</span>,
-            <span key="bmw" className="text-3xl font-black tracking-tight whitespace-nowrap">BMW Premium</span>,
-            <span key="toyota" className="text-3xl font-black tracking-tight whitespace-nowrap">Toyota Elite</span>,
-            <span key="porsche" className="text-3xl font-black tracking-tight whitespace-nowrap">Porsche Service</span>,
-            <span key="volvo" className="text-3xl font-black tracking-tight whitespace-nowrap">Volvo Premium</span>,
-            <span key="mercedes" className="text-3xl font-black tracking-tight whitespace-nowrap">Mercedes-Benz</span>,
-            <span key="honda" className="text-3xl font-black tracking-tight whitespace-nowrap">Honda Vip</span>,
-            <span key="jac" className="text-3xl font-black tracking-tight whitespace-nowrap">JAC Motors</span>,
-          ],
-        }}
-      />
+  // FAQ
+  const [activeFaq, setActiveFaq] = useState(null);
 
-      {/* 2. Seção "Propostas Exclusivas" (Cartões para chamar de seus) */}
-      <div className="py-24 bg-white border-t border-b border-slate-200 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Páginas de reserva para chamar de suas
-          </h2>
-          <p className="text-slate-500 font-semibold max-w-2xl mx-auto mb-16">
-            Crie links de vitrine digital altamente envolventes, personalizados com a logo da sua concessionária, fotos de alta qualidade e ficha técnica integrada.
+  // Contador de métricas
+  const [bilhoes, setBilhoes] = useState(0);
+  const [clientes, setClientes] = useState(0);
+  const [aprovacao, setAprovacao] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 40) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Animação simples dos contadores ao carregar
+    const duration = 1500;
+    const steps = 30;
+    const intervalTime = duration / steps;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      setBilhoes(Math.min((2.4 / steps) * step, 2.4));
+      setClientes(Math.min(Math.floor((15 / steps) * step), 15));
+      setAprovacao(Math.min(Math.floor((99.8 / steps) * step), 99.8));
+
+      if (step >= steps) {
+        clearInterval(timer);
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Lógica do Simulador
+  const calculations = useMemo(() => {
+    const volumeReservasTotal = carPrice * reservasMes; // volume financeiro de vendas simuladas
+    
+    // Com Reservacar: Assinatura fixa mensal de R$ 159 (taxa zero sobre Pix recebido)
+    const custoReservacar = 159; 
+    const valorRecebidoReservacar = volumeReservasTotal - custoReservacar;
+
+    // Com Gateway Tradicional ou Intermediários de mercado (Média de 3% sobre transações de sinal Pix)
+    // Média de sinal Pix exigido é 2.5% do carro
+    const valorMedioSinal = carPrice * 0.025; 
+    const totalSinalMes = valorMedioSinal * reservasMes;
+    const taxaGateway = 0.0299; // 2.99% no Pix do gateway
+    const custoGateway = totalSinalMes * taxaGateway;
+    const valorRecebidoGateway = totalSinalMes - custoGateway;
+
+    const economia = custoGateway - custoReservacar;
+
+    return {
+      volumeReservasTotal,
+      totalSinalMes,
+      custoReservacar,
+      valorRecebidoReservacar,
+      custoGateway,
+      valorRecebidoGateway,
+      economia: economia > 0 ? economia : 0
+    };
+  }, [carPrice, reservasMes]);
+
+  const simulateInvoiceSend = () => {
+    setInvoiceSendStatus('enviando');
+    setTimeout(() => {
+      setInvoiceSendStatus('enviado');
+      setTimeout(() => {
+        setInvoiceSendStatus('enviar');
+      }, 3000);
+    }, 1000);
+  };
+
+  const talentDashboard = (
+    <>
+      {/* Coluna 1: Balanço */}
+      <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4">
+        <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Sinais Pix Recebidos</span>
+        <div className="space-y-1">
+          <p className="text-3xl font-extrabold text-white font-mono">R$ 14.250,00</p>
+          <p className="text-xs text-[#C1F651] font-bold flex items-center gap-1">
+            <TrendingUp size={14} /> +12% em relação ao mês anterior
           </p>
-
-          <div className="relative h-[320px] max-w-3xl mx-auto flex items-center justify-center mt-12 mb-12 select-none">
-            {/* Card 1: Esquerda (Fiat JAC CS) */}
-            <div className="absolute left-4 md:left-20 top-8 bg-slate-50 border-2 border-slate-200 p-6 rounded-3xl w-72 text-left rotate-[-8deg] hover:rotate-0 transition duration-300 z-10">
-              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded uppercase">ELÉTRICO</span>
-              <h4 className="font-extrabold text-base text-slate-900 mt-2">JAC iEV 20 68cv Aut.</h4>
-              <div className="w-full h-24 rounded-xl overflow-hidden bg-slate-200 my-3">
-                <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=300&q=80" className="w-full h-full object-cover" />
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold mt-2">
-                <span className="text-slate-500">Sinal: R$ 1.500</span>
-                <span className="text-slate-950 font-black">R$ 78.262</span>
+        </div>
+        <div className="pt-2">
+          <button 
+            onClick={() => navigateTo('login')}
+            className="w-full bg-[#C1F651] text-[#0B1B17] py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-1"
+          >
+            <Send size={14} /> Acessar Painel Lojista
+          </button>
+        </div>
+      </div>
+      {/* Coluna 2: Faturas Ativas */}
+      <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4 md:col-span-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider">Links de Reservas Recentes</span>
+          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full font-bold">Ativas</span>
+        </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-xs">BMW</div>
+              <div>
+                <p className="text-xs font-bold text-white">BMW 320i M Sport 2024</p>
+                <p className="text-[10px] text-white/40">Sinal: R$ 5.000,00</p>
               </div>
             </div>
-
-            {/* Card 2: Direita / Centro (Sobreposto) */}
-            <div className="absolute right-4 md:right-20 top-4 bg-white border-2 border-slate-350 p-6 rounded-3xl w-72 text-left rotate-[6deg] hover:rotate-0 transition duration-300 z-20">
-              <span className="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase">PREMIUM</span>
-              <h4 className="font-extrabold text-base text-slate-900 mt-2">BMW 320i M Sport 2024</h4>
-              <div className="w-full h-24 rounded-xl overflow-hidden bg-slate-200 my-3">
-                <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=300&q=80" className="w-full h-full object-cover" />
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold mt-2">
-                <span className="text-blue-600">Sinal: R$ 5.000</span>
-                <span className="text-slate-950 font-black">R$ 269.000</span>
-              </div>
+            <div className="text-right">
+              <p className="text-xs font-bold font-mono text-white">R$ 269.000</p>
+              <span className="text-[9px] text-emerald-400 font-bold">Reservado</span>
             </div>
           </div>
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-xs">JAC</div>
+              <div>
+                <p className="text-xs font-bold text-white">JAC iEV 20 68cv Aut.</p>
+                <p className="text-[10px] text-white/40">Sinal: R$ 1.500,00</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold font-mono text-white">R$ 78.262</p>
+              <span className="text-[9px] text-amber-400 font-bold">Aguardando Pix</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
+  const companyDashboard = (
+    <>
+      {/* Coluna 1: Estatísticas da Equipe */}
+      <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4">
+        <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Garantia e Segurança</span>
+        <div className="space-y-1">
+          <p className="text-3xl font-extrabold text-white font-mono">100% Protegido</p>
+          <p className="text-xs text-[#C1F651] font-bold flex items-center gap-1">
+            <ShieldCheck size={14} /> Pix direto para a concessionária
+          </p>
+        </div>
+        <div className="pt-2">
           <button 
             onClick={() => navigateTo('cadastrar-reserva')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-8 py-3.5 rounded-xl transition"
+            className="w-full bg-white/10 text-white py-2 rounded-lg text-xs font-bold hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all flex items-center justify-center gap-1"
           >
-            Criar Minha Primeira Proposta
+            <Sparkles size={14} /> Simular Minha Reserva
           </button>
         </div>
       </div>
+      {/* Coluna 2: Pagamentos da Folha de Pagamento */}
+      <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4 md:col-span-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider">Sua Proposta Recebida</span>
+          <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full font-bold">Exclusiva</span>
+        </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-[#C1F651]/10 flex items-center justify-center font-bold text-xs text-[#C1F651]">VOLVO</div>
+              <div>
+                <p className="text-xs font-bold text-white">Volvo XC60 Hybrid 2024</p>
+                <p className="text-[10px] text-white/40">Sinal Requerido: R$ 8.000,00</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold font-mono text-white">R$ 399.900</p>
+              <span className="text-[9px] text-[#C1F651] font-bold">Aguardando Seu Pix</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-indigo-500/10 flex items-center justify-center font-bold text-xs text-indigo-400">TOYOTA</div>
+              <div>
+                <p className="text-xs font-bold text-white">Toyota Corolla Altis 2023</p>
+                <p className="text-[10px] text-white/40">Sinal Pago: R$ 3.000,00</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold font-mono text-white">R$ 145.000</p>
+              <span className="text-[9px] text-emerald-400 font-bold">Aprovado e Reservado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
-      {/* 3. Seção "Sinal em Minutos" (Envie dinheiro) */}
-      <div className="py-24 bg-[#f8f9fa]">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-          
-          {/* Coluna Esquerda: Mockup móvel */}
-          <div className="flex justify-center select-none">
-            <div className="w-[320px] h-[520px] bg-slate-950 rounded-[40px] overflow-hidden border-[6px] border-slate-800 flex flex-col relative shadow-md">
-              <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-black rounded-full z-30" />
+  return (
+    <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .glass-header {
+          background-color: rgba(11, 27, 23, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .circular-text-container {
+          animation: rotateCircular 20s linear infinite;
+        }
+        @keyframes rotateCircular {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .premium-shadow {
+          box-shadow: 0 20px 40px -15px rgba(11, 27, 23, 0.05);
+        }
+        .premium-shadow-dark {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+      `}} />
+
+      {/* HEADER / NAVEGAÇÃO */}
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass-header py-3.5 shadow-lg text-white' : 'py-5 text-white bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
+            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#0B1B17]" />
+            </div>
+            <span className="font-black">Reservacar</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+          </a>
+
+          {/* Menu Desktop */}
+          <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-white/90">
+            <a href="#features" className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
+            <a href="#simulator" className="hover:text-[#C1F651] transition-colors duration-300">Simulador</a>
+            <a href="#stats" className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
+            <a href="#faq" className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
+          </nav>
+
+          {/* Ações */}
+          <div className="hidden md:flex items-center gap-4">
+            <button 
+              onClick={() => navigateTo('login')} 
+              className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border border-white/30 text-white hover:border-white/80 hover:bg-white/10"
+            >
+              Acesso Lojista
+            </button>
+            <button 
+              onClick={() => navigateTo('assinar')} 
+              className="bg-[#C1F651] text-[#0B1B17] text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-white hover:text-[#0B1B17] transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              Assinar Reservacar
+            </button>
+          </div>
+
+          {/* Botão Menu Mobile */}
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className="md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 text-white" 
+            aria-label="Abrir Menu"
+          >
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`}></span>
+          </button>
+        </div>
+      </header>
+
+      {/* MENU MOBILE OVERLAY */}
+      <div className={`fixed inset-0 bg-[#0B1B17] text-[#F9F9F6] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <nav className="flex flex-col gap-6 text-2xl font-bold">
+          <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Funcionalidades</a>
+          <a href="#simulator" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Simulador de Taxas</a>
+          <a href="#stats" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Métricas de Impacto</a>
+          <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
+        </nav>
+        <div className="flex flex-col gap-4 mt-auto">
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('login'); }} className="w-full text-center border border-white/20 text-white font-semibold py-3.5 rounded-full hover:bg-white/10 transition-colors">Acesso Lojista</button>
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F651] text-[#0B1B17] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
+        </div>
+      </div>
+
+      {/* HERO SECTION */}
+      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-24 md:pt-48 md:pb-36 overflow-hidden">
+        {/* Detalhes de Fundo (Glow sutil) */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col items-center text-center">
+            
+            {/* Alternador de Perfil */}
+            <div className="inline-flex bg-white/5 p-1 rounded-full mb-8 border border-white/10 premium-shadow">
+              <button 
+                onClick={() => setProfile('lojista')} 
+                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'lojista' ? 'bg-[#C1F651] text-[#0B1B17]' : 'text-white/70 hover:text-white'}`}
+              >
+                Para Lojistas
+              </button>
+              <button 
+                onClick={() => setProfile('cliente')} 
+                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'cliente' ? 'bg-[#C1F651] text-[#0B1B17]' : 'text-white/70 hover:text-white'}`}
+              >
+                Para Clientes
+              </button>
+            </div>
+
+            {/* Título Hero */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl leading-[1.1] mb-6 transition-all duration-300">
+              {profile === 'lojista' ? (
+                <>Vendas e reservas digitais de veículos com <span className="text-[#C1F651]">garantia de sinal Pix</span>.</>
+              ) : (
+                <>Garanta seu próximo carro antes de ir <span className="text-[#C1F651]">ao showroom</span>.</>
+              )}
+            </h1>
+            
+            {/* Subtítulo */}
+            <p className="text-[#6B7C77] text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed">
+              {profile === 'lojista' ? (
+                "Sua vitrine digital sob medida. Compartilhe o link da proposta pelo WhatsApp, receba o sinal Pix diretamente na sua conta e segure a venda instantaneamente."
+              ) : (
+                "Recebeu uma proposta exclusiva da concessionária? Faça a reserva via Pix de forma 100% segura e evite que o veículo seja vendido para outro interessado."
+              )}
+            </p>
+
+            {/* CTAs principais */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-16 w-full sm:w-auto">
+              <button 
+                onClick={() => navigateTo('cadastrar-reserva')} 
+                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] text-base font-bold px-8 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10"
+              >
+                Simular Reserva (Cliente)
+              </button>
+              <button 
+                onClick={() => navigateTo('assinar')} 
+                className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/5 text-base font-bold px-8 py-4 rounded-full transition-all duration-300"
+              >
+                Assinar Reservacar
+              </button>
+            </div>
+
+            {/* Preview do Dashboard Interativo */}
+            <div className="w-full max-w-5xl relative mx-auto mt-4 rounded-2xl border border-white/10 bg-[#11221E]/90 premium-shadow-dark overflow-hidden p-4 md:p-6 text-left">
               
-              <div className="bg-white flex-1 p-5 flex flex-col justify-between text-slate-900 text-left">
-                <div className="pt-6">
-                  <span className="bg-emerald-550 text-white text-[8px] font-black px-2 py-0.5 rounded">PIX INTEGRADO</span>
-                  <h4 className="font-black text-lg text-slate-900 mt-2">Pagamento do Sinal</h4>
-                  <p className="text-[10px] text-slate-500 mt-1">Efetue o sinal de garantia e reserve o veículo imediatamente.</p>
-                  
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center my-4">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">VALOR REQUERIDO</span>
-                    <span className="text-2xl font-black text-slate-900">R$ 5.000,00</span>
-                  </div>
+              {/* Barra Superior do Dashboard Mockup */}
+              <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-500/80"></span>
+                  <span className="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+                  <span className="w-3 h-3 rounded-full bg-green-500/80"></span>
+                </div>
+                <div className="bg-white/5 px-4 py-1.5 rounded-lg text-xs font-mono text-white/50 tracking-wider">
+                  https://app.reservacar.com.br/dashboard
+                </div>
+                <div className="flex items-center gap-2 text-white/40">
+                  <Bell className="w-4 h-4" />
+                  <div className="w-6 h-6 rounded-full bg-[#C1F651]/20 flex items-center justify-center text-[10px] text-[#C1F651] font-bold">RC</div>
+                </div>
+              </div>
 
-                  <div className="flex justify-center my-2">
-                    <div className="bg-white border border-slate-200 p-2 rounded-lg">
-                      <svg width="80" height="80" viewBox="0 0 100 100" fill="black">
-                        <rect x="0" y="0" width="20" height="20" />
-                        <rect x="5" y="5" width="10" height="10" fill="white" />
-                        <rect x="80" y="0" width="20" height="20" />
-                        <rect x="85" y="5" width="10" height="10" fill="white" />
-                        <rect x="0" y="80" width="20" height="20" />
-                        <rect x="5" y="85" width="10" height="10" fill="white" />
-                        <rect x="40" y="40" width="20" height="20" />
-                      </svg>
-                    </div>
+              {/* Conteúdo Dinâmico do Dashboard */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-500">
+                {profile === 'lojista' ? talentDashboard : companyDashboard}
+              </div>
+
+              {/* Badge Flutuante Rotativo */}
+              <div className="absolute -right-6 -bottom-6 md:-right-8 md:-bottom-8 w-28 h-28 md:w-36 md:h-36 bg-[#C1F651] text-[#0B1B17] rounded-full flex items-center justify-center p-2 text-center pointer-events-none z-20 shadow-xl shadow-[#C1F651]/20">
+                <div className="circular-text-container relative w-full h-full flex items-center justify-center">
+                  <svg className="w-full h-full absolute inset-0" viewBox="0 0 100 100">
+                    <path id="textPath" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
+                    <text className="font-extrabold text-[8.5px] fill-[#0B1B17] uppercase tracking-widest">
+                      <textPath href="#textPath" startOffset="0%">
+                        VITRINE DIGITAL • PIX IMEDIATO • SHOWROOM
+                      </textPath>
+                    </text>
+                  </svg>
+                  <Car className="w-6 h-6 text-[#0B1B17] relative z-10" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* MARCAS PARCEIRAS */}
+      <section className="py-12 bg-[#F9F9F6] border-y border-[rgba(11,27,23,0.08)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#6B7C77] mb-8">Utilizado por lojas de todas as marcas e capitais</p>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Audi Center</div>
+            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> BMW Premium</div>
+            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Toyota Elite</div>
+            <div className="flex items-center gap-2 font-bold text-lg"><Car className="w-5 h-5 text-slate-800" /> Porsche Service</div>
+            <div className="flex items-center gap-2 font-bold text-lg"><span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata</div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO DE RECURSOS (FEATURES) */}
+      <section id="features" className="py-24 md:py-36 bg-[#F9F9F6]">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          {/* Recurso 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-28 md:mb-36">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" /> Transações Diretas Autenticadas
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0B1B17] leading-tight">
+                Crie links de propostas sem atritos para seus clientes
+              </h2>
+              <p className="text-[#6B7C77] text-lg leading-relaxed">
+                Escreva propostas customizadas com as informações do veículo da tabela FIPE de forma automática. Compartilhe o link pelo WhatsApp. O cliente vê os detalhes, confere o laudo cautelar e reserva o carro na hora.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <button 
+                  onClick={() => navigateTo('cadastrar-reserva')} 
+                  className="bg-[#0B1B17] text-[#F9F9F6] text-center font-bold px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300"
+                >
+                  Simular Reserva (Cliente)
+                </button>
+                <button 
+                  onClick={() => navigateTo('assinar')} 
+                  className="border border-[#0B1B17]/20 text-[#0B1B17] text-center font-bold px-6 py-3.5 rounded-full hover:bg-[#0B1B17]/5 transition-all duration-300"
+                >
+                  Assinar Reservacar
+                </button>
+              </div>
+            </div>
+
+            {/* Visual Interativo do Recurso: Gerador de Proposta Dinâmica */}
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-[#C1F651]"></div>
+              
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Reservar com Garantia</span>
+                  <p className="text-base font-extrabold text-[#0B1B17]">Reservacar Soluções de Showroom</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Proposta N°</span>
+                  <p className="text-sm font-mono text-[#0B1B17] font-semibold">#RC-2026-9844</p>
+                </div>
+              </div>
+
+              {/* Campos de Entrada Interativos */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Modelo do Veículo</label>
+                  <input 
+                    type="text" 
+                    value={invoiceCarName} 
+                    onChange={(e) => setInvoiceCarName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Sinal Pix Requerido (R$)</label>
+                    <input 
+                      type="number" 
+                      value={invoiceSinal} 
+                      onChange={(e) => setInvoiceSinal(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Meio de Pagamento</label>
+                    <select 
+                      value={invoiceCurrency} 
+                      onChange={(e) => setInvoiceCurrency(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
+                    >
+                      <option value="BRL">Pix Direto (BRL)</option>
+                      <option value="BRL_HOLD">Pix Garantia (HOLD)</option>
+                    </select>
                   </div>
                 </div>
+              </div>
 
-                <div className="w-full bg-emerald-600 text-white font-bold text-xs py-3 rounded-xl text-center select-none">
-                  Simulação Pix Ativa
+              {/* Visualização Dinâmica em Tempo Real */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                <div className="flex justify-between text-xs text-slate-400 font-bold mb-2">
+                  <span>Especificação do Veículo</span>
+                  <span>Valor Reserva</span>
                 </div>
+                <div className="flex justify-between text-sm text-[#0B1B17] font-medium mb-1">
+                  <span className="truncate max-w-[200px]">{invoiceCarName}</span>
+                  <span className="font-bold font-mono">
+                    R$ {invoiceSinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">Garante a retirada temporária do showroom físico por 24 horas.</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                  Link Pronto para Enviar
+                </span>
+                <button 
+                  onClick={simulateInvoiceSend} 
+                  className="bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] text-xs font-bold px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-1"
+                >
+                  {invoiceSendStatus === 'enviar' && 'Simular Envio'}
+                  {invoiceSendStatus === 'enviando' && 'Enviando...'}
+                  {invoiceSendStatus === 'enviado' && 'Link Enviado! ✓'}
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Coluna Direita: Texto */}
-          <div className="text-left">
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-widest block mb-3">RECEBA ANTES DO SHOWROOM</span>
-            <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
-              Gere links de reserva e receba sinais em minutos
-            </h2>
-            <p className="text-slate-650 font-medium leading-relaxed mb-8">
-              Não perca vendas para outros showrooms. Compartilhe o link de proposta exclusiva via WhatsApp. O cliente realiza o pagamento do sinal com Pix direto da tela de propostas e garante o carro de forma segura.
-            </p>
-            
-            <div className="flex gap-4">
+          {/* Recurso 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center pt-12">
+            {/* Visualização Interativa */}
+            <div className="order-last lg:order-first bg-[#0B1B17] p-6 md:p-8 rounded-2xl border border-white/10 premium-shadow-dark text-white space-y-6">
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-lg text-white">Segurança nos Recebimentos</h4>
+                <span className="bg-white/10 text-[#C1F651] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Pix sem Intermediários</span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-bold">
+                      Pix
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">Conta Concessionária (Sua Chave)</p>
+                      <p className="text-xs text-white/50">Recebimento direto na hora</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-sm text-emerald-400">Direto na Conta</p>
+                    <span className="text-xs text-white/40">Tarifa R$ 0,00</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-950/20 rounded-lg flex items-center justify-center text-red-400 font-bold">
+                      %
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">Gateways e Intermediários Tradicionais</p>
+                      <p className="text-xs text-white/50">Taxas por transação + Saque 14 dias</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-sm text-red-400">Até 3.9% de perda</p>
+                    <span className="text-xs text-white/40">Dinheiro retido</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-white/50">
+                <span>Tempo de liquidação</span>
+                <span className="font-bold text-white">Instantâneo (Pix Banco Central)</span>
+              </div>
+            </div>
+
+            {/* Texto de Vantagem */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-4 py-1.5 rounded-full text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5" /> Liquidação Imediata
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0B1B17] leading-tight">
+                Pix direto para a sua conta. Sem comissão por reserva
+              </h2>
+              <p className="text-[#6B7C77] text-lg leading-relaxed">
+                Esquça os intermediários que cobram taxas abusivas e retêm o valor do sinal por semanas. Com o Reservacar, o cliente escaneia o Qr Code Pix e o dinheiro cai diretamente na conta bancária da sua concessionária na mesma hora.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <button 
+                  onClick={() => navigateTo('assinar')} 
+                  className="bg-[#0B1B17] text-[#F9F9F6] font-bold px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300"
+                >
+                  Quero Assinar o Reservacar
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* INTERACTIVE SIMULATOR */}
+      <section id="simulator" className="py-24 md:py-32 bg-[#0B1B17] text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-[#C1F651]/5 via-transparent to-transparent pointer-events-none"></div>
+        
+        <div className="max-w-5xl mx-auto px-6 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-[#C1F651] text-sm font-extrabold uppercase tracking-widest block mb-3">Simulador Reservacar</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">Calcule sua economia de comissão</h2>
+            <p className="text-[#6B7C77] mt-4">Compare as reservas diretas sem taxas do Reservacar contra intermediários tradicionais.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Painel de Inputs */}
+            <div className="lg:col-span-7 bg-white/5 p-6 md:p-8 rounded-2xl border border-white/10 space-y-8 flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <label className="font-bold text-sm text-white">Preço Médio do Veículo:</label>
+                  <span className="text-3xl font-extrabold text-[#C1F651] font-mono">R$ {carPrice.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="20000" 
+                  max="500000" 
+                  step="10000" 
+                  value={carPrice} 
+                  onChange={(e) => setCarPrice(Number(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#C1F651]"
+                />
+                <div className="flex justify-between text-xs text-white/40 mt-2 font-mono">
+                  <span>R$ 20.000</span>
+                  <span>R$ 260.000</span>
+                  <span>R$ 500.000</span>
+                </div>
+              </div>
+
+              {/* Opções Adicionais */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Reservas Mensais</label>
+                  <select 
+                    value={reservasMes} 
+                    onChange={(e) => setReservasMes(Number(e.target.value))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-[#C1F651] font-semibold transition-colors"
+                  >
+                    <option value="5" className="bg-[#0B1B17] text-white">5 reservas/mês</option>
+                    <option value="10" className="bg-[#0B1B17] text-white">10 reservas/mês</option>
+                    <option value="20" className="bg-[#0B1B17] text-white">20 reservas/mês</option>
+                    <option value="30" className="bg-[#0B1B17] text-white">30 reservas/mês</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Tipo do Showroom</label>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setPayoutMethod('pix_direto')}
+                      className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border transition ${payoutMethod === 'pix_direto' ? 'bg-[#C1F651] text-[#0B1B17] border-[#C1F651]' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                    >
+                      Reservacar
+                    </button>
+                    <button 
+                      onClick={() => setPayoutMethod('gateway')}
+                      className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border transition ${payoutMethod === 'gateway' ? 'bg-[#C1F651] text-[#0B1B17] border-[#C1F651]' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
+                    >
+                      Gateway (3%)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/10 space-y-2 text-xs text-white/50">
+                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#C1F651]" /> Sem cobrança de comissão sobre a venda do veículo.</p>
+                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#C1F651]" /> Economize milhares de reais em taxas de intermediários.</p>
+              </div>
+            </div>
+
+            {/* Painel de Resultados Comparativos */}
+            <div className="lg:col-span-5 bg-[#C1F651] text-[#0B1B17] p-6 md:p-8 rounded-2xl flex flex-col justify-between premium-shadow relative overflow-hidden">
+              <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/20 rounded-full blur-2xl"></div>
+
+              <div>
+                <span className="text-xs uppercase font-extrabold tracking-widest text-[#0B1B17]/60 block mb-2">Com o Reservacar você economiza</span>
+                <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight font-mono">
+                  R$ {calculations.economia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </h3>
+                <p className="text-xs font-semibold text-[#0B1B17]/60 mt-2">No gateway comum você pagaria <span className="font-bold">R$ {calculations.custoGateway.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> em taxas de sinal Pix.</p>
+              </div>
+
+              <div className="my-8 space-y-4 bg-[#0B1B17]/5 p-4 rounded-xl border border-[#0B1B17]/10">
+                <div className="flex justify-between items-center text-xs font-bold text-[#0B1B17]/70">
+                  <span>Sua economia de comissão em reservas:</span>
+                  <span className="font-mono text-emerald-800 font-extrabold">95% de economia</span>
+                </div>
+                <div className="w-full bg-[#0B1B17]/10 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-[#0B1B17] h-full transition-all duration-500" style={{ width: '95%' }}></div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-extrabold text-sm">Custo Reservacar:</span>
+                  <span className="text-lg font-extrabold font-mono text-slate-900">R$ 159,00/mês</span>
+                </div>
+                <button 
+                  onClick={() => navigateTo('assinar')}
+                  className="block w-full text-center bg-[#0B1B17] text-[#C1F651] font-bold py-3.5 rounded-xl hover:bg-white hover:text-[#0B1B17] transition-all duration-300"
+                >
+                  Assinar Reservacar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* METRICAS */}
+      <section id="stats" className="py-24 bg-[#F9F9F6] border-b border-[rgba(11,27,23,0.08)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+                R$ {bilhoes.toFixed(1)}M+
+              </h3>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Sinais Processados (BRL)</p>
+            </div>
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+                {clientes}k+
+              </h3>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Carros Reservados Ativos</p>
+            </div>
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+                {aprovacao.toFixed(1)}%
+              </h3>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Aprovação Legal e Conformidade</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-24 md:py-32 bg-[#F9F9F6]">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className="text-xs uppercase font-extrabold tracking-widest text-[#6B7C77] block mb-3">FAQ</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17]">Perguntas Frequentes</h2>
+            <p className="text-[#6B7C77] mt-4">Esclareça suas dúvidas sobre o funcionamento do sinal Pix do Reservacar.</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 0 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
               <button 
-                onClick={() => navigateTo('cadastrar-reserva')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3.5 rounded-xl transition"
+                onClick={() => setActiveFaq(activeFaq === 0 ? null : 0)}
+                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
               >
-                Criar Proposta
+                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Como o Reservacar garante a segurança da reserva?</span>
+                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 0 ? 'rotate-90' : ''}`} />
               </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* 4. Banner Horizontal (Revmoji) */}
-      <div className="relative w-full h-[320px] bg-slate-900 flex items-center justify-center overflow-hidden">
-        <img 
-          src="https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&w=1200&q=80" 
-          className="absolute inset-0 w-full h-full object-cover opacity-60" 
-          alt="Concessionária showroom moderno" 
-        />
-        <div className="absolute inset-0 bg-slate-950/50 z-10" />
-
-        <div className="relative max-w-4xl mx-auto px-6 z-20 text-center">
-          <span className="bg-blue-600 text-white text-[10px] font-black px-3.5 py-1.5 rounded-full uppercase tracking-widest mb-4 inline-block">
-            ESCASSEZ CONTROLADA
-          </span>
-          <h3 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-4">
-            Sinta a urgência com a contagem regressiva
-          </h3>
-          <p className="text-slate-300 font-medium max-w-xl mx-auto text-sm md:text-base mb-6 leading-relaxed">
-            Nossos links de propostas contam com contagem regressiva psicológica e selo de laudo cautelar verificado, estimulando o lead quente a fechar a reserva rapidamente.
-          </p>
-        </div>
-      </div>
-
-      {/* 5. Seção de Métricas */}
-      <div className="py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-12">
-            Métricas que aceleram concessionárias
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-8 text-left">
-            <div className="bg-[#f8f9fa] border border-slate-200 p-8 rounded-3xl">
-              <span className="text-6xl font-black text-blue-600 block mb-2">71.4%</span>
-              <h4 className="font-extrabold text-slate-900 text-lg mb-2">Taxa de Conversão</h4>
-              <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                Lojas que usam links do Reservacar conseguem converter mais de 70% dos leads de WhatsApp em reservas de showroom pagas.
-              </p>
+              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 0 ? 'max-h-48' : 'max-h-0'}`}>
+                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
+                  O Reservacar gera Qr Codes de Pix dinâmicos vinculados diretamente à conta bancária de sua própria concessionária ou lojista. O dinheiro cai diretamente na sua conta, e o sistema detecta o pagamento de forma instantânea para atualizar a vitrine digital.
+                </p>
+              </div>
             </div>
 
-            <div className="bg-[#f8f9fa] border border-slate-200 p-8 rounded-3xl">
-              <span className="text-6xl font-black text-slate-900 block mb-2">1h 48m</span>
-              <h4 className="font-extrabold text-slate-900 text-lg mb-2">Tempo Médio de Fechamento</h4>
-              <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                Reduza o tempo de negociação drasticamente. Do envio do link à confirmação do sinal via Pix, a média de decisão é menor que 2 horas.
-              </p>
+            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 1 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
+              <button 
+                onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}
+                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
+              >
+                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Preciso pagar comissão sobre os veículos reservados?</span>
+                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 1 ? 'rotate-90' : ''}`} />
+              </button>
+              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 1 ? 'max-h-48' : 'max-h-0'}`}>
+                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
+                  Não! Diferente de outros portais, nós cobramos apenas uma assinatura mensal fixa de R$ 159. Todas as reservas e sinais Pix gerados em suas propostas vão inteiramente para a conta de sua empresa, sem taxas de intermediação.
+                </p>
+              </div>
+            </div>
+
+            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 2 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
+              <button 
+                onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}
+                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
+              >
+                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Como funciona o cronômetro psicológico da proposta?</span>
+                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 2 ? 'rotate-90' : ''}`} />
+              </button>
+              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 2 ? 'max-h-48' : 'max-h-0'}`}>
+                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
+                  Cada link de proposta enviado ao cliente possui um cronômetro regressivo psicológico configurado pela sua equipe de vendas (ex: 20 minutos). Isso gera um gatilho de escassez e urgência para motivar a reserva rápida do sinal via Pix.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 6. Seção Como Começar */}
-      <div className="py-24 bg-[#f8f9fa] border-t border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Como começar a usar o Reservacar?
-          </h2>
-          <p className="text-slate-500 font-semibold max-w-xl mx-auto mb-16">
-            Siga três passos simples e comece a fechar suas propostas de forma digital hoje mesmo.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-6 text-left mb-12">
-            <div className="bg-white border border-slate-200 p-8 rounded-3xl">
-              <span className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-sm mb-6 select-none">
-                1
-              </span>
-              <h4 className="font-extrabold text-slate-900 text-lg mb-3">Assine um Plano</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-medium">
-                Escolha o plano ideal para o volume de vendas do seu showroom e adquira os créditos de links ativos.
+      {/* FOOTER */}
+      <footer className="bg-[#0B1B17] text-[#F9F9F6] pt-20 pb-10 border-t border-white/10 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="text-2xl font-extrabold tracking-tight flex items-center gap-1">
+                <span className="font-black text-white">Reservacar</span>
+                <span className="text-xs font-bold align-super text-[#C1F651]">®</span>
+              </div>
+              <p className="text-[#6B7C77] text-sm max-w-sm leading-relaxed">
+                Infraestrutura digital completa para concessionárias e lojistas de automóveis gerenciarem suas propostas, coletarem sinais Pix e fecharem mais vendas.
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 p-8 rounded-3xl">
-              <span className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-sm mb-6 select-none">
-                2
-              </span>
-              <h4 className="font-extrabold text-slate-900 text-lg mb-3">Crie a Proposta</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-medium">
-                Consulte o veículo na FIPE, insira quilometragem, fotos, opcionais e defina o valor do sinal Pix.
-              </p>
+            <div className="space-y-4">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Funcionalidades</h4>
+              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+                <li><button onClick={() => navigateTo('cadastrar-reserva')} className="hover:text-white transition-colors">Simular Reserva</button></li>
+                <li><button onClick={() => navigateTo('assinar')} className="hover:text-white transition-colors">Planos de Assinatura</button></li>
+                <li><button onClick={() => navigateTo('login')} className="hover:text-white transition-colors">Login Lojista</button></li>
+              </ul>
             </div>
 
-            <div className="bg-white border border-slate-200 p-8 rounded-3xl">
-              <span className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-sm mb-6 select-none">
-                3
-              </span>
-              <h4 className="font-extrabold text-slate-900 text-lg mb-3">Receba e Feche</h4>
-              <p className="text-slate-500 text-xs leading-relaxed font-medium">
-                Envie o link ao lead. Quando ele pagar o sinal, o carro sai do showroom virtual e você finaliza a venda presencial.
-              </p>
+            <div className="space-y-4">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Recursos</h4>
+              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+                <li><a href="#" className="hover:text-white transition-colors">Central de Ajuda</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Políticas de Uso</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Calculadora de Taxa</a></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Jurídico</h4>
+              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+                <li><a href="#" className="hover:text-white transition-colors">Política de Privacidade</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Termos de Serviço</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Regulação LGPD</a></li>
+              </ul>
             </div>
           </div>
 
-          <button 
-            onClick={() => navigateTo('assinar')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-8 py-3.5 rounded-xl transition"
-          >
-            Quero Assinar Agora
-          </button>
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#6B7C77] font-medium">
+            <p>&copy; 2026 Reservacar. Todos os direitos reservados. Todas as marcas registradas de veículos pertencem aos seus respectivos proprietários.</p>
+            <div className="flex items-center gap-2">
+              <span>Segurança e Criptografia Pix direta de ponta a ponta</span>
+              <Shield className="w-4 h-4 text-[#C1F651]" />
+            </div>
+          </div>
         </div>
-      </div>
-
+      </footer>
     </div>
   );
 }
