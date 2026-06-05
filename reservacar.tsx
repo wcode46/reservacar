@@ -6,7 +6,7 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye
+  ArrowUp, TrendingDown, Eye, Star, Trophy
 } from 'lucide-react';
 
 
@@ -2367,6 +2367,224 @@ function Footer({ navigateTo }) {
   );
 }
 
+// --- SUB-COMPONENTS FOR OUTRAS SOLUÇOES (EMPRESA VIEW) ---
+function LinkGeneratorPreview({ navigateTo }) {
+  const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  const handleCopy = (e) => {
+    e.preventDefault();
+    copyToClipboard("https://reservacar.com.br/reserva/bmw-320i-xyz", (success) => {
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    });
+  };
+
+  const handleShare = () => {
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
+  };
+
+  return (
+    <div className="grid-bg-dark p-8 rounded-2xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 text-white min-h-[460px]">
+      <div className="space-y-6">
+        <div className="w-12 h-12 bg-white/10 text-[#C1F651] rounded-xl flex items-center justify-center">
+          <LinkIcon className="w-6 h-6" />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-lg font-bold text-white">Gerador de Links de Reserva</h4>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Crie propostas personalizadas com FIPE, urgência e Pix integrado em menos de 60 segundos.
+          </p>
+        </div>
+        
+        {/* Preview da Interface do Link */}
+        <div className="bg-white border border-white/10 rounded-xl p-4 space-y-4 text-slate-900 shadow-xl">
+          <span className="text-[10px] font-bold text-[#6b7c77] uppercase tracking-wider block text-left">Link de Reserva Gerado</span>
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+            <div className="flex items-center gap-2 overflow-hidden w-full">
+              <LinkIcon className="w-4 h-4 text-[#6b7c77] shrink-0" />
+              <span className="text-xs text-[#0f172a] font-mono truncate">reservacar.com/reserva/bmw...</span>
+            </div>
+            <button 
+              onClick={handleCopy}
+              className="text-slate-400 hover:text-[#0b1b17] transition-colors p-1"
+              title="Copiar Link"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+          <button 
+            onClick={handleShare}
+            className="w-full bg-[#0b1b17] hover:bg-[#C1F651] hover:text-[#0b1b17] text-white text-xs font-bold py-3 rounded-lg transition-colors duration-200"
+          >
+            {shared ? "Compartilhado!" : "Compartilhar"}
+          </button>
+        </div>
+      </div>
+
+      <a 
+        href="#" 
+        onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} 
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#C1F651] transition-colors pt-6"
+      >
+        Conhecer funcionalidade
+        <ArrowRight size={14} />
+      </a>
+    </div>
+  );
+}
+
+function LiveDashboardPreview({ navigateTo }) {
+  const [proposalActive, setProposalActive] = useState(true);
+
+  return (
+    <div className="grid-bg-light p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] flex flex-col justify-between hover:border-slate-300 transition-colors duration-200 text-[#0b1b17] min-h-[460px]">
+      <div className="space-y-6">
+        <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0b1b17] rounded-xl flex items-center justify-center">
+          <BarChart2 className="w-6 h-6" />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-lg font-bold text-[#0b1b17]">Painel de vendas</h4>
+          <p className="text-sm text-[#6b7c77] leading-relaxed">
+            Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.
+          </p>
+        </div>
+
+        {/* Preview da Interface de Status */}
+        <div className="bg-white border border-[rgba(11,27,23,0.06)] rounded-xl p-4 space-y-3 shadow-xl">
+          <div className="flex items-center justify-between bg-white border border-[#e2e8f0] rounded-lg p-3">
+            <span className="text-xs font-bold text-[#0f172a]">Status da Proposta</span>
+            <div className="flex items-center gap-3">
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${proposalActive ? 'text-emerald-800 bg-emerald-50' : 'text-slate-500 bg-slate-100'}`}>
+                {proposalActive ? "Ativa" : "Inativa"}
+              </span>
+              <button 
+                onClick={() => setProposalActive(!proposalActive)}
+                className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${proposalActive ? 'bg-[#0b1b17]' : 'bg-slate-200'}`}
+                aria-label="Alternar status da proposta"
+              >
+                <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-200 ${proposalActive ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between bg-white border border-[#e2e8f0] rounded-lg p-3">
+            <span className="text-xs font-bold text-[#0f172a]">Status do Pix</span>
+            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${proposalActive ? 'text-amber-800 bg-amber-50' : 'text-rose-800 bg-rose-50'}`}>
+              {proposalActive ? "Pendente" : "Cancelada"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <a 
+        href="#" 
+        onClick={(e) => { e.preventDefault(); navigateTo('login'); }} 
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1b17] hover:text-[#C1F651] transition-colors pt-6"
+      >
+        Conhecer funcionalidade
+        <ArrowRight size={14} />
+      </a>
+    </div>
+  );
+}
+
+function RankingGamificationPreview({ navigateTo }) {
+  return (
+    <div className="bg-[#C1F651] p-8 rounded-2xl border border-[#C1F651] hover:brightness-[1.01] transition-all duration-200 md:col-span-2 text-[#0b1b17] relative overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+        
+        {/* Esquerda: Informações */}
+        <div className="lg:col-span-6 space-y-6 text-left">
+          <div className="space-y-3">
+            <h4 className="text-2xl font-bold text-[#0b1b17] flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-[#0b1b17] rounded-lg flex items-center justify-center text-[#C1F651] shrink-0">
+                <Trophy className="w-4 h-4 fill-current" />
+              </div>
+              Ranking e Gamificação
+            </h4>
+            <p className="text-sm text-[#0b1b17]/80 leading-relaxed">
+              Motive sua equipe com metas, ranking de vendedores e badges de performance por período.
+            </p>
+          </div>
+
+          <button 
+            onClick={() => navigateTo('login')}
+            className="bg-[#0b1b17] hover:bg-white hover:text-[#0b1b17] text-[#C1F651] text-xs font-bold px-6 py-3 rounded-full transition-colors duration-200 focus:outline-none shadow-md"
+          >
+            Conhecer funcionalidade
+          </button>
+
+          <div className="space-y-3.5 pt-4 border-t border-[#0b1b17]/10">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-[#0b1b17]">
+              {/* Ícone de toggle/barra simulado */}
+              <div className="w-8 h-4 bg-[#0b1b17] rounded-full p-0.5 flex items-center justify-end shrink-0">
+                <div className="bg-white w-3 h-3 rounded-full" />
+              </div>
+              <span>Metas e objetivos de equipe.</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs font-bold text-[#0b1b17]">
+              <Star className="w-5 h-5 text-[#0b1b17] shrink-0" />
+              <span>Badges e medalhas de conquista.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Direita: Preview Visual */}
+        <div className="lg:col-span-6 bg-white border border-[#0b1b17]/10 rounded-xl p-4 space-y-4 shadow-xl">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+            <div className="w-16 h-2 bg-slate-100 rounded"></div>
+            <div className="w-10 h-2 bg-slate-100 rounded"></div>
+          </div>
+
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-bold text-[#6b7c77] uppercase tracking-wider block mb-1 text-left">Top 3 Vendedores</span>
+            
+            {/* Carlos Pereira */}
+            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-50 text-blue-800 font-bold rounded-full flex items-center justify-center text-[10px]">
+                  CP
+                </div>
+                <span className="text-xs font-bold text-slate-800">Carlos Pereira</span>
+              </div>
+              <span className="text-xs font-mono font-extrabold text-slate-400">#1</span>
+            </div>
+
+            {/* Ana Souza */}
+            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-emerald-50 text-emerald-800 font-bold rounded-full flex items-center justify-center text-[10px]">
+                  AS
+                </div>
+                <span className="text-xs font-bold text-slate-800">Ana Souza</span>
+              </div>
+              <span className="text-xs font-mono font-extrabold text-slate-400">#2</span>
+            </div>
+
+            {/* Badge */}
+            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 bg-[#C1F651]/10 rounded flex items-center justify-center text-[#C1F651] shrink-0">
+                  <Trophy className="w-4 h-4 fill-current" />
+                </div>
+                <span className="text-xs font-bold text-slate-800">Badge de Performance (Mês)</span>
+              </div>
+              <div className="w-6 h-6 bg-[#C1F651] rounded flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 text-[#0b1b17] fill-[#0b1b17]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // --- EMPRESA VIEW ---
 function EmpresaView({ navigateTo }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -2409,6 +2627,13 @@ function EmpresaView({ navigateTo }) {
         .premium-shadow-dark {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+        .grid-bg-dark {
+          background-color: #0b1b17;
+        }
+        .grid-bg-light {
+          background-color: #f9f9f6;
+        }
+
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
@@ -2710,49 +2935,69 @@ function EmpresaView({ navigateTo }) {
           </div>
 
           {/* Passos */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
             {/* Passo 1 */}
-            <div className="space-y-4 relative group">
-              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">01</span>
-              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
-                <h4 className="font-bold text-base">Cadastro do veículo</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
-                </p>
+            <div className="grid-bg-dark p-10 rounded-3xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 min-h-[280px] text-white">
+              <div className="flex justify-between items-start w-full">
+                <h4 className="text-2xl font-bold tracking-tight">Cadastro do veículo</h4>
+                <div className="relative text-white/90 shrink-0">
+                  <Car className="w-10 h-10" />
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F651] text-[#0B1B17] rounded-full p-0.5 border border-[#0B1B17]">
+                    <Check className="w-3 h-3 stroke-[3.5]" />
+                  </div>
+                </div>
               </div>
+              <p className="text-sm text-slate-300 leading-relaxed pt-16">
+                O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
+              </p>
             </div>
 
             {/* Passo 2 */}
-            <div className="space-y-4 relative group">
-              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">02</span>
-              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
-                <h4 className="font-bold text-base">Geração do link</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
-                </p>
+            <div className="bg-[#C1F651] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#0B1B17]">
+              <div className="flex justify-between items-start w-full">
+                <h4 className="text-2xl font-bold tracking-tight text-[#0B1B17]">Geração do link</h4>
+                <div className="relative text-[#0B1B17] shrink-0">
+                  <LinkIcon className="w-10 h-10 rotate-45" />
+                  <div className="absolute -bottom-1 -right-1.5 text-[#0B1B17]">
+                    <Send className="w-4 h-4 rotate-45 fill-[#0B1B17]" />
+                  </div>
+                </div>
               </div>
+              <p className="text-sm text-[#0B1B17]/90 leading-relaxed pt-16">
+                Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
+              </p>
             </div>
 
             {/* Passo 3 */}
-            <div className="space-y-4 relative group">
-              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">03</span>
-              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
-                <h4 className="font-bold text-base">Compartilhamento</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
-                </p>
+            <div className="grid-bg-dark p-10 rounded-3xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 min-h-[280px] text-white">
+              <div className="flex justify-between items-start w-full">
+                <h4 className="text-2xl font-bold tracking-tight">Compartilhamento</h4>
+                <div className="relative text-white/90 shrink-0">
+                  <MessageCircle className="w-10 h-10" />
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F651] text-[#0B1B17] rounded-full p-0.5 border border-[#0B1B17]">
+                    <Send className="w-3 h-3 stroke-[2.5]" />
+                  </div>
+                </div>
               </div>
+              <p className="text-sm text-slate-300 leading-relaxed pt-16">
+                O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
+              </p>
             </div>
 
             {/* Passo 4 */}
-            <div className="space-y-4 relative group">
-              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">04</span>
-              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
-                <h4 className="font-bold text-base">Sinal confirmado</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
-                </p>
+            <div className="bg-[#C1F651] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#0B1B17]">
+              <div className="flex justify-between items-start w-full">
+                <h4 className="text-2xl font-bold tracking-tight text-[#0B1B17]">Sinal confirmado</h4>
+                <div className="relative text-[#0B1B17] shrink-0">
+                  <ShieldCheck className="w-10 h-10" />
+                  <div className="absolute -top-1.5 -right-1.5 text-[#0B1B17]">
+                    <Sparkles className="w-4 h-4 fill-current" />
+                  </div>
+                </div>
               </div>
+              <p className="text-sm text-[#0B1B17]/90 leading-relaxed pt-16">
+                O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
+              </p>
             </div>
           </div>
 
@@ -2805,51 +3050,10 @@ function EmpresaView({ navigateTo }) {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-            {/* Card 1 */}
-            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
-              <div className="space-y-4">
-                <span className="text-3xl">🔗</span>
-                <h4 className="text-lg font-bold">Gerador de Links de Reserva</h4>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  Crie propostas personalizadas com FIPE, urgência e Pix integrado em menos de 60 segundos.
-                </p>
-              </div>
-              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
-                Conhecer funcionalidade
-                <ArrowRight size={14} />
-              </a>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
-              <div className="space-y-4">
-                <span className="text-3xl">📊</span>
-                <h4 className="text-lg font-bold">Painel de Vendas ao Vivo</h4>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  Acompanhe cada proposta ativa, veja quando o cliente visualizou e confirme Pix em tempo real.
-                </p>
-              </div>
-              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
-                Conhecer funcionalidade
-                <ArrowRight size={14} />
-              </a>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
-              <div className="space-y-4">
-                <span className="text-3xl">🏆</span>
-                <h4 className="text-lg font-bold">Ranking e Gamificação</h4>
-                <p className="text-sm text-slate-500 leading-relaxed">
-                  Motive sua equipe com metas, ranking de vendedores e badges de performance por período.
-                </p>
-              </div>
-              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
-                Conhecer funcionalidade
-                <ArrowRight size={14} />
-              </a>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <LinkGeneratorPreview navigateTo={navigateTo} />
+            <LiveDashboardPreview navigateTo={navigateTo} />
+            <RankingGamificationPreview navigateTo={navigateTo} />
           </div>
         </div>
       </section>
@@ -4527,11 +4731,18 @@ function MobileClientView({
                           showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
                           return;
                         }
-                        setShowPixModal(true);
+                        let phone = empresaLogada?.telefone || '5511999999999';
+                        phone = phone.replace(/\D/g, '');
+                        if (phone.length === 10 || phone.length === 11) {
+                          phone = '55' + phone;
+                        }
+                        const text = `Olá ${selectedAtendente}, estou na página do veículo ${data.title} e gostaria de negociá-lo!`;
+                        window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
                       }}
-                      className="w-full bg-[#C1F651] text-[#0B1B17] hover:bg-[#b0e040] font-bold text-sm py-4 rounded-xl flex items-center justify-center transition"
+                      className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-sm py-4 rounded-xl flex items-center justify-center transition gap-2"
                     >
-                      Reservar com o PIX
+                      Negociar veículo
+                      <MessageCircle size={16} className="text-[#C1F651] stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
