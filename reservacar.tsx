@@ -3417,7 +3417,7 @@ function PreviewView({
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <span className="bg-[#0B1B17] text-[#F9F9F6] px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4 inline-block">
-              PROPOSTA DE RESERVA EXCLUSIVA BMW
+              PROPOSTA DE RESERVA
             </span>
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">{data.title}</h1>
           </div>
