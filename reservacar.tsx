@@ -285,7 +285,7 @@ export default function App() {
       )}
 
       {/* Hide standard navbar on logged-in routes, preview layouts and the home landing page */}
-      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && (
+      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && currentRoute !== 'empresa' && (
         <Navbar currentRoute={currentRoute} navigateTo={navigateTo} />
       )}
 
@@ -320,6 +320,7 @@ export default function App() {
       
       <main className={`transition-all duration-300 ${isLoggedRoute ? 'lg:pl-64 pt-16 lg:pt-0' : ''}`}>
         {currentRoute === 'home' && <HomeView navigateTo={navigateTo} />}
+        {currentRoute === 'empresa' && <EmpresaView navigateTo={navigateTo} />}
         {currentRoute === 'login' && <LoginView navigateTo={navigateTo} />}
         
         {currentRoute === 'hub' && (
@@ -1486,6 +1487,7 @@ function HomeView({ navigateTo }) {
             <a href="#simulator" className="hover:text-[#C1F651] transition-colors duration-300">Simulador</a>
             <a href="#stats" className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
             <a href="#faq" className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('empresa'); }} className="hover:text-[#C1F651] transition-colors duration-300">Empresa</a>
           </nav>
 
           {/* Ações */}
@@ -1524,6 +1526,7 @@ function HomeView({ navigateTo }) {
           <a href="#simulator" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Simulador de Taxas</a>
           <a href="#stats" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Métricas de Impacto</a>
           <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); navigateTo('empresa'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Empresa</a>
         </nav>
         <div className="flex flex-col gap-4 mt-auto">
           <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('login'); }} className="w-full text-center border border-white/20 text-white font-semibold py-3.5 rounded-full hover:bg-white/10 transition-colors">Acesso Lojista</button>
@@ -2361,6 +2364,553 @@ function Footer({ navigateTo }) {
 
       </div>
     </footer>
+  );
+}
+
+// --- EMPRESA VIEW ---
+function EmpresaView({ navigateTo }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 40) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleHomeAnchor = (anchorId: string) => {
+    navigateTo('home');
+    setTimeout(() => {
+      const element = document.getElementById(anchorId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 150);
+  };
+
+  return (
+    <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative text-left">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .glass-header {
+          background-color: rgba(11, 27, 23, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .premium-shadow {
+          box-shadow: 0 20px 40px -15px rgba(11, 27, 23, 0.05);
+        }
+        .premium-shadow-dark {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+      `}} />
+
+      {/* HEADER / NAVEGAÇÃO */}
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass-header py-3.5 shadow-lg text-white' : 'py-5 text-white bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
+            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#0B1B17]" />
+            </div>
+            <span className="font-black">Reservacar</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+          </a>
+
+          {/* Menu Desktop */}
+          <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-white/90">
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('features'); }} className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('simulator'); }} className="hover:text-[#C1F651] transition-colors duration-300">Simulador</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('stats'); }} className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('faq'); }} className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C1F651] font-bold transition-colors duration-300 font-extrabold">Empresa</a>
+          </nav>
+
+          {/* Ações */}
+          <div className="hidden md:flex items-center gap-4">
+            <button 
+              onClick={() => navigateTo('login')} 
+              className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border border-white/30 text-white hover:border-white/80 hover:bg-white/10 cursor-pointer"
+            >
+              Acesso Lojista
+            </button>
+            <button 
+              onClick={() => navigateTo('assinar')} 
+              className="bg-[#C1F651] text-[#0B1B17] text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-white hover:text-[#0B1B17] transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+            >
+              Assinar Reservacar
+            </button>
+          </div>
+
+          {/* Botão Menu Mobile */}
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className="md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 text-white cursor-pointer" 
+            aria-label="Abrir Menu"
+          >
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`}></span>
+          </button>
+        </div>
+      </header>
+
+      {/* MENU MOBILE OVERLAY */}
+      <div className={`fixed inset-0 bg-[#0B1B17] text-[#F9F9F6] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <nav className="flex flex-col gap-6 text-2xl font-bold">
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('features'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Funcionalidades</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('simulator'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Simulador de Taxas</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('stats'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Métricas de Impacto</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('faq'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C1F651] transition-colors duration-300 inline-block">Empresa</a>
+        </nav>
+        <div className="flex flex-col gap-4 mt-auto">
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('login'); }} className="w-full text-center border border-white/20 text-white font-semibold py-3.5 rounded-full hover:bg-white/10 transition-colors">Acesso Lojista</button>
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F651] text-[#0B1B17] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
+        </div>
+      </div>
+
+      {/* HERO SECTION */}
+      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-24 md:pt-48 md:pb-36 overflow-hidden">
+        {/* Detalhes de Fundo (Glow sutil) */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            {/* Visual (SVG) */}
+            <div className="w-full max-w-lg mx-auto bg-[#D6EAD8] rounded-2xl overflow-hidden premium-shadow-dark border border-white/10">
+              <svg viewBox="0 0 640 520" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+                <rect width="640" height="520" fill="#C8E6CA"/>
+                <ellipse cx="320" cy="420" rx="260" ry="80" fill="rgba(44,107,47,.12)"/>
+                <circle cx="320" cy="160" r="72" fill="#8BC34A" opacity=".6"/>
+                <rect x="268" y="228" width="104" height="140" rx="20" fill="#558B2F" opacity=".7"/>
+                <rect x="302" y="248" width="56" height="96" rx="10" fill="#E8F5E9"/>
+                <rect x="310" y="258" width="40" height="68" rx="6" fill="#33691E" opacity=".8"/>
+                <circle cx="330" cy="336" r="5" fill="#8BC34A"/>
+                <path d="M268 270 Q230 310 240 350" stroke="#558B2F" stroke-width="22" stroke-linecap="round" fill="none" opacity=".7"/>
+                <path d="M372 270 Q410 310 400 350" stroke="#558B2F" stroke-width="22" stroke-linecap="round" fill="none" opacity=".7"/>
+                <rect x="80" y="80" width="160" height="52" rx="12" fill="white" opacity=".9"/>
+                <circle cx="106" cy="106" r="14" fill="#2C6B2F"/>
+                <text x="128" y="101" font-family="sans-serif" font-size="10" fill="#111" font-weight="600">Sinal confirmado</text>
+                <text x="128" y="116" font-family="sans-serif" font-size="12" fill="#2C6B2F" font-weight="700">R$ 5.000 via Pix</text>
+                <rect x="380" y="120" width="176" height="48" rx="12" fill="#0F1C0F" opacity=".85"/>
+                <text x="400" y="140" font-family="sans-serif" font-size="10" fill="rgba(255,255,255,.6)">Link expira em</text>
+                <text x="400" y="158" font-family="monospace" font-size="16" fill="#5CB85C" font-weight="700">23:47</text>
+              </svg>
+            </div>
+
+            {/* Conteúdo Textual */}
+            <div className="space-y-6 text-left">
+              <div className="inline-flex items-center gap-2 bg-[#C1F651]/20 text-[#C1F651] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
+                Quem somos
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-white">
+                A plataforma que transforma interesse em sinal — <span className="text-[#C1F651]">na hora certa</span>
+              </h1>
+              <p className="text-[#6B7C77] text-lg leading-relaxed">
+                Nascemos para resolver o maior problema do vendedor de carros: o lead some antes de fechar. O Reservacar cria o ambiente de urgência e comprometimento que faltava, conectando o momento de interesse ao pagamento do sinal via Pix em minutos.
+              </p>
+              <button 
+                onClick={() => navigateTo('cadastrar-reserva')}
+                className="bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#C1F651]/10 text-sm cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Criar meu primeiro link
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO PROBLEMA */}
+      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] text-left border-y border-[rgba(11,27,23,0.06)]">
+        <div className="max-w-4xl mx-auto px-6 space-y-6">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+            A indecisão do comprador custa caro para quem vende
+          </h2>
+          <p className="text-[#6B7C77] text-lg leading-relaxed">
+            No mercado automotivo, tempo é rival do vendedor. O cliente visita o showroom, sai "para pensar", e nunca mais volta — ou volta apenas para avisar que comprou com o concorrente. O Reservacar existe porque vimos isso acontecer todos os dias, e entendemos que a solução não é pressionar mais: é criar o compromisso certo, na hora certa, com a ferramenta certa.
+          </p>
+        </div>
+      </section>
+
+      {/* SEÇÃO MISSÃO */}
+      <section className="py-24 md:py-32 bg-[#0B1B17] text-[#F9F9F6]">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              Cuidar do resultado do vendedor é cuidar do futuro da concessionária
+            </h2>
+            <p className="text-[#6B7C77] text-lg md:text-xl leading-relaxed">
+              Pesquisa com mais de 400 vendedores mostrou que o maior gargalo não é a abordagem — é a falta de comprometimento formal do lead antes de ir embora.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+            {/* Pilar 1 */}
+            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
+              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <div className="space-y-2">
+                <span className="text-4xl font-black text-[#C1F651] block font-mono">+73%</span>
+                <h4 className="text-lg font-bold text-white">Conversão com urgência</h4>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Propostas com countdown ativo convertem 73% mais do que abordagens sem prazo definido.
+                </p>
+              </div>
+            </div>
+
+            {/* Pilar 2 */}
+            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
+              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div className="space-y-2">
+                <span className="text-4xl font-black text-[#C1F651] block font-mono">1h 48m</span>
+                <h4 className="text-lg font-bold text-white">Velocidade média de fechamento</h4>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Da criação do link ao recebimento do sinal via Pix, nossos clientes fecham em menos de 2 horas.
+                </p>
+              </div>
+            </div>
+
+            {/* Pilar 3 */}
+            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
+              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div className="space-y-2">
+                <span className="text-4xl font-black text-[#C1F651] block font-mono">R$ 2,1Bi</span>
+                <h4 className="text-lg font-bold text-white">Em veículos reservados</h4>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Volume acumulado de propostas geradas e sinais confirmados pela plataforma desde o lançamento.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO CTA SPLIT */}
+      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            {/* Conteúdo Textual */}
+            <div className="space-y-6 text-left">
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                Vamos juntos transformar o seu processo de vendas?
+              </h2>
+              <p className="text-[#6B7C77] text-lg leading-relaxed">
+                Com o Reservacar, você e sua equipe têm acesso a links de reserva personalizados, painel de vendas ao vivo, comparação FIPE e toda a inteligência para fechar mais rápido. Tudo para eliminar o "vou pensar" da sua rotina.
+              </p>
+              <button 
+                onClick={() => navigateTo('login')}
+                className="bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#0B1B17]/10 text-sm cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" className="w-4 h-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Falar com nossa equipe
+              </button>
+            </div>
+
+            {/* Visual (SVG) */}
+            <div className="w-full max-w-lg mx-auto bg-[#E8F5E9] rounded-2xl overflow-hidden border border-[rgba(11,27,23,0.08)] premium-shadow">
+              <svg viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+                <rect width="640" height="420" fill="#C8E6CA"/>
+                <rect x="120" y="200" width="400" height="120" rx="20" fill="#2C6B2F" opacity=".8"/>
+                <rect x="160" y="160" width="300" height="80" rx="16" fill="#33691E" opacity=".9"/>
+                <rect x="180" y="175" width="80" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
+                <rect x="280" y="175" width="80" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
+                <rect x="380" y="175" width="60" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
+                <circle cx="200" cy="320" r="40" fill="#111"/>
+                <circle cx="200" cy="320" r="24" fill="#333"/>
+                <circle cx="440" cy="320" r="40" fill="#111"/>
+                <circle cx="440" cy="320" r="24" fill="#333"/>
+                <ellipse cx="520" cy="235" rx="22" ry="14" fill="#FFF59D" opacity=".9"/>
+                <rect x="360" y="60" width="220" height="100" rx="14" fill="white" opacity=".95"/>
+                <text x="380" y="85" font-family="sans-serif" font-size="10" fill="#9E9C96" font-weight="600">PROPOSTA GERADA</text>
+                <text x="380" y="108" font-family="sans-serif" font-size="14" fill="#111" font-weight="700">BMW 320i 2023</text>
+                <text x="380" y="126" font-family="sans-serif" font-size="11" fill="#2C6B2F" font-weight="600">R$ 214.900 · Sinal R$ 5.000</text>
+                <rect x="380" y="138" width="140" height="12" rx="4" fill="#E8F5E9"/>
+                <rect x="380" y="138" width="98" height="12" rx="4" fill="#2C6B2F"/>
+              </svg>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO QUOTE / CASE */}
+      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] border-t border-[rgba(11,27,23,0.06)]">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            {/* Visual (SVG) */}
+            <div className="w-full max-w-sm mx-auto bg-[#1A2F1A] rounded-2xl overflow-hidden border border-white/10 premium-shadow">
+              <svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+                <rect width="380" height="380" fill="#1A2F1A"/>
+                <ellipse cx="190" cy="380" rx="160" ry="60" fill="rgba(92,184,92,.08)"/>
+                <circle cx="190" cy="150" r="80" fill="#2C6B2F" opacity=".5"/>
+                <rect x="130" y="225" width="120" height="155" rx="18" fill="#33691E" opacity=".6"/>
+                <circle cx="190" cy="150" r="55" fill="#558B2F" opacity=".7"/>
+                <circle cx="175" cy="140" r="6" fill="#C8E6CA" opacity=".8"/>
+                <circle cx="205" cy="140" r="6" fill="#C8E6CA" opacity=".8"/>
+                <path d="M175 165 Q190 178 205 165" stroke="#C8E6CA" stroke-width="3" stroke-linecap="round" fill="none" opacity=".8"/>
+              </svg>
+            </div>
+
+            {/* Texto de Depoimento */}
+            <div className="space-y-6 text-left">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#6B7C77]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#C1F651] inline-block"></span>
+                BMW Premium SP
+              </div>
+              <blockquote className="text-xl md:text-2xl font-bold italic text-slate-800 leading-relaxed">
+                "Com o Reservacar, nosso time parou de perder leads para o silêncio. O link de reserva com o countdown faz o trabalho que nenhum follow-up manual conseguia fazer. Em 3 meses, nossa taxa de conversão saiu de 34% para 71%."
+              </blockquote>
+              <p className="text-sm font-bold text-slate-700">
+                Marcos Souza — Gerente Comercial, BMW Premium SP
+              </p>
+              <div>
+                <a 
+                  href="#" 
+                  onClick={(e) => { e.preventDefault(); navigateTo('assinar'); }}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-all border-b-2 border-[#0B1B17] pb-1"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Ver o case completo
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO COMO FUNCIONA */}
+      <section className="py-24 bg-white text-[#0B1B17]">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#6B7C77] block">Nosso processo</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              Como o Reservacar funciona na prática
+            </h2>
+            <p className="text-[#6B7C77] text-lg leading-relaxed">
+              Veja como ajudamos vendedores e concessionárias a transformar interesse em comprometimento financeiro real.
+            </p>
+          </div>
+
+          {/* Passos */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+            {/* Passo 1 */}
+            <div className="space-y-4 relative group">
+              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">01</span>
+              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
+                <h4 className="font-bold text-base">Cadastro do veículo</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
+                </p>
+              </div>
+            </div>
+
+            {/* Passo 2 */}
+            <div className="space-y-4 relative group">
+              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">02</span>
+              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
+                <h4 className="font-bold text-base">Geração do link</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
+                </p>
+              </div>
+            </div>
+
+            {/* Passo 3 */}
+            <div className="space-y-4 relative group">
+              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">03</span>
+              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
+                <h4 className="font-bold text-base">Compartilhamento</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
+                </p>
+              </div>
+            </div>
+
+            {/* Passo 4 */}
+            <div className="space-y-4 relative group">
+              <span className="text-5xl font-black text-slate-200 group-hover:text-[#C1F651] transition-all duration-300 font-mono">04</span>
+              <div className="bg-[#F9F9F6] p-6 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-2 min-h-[160px] hover:scale-[1.02] transition-transform duration-200">
+                <h4 className="font-bold text-base">Sinal confirmado</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8">
+            <button 
+              onClick={() => navigateTo('login')}
+              className="mx-auto bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#0B1B17]/10 text-sm cursor-pointer"
+            >
+              <PlusCircle size={16} />
+              Criar minha conta grátis
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO NÚMEROS */}
+      <section className="py-24 bg-[#0B1B17] text-[#F9F9F6]">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">
+            Reservacar em números
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
+              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">18k+</span>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Propostas geradas por mês</p>
+            </div>
+            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
+              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">73%</span>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Taxa de conversão média</p>
+            </div>
+            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
+              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">1h48</span>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Velocidade de fechamento</p>
+            </div>
+            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
+              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">R$2,1Bi</span>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Em veículos reservados</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO OUTRAS SOLUÇÕES */}
+      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] border-b border-[rgba(11,27,23,0.06)]">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#6B7C77] block">Conheça outras soluções</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              Tudo que você precisa para vender mais
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+            {/* Card 1 */}
+            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
+              <div className="space-y-4">
+                <span className="text-3xl">🔗</span>
+                <h4 className="text-lg font-bold">Gerador de Links de Reserva</h4>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Crie propostas personalizadas com FIPE, urgência e Pix integrado em menos de 60 segundos.
+                </p>
+              </div>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
+                Conhecer funcionalidade
+                <ArrowRight size={14} />
+              </a>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
+              <div className="space-y-4">
+                <span className="text-3xl">📊</span>
+                <h4 className="text-lg font-bold">Painel de Vendas ao Vivo</h4>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Acompanhe cada proposta ativa, veja quando o cliente visualizou e confirme Pix em tempo real.
+                </p>
+              </div>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
+                Conhecer funcionalidade
+                <ArrowRight size={14} />
+              </a>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-white p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] premium-shadow space-y-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
+              <div className="space-y-4">
+                <span className="text-3xl">🏆</span>
+                <h4 className="text-lg font-bold">Ranking e Gamificação</h4>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Motive sua equipe com metas, ranking de vendedores e badges de performance por período.
+                </p>
+              </div>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-colors pt-4">
+                Conhecer funcionalidade
+                <ArrowRight size={14} />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-[#0B1B17] text-[#F9F9F6] py-16 text-left">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {/* Coluna 1 */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight">
+                <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
+                  <Car size={18} className="text-[#0B1B17]" />
+                </div>
+                <span className="font-black">Reservacar</span>
+              </div>
+              <p className="text-xs text-[#6B7C77] leading-relaxed">
+                Acelere o seu processo de vendas e elimine a hesitação. Propostas personalizadas com fechamento imediato via Pix direto.
+              </p>
+            </div>
+            
+            {/* Coluna 2 */}
+            <div className="space-y-4">
+              <h4 className="text-white font-bold text-sm">Empresa</h4>
+              <ul className="space-y-2 text-xs text-[#6B7C77]">
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="hover:text-white transition">Início</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition">Sobre Nós</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('assinar'); }} className="hover:text-white transition">Planos</a></li>
+              </ul>
+            </div>
+
+            {/* Coluna 3 */}
+            <div className="space-y-4">
+              <h4 className="text-white font-bold text-sm">Links Úteis</h4>
+              <ul className="space-y-2 text-xs text-[#6B7C77]">
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="hover:text-white transition">Acesso Lojista</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} className="hover:text-white transition">Simulador Cliente</a></li>
+              </ul>
+            </div>
+
+            {/* Coluna 4 */}
+            <div className="space-y-4">
+              <h4 className="text-white font-bold text-sm">Suporte</h4>
+              <ul className="space-y-2 text-xs text-[#6B7C77]">
+                <li><a href="mailto:suporte@reservacar.com.br" className="hover:text-white transition">suporte@reservacar.com.br</a></li>
+                <li><span className="text-[10px] bg-white/5 text-[#C1F651] px-2.5 py-1 rounded-full font-bold inline-block">Atendimento 24h</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-8 border-t border-white/5 gap-4 mt-12">
+            <span className="text-[11px] font-semibold text-slate-600">© 2026 Reservacar Ltda. Todos os direitos reservados. CNPJ 12.345.678/0001-90.</span>
+            <div className="flex gap-4 text-xs font-semibold text-[#6B7C77]">
+              <a href="#" className="hover:text-white transition">Privacidade</a>
+              <a href="#" className="hover:text-white transition">Termos</a>
+              <a href="#" className="hover:text-white transition">Cookies</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
 
