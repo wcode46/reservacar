@@ -3404,6 +3404,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
   // Estados de Filtro e Ordenação
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'aguardando' | 'urgentes' | 'confirmados'>('todos');
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
   // Cálculos 100% dinâmicos baseados no estado real das reservas
   const totalResgatesAtivos = recentReservations.filter(r => r.status === 'Active').length;
@@ -3471,6 +3472,35 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       porcentagem: Math.max(8, Math.round((v.valor / maxVal) * 100))
     }));
   }, [totalCaixaReal]);
+
+  // Parâmetros do gráfico de linha SVG
+  const chartWidth = 600;
+  const chartHeight = 200;
+  const paddingX = 40;
+  const paddingY = 25;
+
+  const chartPoints = useMemo(() => {
+    return diasSemana.map((dia, idx) => {
+      const x = paddingX + ((chartWidth - 2 * paddingX) / 6) * idx;
+      // Invertermos o eixo Y: 100% de porcentagem fica no topo (paddingY), 0% fica na base (chartHeight - paddingY)
+      const y = paddingY + (chartHeight - 2 * paddingY) * (1 - dia.porcentagem / 100);
+      return { x, y, ...dia, index: idx };
+    });
+  }, [diasSemana]);
+
+  const linePath = useMemo(() => {
+    if (chartPoints.length === 0) return '';
+    return chartPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  }, [chartPoints]);
+
+  const areaPath = useMemo(() => {
+    if (chartPoints.length === 0) return '';
+    const firstPoint = chartPoints[0];
+    const lastPoint = chartPoints[chartPoints.length - 1];
+    return `M ${firstPoint.x} ${chartHeight - paddingY} ` +
+      chartPoints.map(p => `L ${p.x} ${p.y}`).join(' ') +
+      ` L ${lastPoint.x} ${chartHeight - paddingY} Z`;
+  }, [chartPoints]);
 
   // Ranking de vendedores calculados dinamicamente
   const rankingVendedores = useMemo(() => {
@@ -3608,23 +3638,146 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               <p className="text-[10px] text-slate-400 font-medium">Sinais pagos distribuídos proporcionalmente nos dias da semana</p>
             </div>
             
-            {/* Gráfico de Barras CSS Puro */}
-            <div className="flex items-end justify-between gap-4 h-48 px-2 mt-4 border-b border-slate-100 pb-2">
-              {diasSemana.map((dia) => (
-                <div key={dia.label} className="h-full flex flex-col justify-end items-center flex-1 group relative">
-                  {/* Barra vertical com cor azul e altura dinâmica */}
-                  <div 
-                    className="w-full bg-[#0B1B17] hover:bg-[#122621] rounded-t-md transition-all duration-500 cursor-pointer relative"
-                    style={{ height: `${dia.porcentagem}%` }}
+            {/* Gráfico de Linha e Área Animado Interativo */}
+            <div className="relative w-full h-48 mt-4">
+              <svg 
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+                className="w-full h-full overflow-visible"
+              >
+                <defs>
+                  {/* Gradiente da área preenchida */}
+                  <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0B1B17" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#0B1B17" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Linhas de Grade de Background */}
+                <line 
+                  x1={paddingX} 
+                  y1={paddingY} 
+                  x2={chartWidth - paddingX} 
+                  y2={paddingY} 
+                  stroke="#F1F5F9" 
+                  strokeWidth="1" 
+                />
+                <line 
+                  x1={paddingX} 
+                  y1={paddingY + (chartHeight - 2 * paddingY) / 2} 
+                  x2={chartWidth - paddingX} 
+                  y2={paddingY + (chartHeight - 2 * paddingY) / 2} 
+                  stroke="#F1F5F9" 
+                  strokeDasharray="4 4" 
+                  strokeWidth="1" 
+                />
+                <line 
+                  x1={paddingX} 
+                  y1={chartHeight - paddingY} 
+                  x2={chartWidth - paddingX} 
+                  y2={chartHeight - paddingY} 
+                  stroke="#F1F5F9" 
+                  strokeWidth="1" 
+                />
+
+                {/* Área Preenchida com Animação */}
+                <path 
+                  d={areaPath} 
+                  fill="url(#chartAreaGrad)" 
+                  className="animate-fade-in-area" 
+                />
+
+                {/* Linha do Gráfico com Animação de Entrada */}
+                <path 
+                  d={linePath} 
+                  fill="none" 
+                  stroke="#0B1B17" 
+                  strokeWidth="3.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  className="chart-line animate-draw-line" 
+                />
+
+                {/* Rótulos do Eixo X (Dias da Semana) */}
+                {chartPoints.map((p) => (
+                  <text 
+                    key={`label-${p.index}`}
+                    x={p.x} 
+                    y={chartHeight - 5} 
+                    textAnchor="middle" 
+                    className="text-[10px] font-bold fill-slate-400 uppercase select-none"
                   >
-                    {/* Tooltip com valor em hover */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 text-white text-[9px] font-mono font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 shadow-lg border border-slate-700">
-                      {formatCurrency(dia.valor)}
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase mt-2">{dia.label}</span>
+                    {p.label}
+                  </text>
+                ))}
+
+                {/* Pontos de Dados Interativos */}
+                {chartPoints.map((p) => {
+                  const isHovered = hoveredPoint === p.index;
+                  return (
+                    <g key={`point-group-${p.index}`}>
+                      {/* Anel Pulsante (Apenas no ponto hovered) */}
+                      {isHovered && (
+                        <circle 
+                          cx={p.x} 
+                          cy={p.y} 
+                          r={12} 
+                          fill="#C1F651" 
+                          className="animate-pulse-ring origin-center pointer-events-none" 
+                        />
+                      )}
+
+                      {/* Ponto Visual */}
+                      <circle 
+                        cx={p.x} 
+                        cy={p.y} 
+                        r={isHovered ? 6 : 4} 
+                        fill={isHovered ? '#C1F651' : '#0B1B17'} 
+                        stroke="#FFFFFF" 
+                        strokeWidth={isHovered ? 2 : 1.5} 
+                        className="transition-all duration-200 ease-out pointer-events-none"
+                      />
+
+                      {/* Área de Hover Invisível para Acessibilidade e Toque */}
+                      <circle 
+                        cx={p.x} 
+                        cy={p.y} 
+                        r={20} 
+                        fill="transparent" 
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredPoint(p.index)}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                        tabIndex={0}
+                        aria-label={`Receita para ${p.label}: ${formatCurrency(p.valor)}`}
+                        onFocus={() => setHoveredPoint(p.index)}
+                        onBlur={() => setHoveredPoint(null)}
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Tooltip HTML Posicionado Absolutamente */}
+              {hoveredPoint !== null && (
+                <div 
+                  className="absolute bg-slate-950 text-white p-3 rounded-2xl shadow-xl border border-slate-800 text-xs pointer-events-none transition-all duration-200 z-30 flex flex-col gap-0.5 whitespace-nowrap"
+                  style={{
+                    left: `${(chartPoints[hoveredPoint].x / chartWidth) * 100}%`,
+                    top: `${(chartPoints[hoveredPoint].y / chartHeight) * 100}%`,
+                    transform: 'translate(-50%, -120%)',
+                  }}
+                >
+                  {/* Seta do tooltip */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-slate-950 border-r border-b border-slate-800" />
+                  
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{chartPoints[hoveredPoint].label}</span>
+                  <span className="font-mono font-bold text-sm text-[#C1F651]">
+                    {formatCurrency(chartPoints[hoveredPoint].valor)}
+                  </span>
+                  <span className="text-[9px] text-slate-400">
+                    {chartPoints[hoveredPoint].porcentagem}% da receita
+                  </span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
