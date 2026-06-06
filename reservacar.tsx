@@ -6,7 +6,7 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye, Star, Trophy
+  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus
 } from 'lucide-react';
 
 
@@ -284,8 +284,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Hide standard navbar on logged-in routes, preview layouts and the home landing page */}
-      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && currentRoute !== 'empresa' && (
+      {/* Hide standard navbar on logged-in routes, preview layouts, the home landing page and login page */}
+      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && currentRoute !== 'empresa' && currentRoute !== 'login' && (
         <Navbar currentRoute={currentRoute} navigateTo={navigateTo} />
       )}
 
@@ -730,23 +730,44 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
         </div>
 
         {/* Store Info */}
-        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="px-6 py-5 bg-slate-50/50">
           <p className="text-sm font-bold text-slate-800 truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Plano {activePlano}</span>
           </div>
+
+          {/* Botão de Atalho Criar Reserva */}
+          <button
+            type="button"
+            onClick={() => {
+              if (reservasUsadas >= totalReservasPlano) {
+                showToast('Limite de propostas atingido pelo seu plano. Faça upgrade nas configurações!', 'error');
+                return;
+              }
+              handleNavigate('cadastrar-reserva');
+            }}
+            aria-disabled={reservasUsadas >= totalReservasPlano}
+            className={`w-full mt-3.5 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
+              reservasUsadas >= totalReservasPlano
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                : 'bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6]'
+            }`}
+          >
+            <Plus size={14} className={reservasUsadas >= totalReservasPlano ? 'text-slate-400' : 'text-[#C1F651]'} />
+            <span>Criar Reserva</span>
+          </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="divide-y divide-slate-100 space-y-4">
+        <nav className="space-y-4">
           {renderNavGroup('Operações', operacoesItems)}
           {renderNavGroup('Gestão', gestaoItems)}
         </nav>
       </div>
 
-      {/* Widget de Uso de Créditos (Flat & Premium) */}
-      <div className="px-6 py-5 border-t border-slate-200 bg-slate-50/50 text-left">
+      {/* Widget de Uso de Créditos (Flat & Premium com mt-8) */}
+      <div className="px-6 py-5 border-t border-slate-200 bg-slate-50/50 text-left mt-8">
         <div className="flex justify-between items-center mb-2">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Uso do Plano</span>
           <span className="text-[11px] font-black text-slate-900">{reservasUsadas}/{totalReservasPlano}</span>
@@ -3121,42 +3142,129 @@ function EmpresaView({ navigateTo }) {
 // --- LOGIN VIEW ---
 function LoginView({ navigateTo }) {
   return (
-    <div className="min-h-screen flex items-center justify-center pt-24 px-6 bg-[#f8f9fa] relative">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-10 relative">
-        <h2 className="text-3xl font-black mb-2 text-slate-900 tracking-tight">Acesso Lojista</h2>
-        <p className="text-slate-500 font-medium mb-8">Gerencie suas propostas de reserva exclusivas.</p>
-        
-        <form onSubmit={(e) => { e.preventDefault(); navigateTo('hub'); }} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">E-mail Corporativo</label>
-            <input 
-              type="email" 
-              defaultValue="vendedor@bmwpremium.com.br"
-              className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 focus:border-slate-900 focus:outline-none transition font-medium"
-              required
-            />
-          </div>
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Senha</label>
-              <a href="#" className="text-xs font-semibold text-[#0B1B17] hover:underline">Esqueceu?</a>
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#F9F9F6]">
+      
+      {/* Coluna Esquerda: Banner Visual do Showroom */}
+      <div className="hidden lg:flex flex-col justify-between p-16 bg-[#0B1B17] relative overflow-hidden text-left min-h-screen">
+        {/* Linhas Verticais Decorativas do Anexo */}
+        <div className="absolute inset-0 flex justify-between px-20 pointer-events-none">
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+          <div className="w-[1px] h-full bg-white/[0.03]"></div>
+        </div>
+
+        {/* Efeitos de Luz (Glow) Verde-Limão e Brancos subindo da base */}
+        <div className="absolute bottom-[-150px] left-1/4 w-[400px] h-[400px] bg-[#C1F651]/15 rounded-full blur-[120px] pointer-events-none animate-pulse duration-[6000ms]"></div>
+        <div className="absolute bottom-[-180px] left-1/2 w-[300px] h-[300px] bg-white/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
+
+        {/* Logo superior */}
+        <div className="z-10">
+          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight text-white">
+            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#0B1B17]" />
             </div>
-            <input 
-              type="password" 
-              defaultValue="123456"
-              className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 focus:border-slate-900 focus:outline-none transition font-medium"
-              required
-            />
+            <span className="font-black">Reservacar</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+          </a>
+        </div>
+
+        {/* Mensagem Principal */}
+        <div className="z-10 max-w-xl my-auto">
+          <h1 className="text-4xl lg:text-5xl font-black text-white leading-[1.1] tracking-tight">
+            Acelerador de escassez e reservas digitais para o seu showroom.
+          </h1>
+          <p className="text-slate-400 text-sm mt-6 leading-relaxed max-w-md">
+            A plataforma definitiva para concessionárias e lojistas gerenciarem propostas de reserva com agilidade, segurança e inteligência de vendas.
+          </p>
+        </div>
+
+        {/* Direitos Autorais na base */}
+        <div className="z-10 flex items-center justify-between text-xs text-slate-500 font-medium">
+          <span>© {new Date().getFullYear()} Reservacar S.A.</span>
+          <div className="flex gap-4">
+            <a href="#" className="hover:text-slate-350 transition">Privacidade</a>
+            <a href="#" className="hover:text-slate-350 transition">Termos</a>
           </div>
-          
-          <button 
-            type="submit"
-            className="w-full bg-[#0B1B17] text-white font-bold rounded-xl py-4 mt-2 hover:bg-[#122621] transition"
-          >
-            Entrar no Sistema
-          </button>
-        </form>
+        </div>
       </div>
+
+      {/* Coluna Direita: Formulário de Login */}
+      <div className="flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-[#F9F9F6] relative min-h-screen text-left">
+        {/* Logo visível apenas no mobile */}
+        <div className="lg:hidden absolute top-8 left-8">
+          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight text-[#0B1B17]">
+            <div className="w-8 h-8 bg-[#0B1B17] rounded-lg flex items-center justify-center">
+              <Car size={16} className="text-[#C1F651]" />
+            </div>
+            <span className="font-black">Reservacar</span>
+          </a>
+        </div>
+
+        <div className="w-full max-w-md mx-auto space-y-8">
+          {/* Cabeçalho do Formulário (Ícone e Título) */}
+          <div className="space-y-3">
+            {/* Ícone de sol decorativo igual ao anexo */}
+            <div className="w-10 h-10 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center">
+              <Sun size={20} className="stroke-[2px]" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Lojista</h2>
+              <p className="text-slate-500 font-medium text-sm">
+                Bem-vindo ao Reservacar. Faça login na sua conta corporativa.
+              </p>
+            </div>
+          </div>
+
+          {/* Formulário */}
+          <form onSubmit={(e) => { e.preventDefault(); navigateTo('hub'); }} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-550 uppercase tracking-wider">
+                E-mail Corporativo
+              </label>
+              <input 
+                type="email" 
+                defaultValue="vendedor@bmwpremium.com.br"
+                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold text-slate-550 uppercase tracking-wider">
+                  Senha
+                </label>
+                <a href="#" className="text-xs font-semibold text-[#0B1B17] hover:underline">
+                  Esqueceu a senha?
+                </a>
+              </div>
+              <input 
+                type="password" 
+                defaultValue="123456"
+                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit"
+              className="w-full bg-[#0B1B17] hover:bg-[#122621] text-white font-bold rounded-2xl py-4 mt-2 transition duration-200 shadow-sm"
+            >
+              Entrar no Sistema
+            </button>
+          </form>
+
+          {/* Rodapé do mobile */}
+          <div className="lg:hidden text-center text-xs text-slate-400 font-medium pt-8">
+            © {new Date().getFullYear()} Reservacar S.A.
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -3232,7 +3340,9 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
-            <LinkIcon size={16} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+              <LinkIcon size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">7</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -3243,7 +3353,9 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
-            <TrendingUp size={16} className="text-emerald-600" />
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
+              <TrendingUp size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">71%</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -3254,7 +3366,9 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <DollarSign size={16} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+              <DollarSign size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">R$ 42k</span>
           <span className="text-xs text-slate-400 font-medium">Este mês</span>
@@ -3263,7 +3377,9 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
-            <Clock size={16} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+              <Clock size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">1h 48m</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -3584,7 +3700,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <DollarSign size={16} className="text-[#0B1B17] shrink-0" />
+            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+              <DollarSign size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -3596,7 +3714,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
-            <Users size={16} className="text-[#0B1B17] shrink-0" />
+            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+              <Users size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalResgatesAtivos}</span>
           <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
@@ -3608,7 +3728,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">LINKS EXPIRADOS</span>
-            <ShieldAlert size={16} className="text-rose-600 shrink-0" />
+            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0 border border-rose-100">
+              <ShieldAlert size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalExpiradas}</span>
           <span className="text-xs text-slate-400 font-medium">Por inatividade de leads</span>
@@ -3618,7 +3740,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="bg-white border border-slate-200 p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
-            <TrendingUp size={16} className="text-emerald-600 shrink-0" />
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
+              <TrendingUp size={16} />
+            </div>
           </div>
           <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{conversaoLiquida}%</span>
           <span className="text-xs text-slate-400 font-medium">
@@ -5932,20 +6056,41 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <span className="font-bold text-xs text-slate-800">Carregar fotos do veículo</span>
                   <span className="text-[10px] text-slate-400 mt-1">Formatos suportados: PNG, JPG, JPEG</span>
                   
-                  <div className="mt-4 flex gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
-                    >
-                      + Preset Fiat CS
-                    </button>
+                  <div className="mt-4 flex flex-wrap gap-2 justify-center">
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80')}
                       className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
                     >
-                      + Preset Showroom
+                      + FRENTE+
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80')}
+                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                    >
+                      + Traseira
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80')}
+                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                    >
+                      + Interior +
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80')}
+                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                    >
+                      + Lateral +
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80')}
+                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                    >
+                      + Frente Extra +
                     </button>
                   </div>
                 </div>
