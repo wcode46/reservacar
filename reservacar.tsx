@@ -2348,117 +2348,47 @@ function HomeView({ navigateTo }) {
         </div>
       </section>
 
-      {/* INTERACTIVE SIMULATOR */}
-      <section id="simulator" className="py-24 md:py-32 bg-[#0B1B17] text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-[#C1F651]/5 via-transparent to-transparent pointer-events-none"></div>
-        
-        <div className="max-w-5xl mx-auto px-6 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-[#C1F651] text-sm font-extrabold uppercase tracking-widest block mb-3">Simulador Reservacar</span>
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">Calcule sua economia de comissão</h2>
-            <p className="text-[#6B7C77] mt-4">Compare as reservas diretas sem taxas do Reservacar contra intermediários tradicionais.</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            {/* Painel de Inputs */}
-            <div className="lg:col-span-7 bg-white/5 p-6 md:p-8 rounded-2xl border border-white/10 space-y-8 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <label className="font-bold text-sm text-white">Preço Médio do Veículo:</label>
-                  <span className="text-3xl font-extrabold text-[#C1F651] font-mono">R$ {carPrice.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="20000" 
-                  max="500000" 
-                  step="10000" 
-                  value={carPrice} 
-                  onChange={(e) => setCarPrice(Number(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#C1F651]"
-                />
-                <div className="flex justify-between text-xs text-white/40 mt-2 font-mono">
-                  <span>R$ 20.000</span>
-                  <span>R$ 260.000</span>
-                  <span>R$ 500.000</span>
-                </div>
-              </div>
-
-              {/* Opções Adicionais */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Reservas Mensais</label>
-                  <select 
-                    value={reservasMes} 
-                    onChange={(e) => setReservasMes(Number(e.target.value))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-[#C1F651] font-semibold transition-colors"
-                  >
-                    <option value="5" className="bg-[#0B1B17] text-white">5 reservas/mês</option>
-                    <option value="10" className="bg-[#0B1B17] text-white">10 reservas/mês</option>
-                    <option value="20" className="bg-[#0B1B17] text-white">20 reservas/mês</option>
-                    <option value="30" className="bg-[#0B1B17] text-white">30 reservas/mês</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-white/50 mb-2 uppercase">Tipo do Showroom</label>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setPayoutMethod('pix_direto')}
-                      className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border transition ${payoutMethod === 'pix_direto' ? 'bg-[#C1F651] text-[#0B1B17] border-[#C1F651]' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
-                    >
-                      Reservacar
-                    </button>
-                    <button 
-                      onClick={() => setPayoutMethod('gateway')}
-                      className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold border transition ${payoutMethod === 'gateway' ? 'bg-[#C1F651] text-[#0B1B17] border-[#C1F651]' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}
-                    >
-                      Gateway (3%)
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-white/10 space-y-2 text-xs text-white/50">
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#C1F651]" /> Sem cobrança de comissão sobre a venda do veículo.</p>
-                <p className="flex items-center gap-2"><Check className="w-4 h-4 text-[#C1F651]" /> Economize milhares de reais em taxas de intermediários.</p>
-              </div>
+      {/* SEÇÃO PIX DIRETO (SUBSTITUTO DO SIMULADOR) */}
+      <section id="simulator" className="py-24 bg-[#F9F9F6] text-[#0B1B17]">
+        <div className="max-w-7xl mx-auto px-6">
+          
+          {/* Cabeçalho de Alinhamento Flex */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#0B1B17] leading-[1.15]">
+                Pix direto para a sua conta.<br />
+                Sem comissão por reserva
+              </h2>
             </div>
-
-            {/* Painel de Resultados Comparativos */}
-            <div className="lg:col-span-5 bg-[#C1F651] text-[#0B1B17] p-6 md:p-8 rounded-2xl flex flex-col justify-between premium-shadow relative overflow-hidden">
-              <div className="absolute -right-12 -top-12 w-48 h-48 bg-white/20 rounded-full blur-2xl"></div>
-
-              <div>
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[#0B1B17]/60 block mb-2">Com o Reservacar você economiza</span>
-                <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight font-mono">
-                  R$ {calculations.economia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </h3>
-                <p className="text-xs font-semibold text-[#0B1B17]/60 mt-2">No gateway comum você pagaria <span className="font-bold">R$ {calculations.custoGateway.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> em taxas de sinal Pix.</p>
-              </div>
-
-              <div className="my-8 space-y-4 bg-[#0B1B17]/5 p-4 rounded-xl border border-[#0B1B17]/10">
-                <div className="flex justify-between items-center text-xs font-bold text-[#0B1B17]/70">
-                  <span>Sua economia de comissão em reservas:</span>
-                  <span className="font-mono text-emerald-800 font-extrabold">95% de economia</span>
-                </div>
-                <div className="w-full bg-[#0B1B17]/10 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-[#0B1B17] h-full transition-all duration-500" style={{ width: '95%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-sm">Custo Reservacar:</span>
-                  <span className="text-lg font-extrabold font-mono text-slate-900">R$ 159,00/mês</span>
-                </div>
-                <button 
-                  onClick={() => navigateTo('assinar')}
-                  className="block w-full text-center bg-[#0B1B17] text-[#C1F651] font-bold py-3.5 rounded-xl hover:bg-white hover:text-[#0B1B17] transition-all duration-300"
-                >
-                  Assinar Reservacar
-                </button>
-              </div>
+            <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
+              <button
+                onClick={() => navigateTo('assinar')}
+                className="w-full sm:w-auto bg-[#0B1B17] hover:bg-[#122621] text-white font-bold text-xs px-6 py-4 rounded-xl transition duration-150 flex items-center justify-between gap-4 group cursor-pointer animate-none"
+              >
+                <span>Assinar Reservacar</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+              <button
+                onClick={() => navigateTo('login')}
+                className="w-full sm:w-auto bg-white border border-slate-200 text-[#0B1B17] hover:bg-slate-50 font-bold text-xs px-6 py-4 rounded-xl transition duration-150 flex items-center justify-between gap-4 group cursor-pointer"
+              >
+                <span>Ver demonstracao</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
             </div>
           </div>
+
+          {/* Container Escuro da Imagem */}
+          <div className="bg-[#0B1B17] rounded-[32px] p-6 sm:p-10 md:p-14 lg:p-20 flex items-center justify-center">
+            <div className="max-w-4xl w-full rounded-[24px] overflow-hidden shadow-2xl">
+              <img
+                src="https://i.imgur.com/bQ0jZH2.jpeg"
+                alt="Pix direto para a conta sem comissao"
+                className="w-full h-auto object-cover block"
+              />
+            </div>
+          </div>
+
         </div>
       </section>
 
