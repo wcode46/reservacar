@@ -2122,84 +2122,83 @@ function HomeView({ navigateTo }) {
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Recurso 2 (Como funciona o fluxo de propostas e reservas) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center pt-16 border-t border-slate-200/60 mt-16">
-            {/* Coluna da Esquerda: Título e Link */}
-            <div className="lg:col-span-4 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0B1B17] leading-[1.2]">
-                Propostas e reservas digitais em menos de 60 segundos
-              </h2>
-              <p className="text-[#6B7C77] text-base leading-relaxed font-medium">
-                Venda veículos com muito mais agilidade utilizando o fluxo de sinal via Pix do Reservacar.
-              </p>
-              <div className="pt-2">
-                <button 
-                  onClick={() => navigateTo('assinar')}
-                  className="inline-flex items-center gap-2 text-[#0B1B17] hover:text-[#C1F651] font-bold text-sm transition-all duration-300 group cursor-pointer"
-                >
-                  <span>Quero Assinar o Reservacar</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
-                </button>
-              </div>
-            </div>
-
-            {/* Coluna da Direita: Grid de Cards */}
-            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Card 1 */}
-              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
-                  1
-                </div>
-                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
-                  Cadastro do veículo
-                </h4>
-                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
-                  O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
-                </p>
-              </div>
-
-              {/* Card 2 */}
-              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
-                  2
-                </div>
-                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
-                  Geração do link
-                </h4>
-                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
-                  Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
-                </p>
-              </div>
-
-              {/* Card 3 */}
-              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
-                  3
-                </div>
-                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
-                  Compartilhamento
-                </h4>
-                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
-                  O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
-                </p>
-              </div>
-
-              {/* Card 4 */}
-              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
-                  4
-                </div>
-                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
-                  Sinal confirmado
-                </h4>
-                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
-                  O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
-                </p>
-              </div>
+      {/* SEÇÃO DE PROPOSTAS E RESERVAS DIGITAIS (FULL WIDTH VERDE ESCURO) */}
+      <section id="propostas-fluxo" className="py-24 bg-[#0B1B17] text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-[1.15]">
+              Propostas e reservas digitais<br className="hidden sm:inline" /> em menos de 60 segundos
+            </h2>
+            <p className="text-[#A0B2AC] text-base md:text-lg leading-relaxed font-medium mt-6">
+              Venda veículos com muito mais agilidade utilizando o fluxo de sinal via Pix do Reservacar.
+            </p>
+            
+            {/* Botões de Ação Centralizados */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
+              <button
+                onClick={() => navigateTo('assinar')}
+                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] font-extrabold text-sm px-8 py-3.5 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10 cursor-pointer"
+              >
+                Assinar Reservacar
+              </button>
+              <button
+                onClick={() => navigateTo('login')}
+                className="w-full sm:w-auto bg-transparent border border-white/20 hover:border-white text-white hover:bg-white/5 font-extrabold text-sm px-8 py-3.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Ver demonstracao</span>
+                <ChevronRight size={14} />
+              </button>
             </div>
           </div>
 
+          {/* Linha Divisória Fina */}
+          <div className="w-full border-t border-white/10 mb-16"></div>
+
+          {/* Grid de 4 Colunas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {/* Coluna 1: Cadastro */}
+            <div className="space-y-4">
+              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+                Cadastro
+              </h3>
+              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
+                O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
+              </p>
+            </div>
+
+            {/* Coluna 2: link */}
+            <div className="space-y-4">
+              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+                link
+              </h3>
+              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
+                Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
+              </p>
+            </div>
+
+            {/* Coluna 3: compartilhe */}
+            <div className="space-y-4">
+              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+                compartilhe
+              </h3>
+              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
+                O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
+              </p>
+            </div>
+
+            {/* Coluna 4: Sinal */}
+            <div className="space-y-4">
+              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+                Sinal
+              </h3>
+              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
+                O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
