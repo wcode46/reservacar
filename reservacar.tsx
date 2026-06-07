@@ -6,7 +6,7 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus
+  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera
 } from 'lucide-react';
 
 
@@ -132,6 +132,7 @@ export default function App() {
   const [activeReservation, setActiveReservation] = useState<any>(null); 
   const [toastMessage, setToastMessage] = useState<any>(null);
   const [previewOrigin, setPreviewOrigin] = useState('dashboard');
+  const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'employee'>('owner');
   
   // Credit Plan state management
   const [totalReservasPlano, setTotalReservasPlano] = useState(30);
@@ -315,13 +316,20 @@ export default function App() {
           totalReservasPlano={totalReservasPlano}
           recentReservations={recentReservations}
           showToast={showToast}
+          currentUserRole={currentUserRole}
         />
       )}
       
       <main className={`transition-all duration-300 ${isLoggedRoute ? 'lg:pl-64 pt-16 lg:pt-0' : ''}`}>
         {currentRoute === 'home' && <HomeView navigateTo={navigateTo} />}
         {currentRoute === 'empresa' && <EmpresaView navigateTo={navigateTo} />}
-        {currentRoute === 'login' && <LoginView navigateTo={navigateTo} />}
+        {currentRoute === 'login' && (
+          <LoginView 
+            navigateTo={navigateTo} 
+            currentUserRole={currentUserRole}
+            setCurrentUserRole={setCurrentUserRole}
+          />
+        )}
         
         {currentRoute === 'hub' && (
           <HubView 
@@ -459,6 +467,7 @@ export default function App() {
       {reservaParaGerenciar && (
         <GerenciarReservaModal
           reserva={reservaParaGerenciar}
+          currentUserRole={currentUserRole}
           onClose={() => setReservaParaGerenciar(null)}
           onSave={(updatedRes) => {
             setRecentReservations(prev => prev.map(res => res.id === updatedRes.id ? updatedRes : res));
@@ -496,24 +505,30 @@ export default function App() {
 }
 
 // --- MODAL DE GERENCIAMENTO DE RESERVA (F5) ---
-function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
+function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, currentUserRole = 'owner' }) {
   const [sinal, setSinal] = useState(String(reserva.signal || reserva.sinal || 0));
   const [status, setStatus] = useState(reserva.status || 'Active');
   const [vendedor, setVendedor] = useState(reserva.vendedores || '');
+  const [fotoUrl, setFotoUrl] = useState(reserva.fotos || reserva.foto || '');
+  const [showPhotoSelector, setShowPhotoSelector] = useState(false);
+  const [customUrl, setCustomUrl] = useState('');
 
   const handleSave = () => {
     const novosLogs = [...(reserva.logs || [])];
     const originalSignal = Number(reserva.signal || reserva.sinal || 0);
     const newSignal = Number(sinal);
 
-    if (newSignal !== originalSignal) {
+    const signalToSave = currentUserRole === 'owner' ? newSignal : originalSignal;
+    const sellerToSave = currentUserRole === 'owner' ? vendedor : reserva.vendedores;
+
+    if (currentUserRole === 'owner' && newSignal !== originalSignal) {
       novosLogs.push({
         time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
         text: `Valor do sinal alterado de R$ ${originalSignal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para R$ ${newSignal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
       });
     }
 
-    if (vendedor !== reserva.vendedores) {
+    if (currentUserRole === 'owner' && vendedor !== reserva.vendedores) {
       novosLogs.push({
         time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
         text: `Atendente responsável alterado para: ${vendedor}`
@@ -528,16 +543,25 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
       };
       novosLogs.push({
         time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
-        text: `Status alterado para: ${statusMap[status] || status}`
+        text: `Status alterado para: ${statusMap[status] || status} por ${currentUserRole === 'owner' ? 'Dono' : 'Vendedor'}`
+      });
+    }
+
+    if (fotoUrl !== (reserva.fotos || '')) {
+      novosLogs.push({
+        time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+        text: `Foto do veículo atualizada por ${currentUserRole === 'owner' ? 'Dono' : 'Vendedor'}`
       });
     }
 
     onSave({
       ...reserva,
-      signal: newSignal,
-      sinal: newSignal,
+      signal: signalToSave,
+      sinal: signalToSave,
       status: status,
-      vendedores: vendedor,
+      vendedores: sellerToSave,
+      fotos: fotoUrl,
+      foto: fotoUrl,
       logs: novosLogs
     });
   };
@@ -579,26 +603,114 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
             </div>
           </div>
 
+          {/* Galeria de Fotos */}
+          <div className="space-y-3 bg-slate-50 border border-slate-150 p-4 rounded-2xl">
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Galeria / Fotos do Veículo</label>
+            <div className="flex items-center gap-4">
+              <div className="w-24 h-16 rounded-xl overflow-hidden border border-slate-250 bg-white shrink-0 relative">
+                {fotoUrl ? (
+                  <img src={fotoUrl} alt="Veículo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <Car size={24} />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoSelector(!showPhotoSelector)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition"
+                >
+                  <Camera size={14} className="text-[#0B1B17]" />
+                  <span>Atualizar Imagem</span>
+                </button>
+                <p className="text-[10px] text-slate-400 font-semibold leading-none">Selecione presets do showroom ou URL externa</p>
+              </div>
+            </div>
+
+            {showPhotoSelector && (
+              <div className="bg-white border border-slate-200 p-4 rounded-xl space-y-4 transition duration-150 mt-3">
+                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Presets de Imagem</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {CAR_IMAGES.map((img) => (
+                    <button
+                      key={img.url}
+                      type="button"
+                      onClick={() => {
+                        setFotoUrl(img.url);
+                        setShowPhotoSelector(false);
+                      }}
+                      className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition ${
+                        fotoUrl === img.url ? 'border-[#0B1B17]' : 'border-transparent'
+                      }`}
+                    >
+                      <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="border-t border-slate-100 pt-3 space-y-2">
+                  <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">URL do Veículo</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://exemplo.com/foto.jpg"
+                      value={customUrl}
+                      onChange={(e) => setCustomUrl(e.target.value)}
+                      className="flex-1 bg-white border border-slate-250 rounded-xl px-3 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B1B17] font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (customUrl.trim()) {
+                          setFotoUrl(customUrl.trim());
+                          setCustomUrl('');
+                          setShowPhotoSelector(false);
+                        }
+                      }}
+                      className="px-4 py-2.5 bg-[#0B1B17] hover:bg-[#122621] text-white rounded-xl text-xs font-bold transition"
+                    >
+                      Ok
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Valor do Sinal */}
           <div>
             <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Valor do Sinal (R$)</label>
-            <input 
-              type="text" 
-              value={sinal}
-              onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition font-mono"
-            />
+            {currentUserRole === 'owner' ? (
+              <input 
+                type="text" 
+                value={sinal}
+                onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition font-mono"
+              />
+            ) : (
+              <div className="w-full bg-slate-50 border border-slate-150 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 font-mono select-none">
+                {formatCurrencyLocal(Number(sinal))}
+              </div>
+            )}
           </div>
 
           {/* Vendedor */}
           <div>
             <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Atendente Responsável</label>
-            <input 
-              type="text" 
-              value={vendedor}
-              onChange={(e) => setVendedor(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition"
-            />
+            {currentUserRole === 'owner' ? (
+              <input 
+                type="text" 
+                value={vendedor}
+                onChange={(e) => setVendedor(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition"
+              />
+            ) : (
+              <div className="w-full bg-slate-50 border border-slate-150 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 select-none">
+                {vendedor}
+              </div>
+            )}
           </div>
 
           {/* Status */}
@@ -648,7 +760,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
             >
               Descartar
             </button>
-             <button
+            <button
               onClick={handleSave}
               className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold py-3.5 px-5 rounded-xl text-xs transition"
             >
@@ -662,9 +774,9 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva }) {
 }
 
 // --- SIDEBAR ---
-function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast }) {
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner' }) {
   const operacoesItems = [
-    { id: 'hub', label: 'Painel central', icon: Laptop },
+    ...(currentUserRole === 'owner' ? [{ id: 'hub', label: 'Painel central', icon: Laptop }] : []),
     { id: 'sales-stats', label: 'Painel de vendas', icon: BarChart2 },
     { id: 'dashboard', label: 'Nova proposta', icon: LinkIcon },
   ];
@@ -734,7 +846,9 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
           <p className="text-sm font-bold text-slate-800 truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Plano {activePlano}</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+              {currentUserRole === 'owner' ? `Plano ${activePlano}` : 'Consultor / Vendedor'}
+            </span>
           </div>
 
           {/* Botão de Atalho Criar Reserva */}
@@ -762,7 +876,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
         {/* Navigation Items */}
         <nav className="space-y-4">
           {renderNavGroup('Operações', operacoesItems)}
-          {renderNavGroup('Gestão', gestaoItems)}
+          {currentUserRole === 'owner' && renderNavGroup('Gestão', gestaoItems)}
         </nav>
       </div>
 
@@ -786,13 +900,15 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
           {linksDisponiveis} links disponíveis
         </p>
 
-        <button
-          onClick={() => handleNavigate('checkout-plano')}
-          className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#0B1B17] bg-[#C1F651]/20 hover:bg-[#C1F651]/35 hover:text-[#0B1B17] transition duration-150 cursor-pointer"
-        >
-          <ArrowUp size={14} className="stroke-[2.5px]" />
-          <span>Fazer Upgrade de Plano</span>
-        </button>
+        {currentUserRole === 'owner' && (
+          <button
+            onClick={() => handleNavigate('checkout-plano')}
+            className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#0B1B17] bg-[#C1F651]/20 hover:bg-[#C1F651]/35 hover:text-[#0B1B17] transition duration-150 cursor-pointer"
+          >
+            <ArrowUp size={14} className="stroke-[2.5px]" />
+            <span>Fazer Upgrade de Plano</span>
+          </button>
+        )}
       </div>
 
       {/* Suporte e Configurações */}
@@ -807,17 +923,19 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
         </button>
 
         {/* Configurações */}
-        <button
-          onClick={() => handleNavigate('configuracoes')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 cursor-pointer ${
-            currentRoute === 'configuracoes' || currentRoute === 'checkout-plano'
-              ? 'bg-[#C1F651]/20 text-[#0B1B17] border border-[#C1F651]/30'
-              : 'text-slate-600 hover:text-[#0B1B17] hover:bg-slate-50 border border-transparent'
-          }`}
-        >
-          <Settings size={18} className={currentRoute === 'configuracoes' || currentRoute === 'checkout-plano' ? 'text-[#0B1B17]' : 'text-slate-500'} />
-          <span>Configurações</span>
-        </button>
+        {currentUserRole === 'owner' && (
+          <button
+            onClick={() => handleNavigate('configuracoes')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 cursor-pointer ${
+              currentRoute === 'configuracoes' || currentRoute === 'checkout-plano'
+                ? 'bg-[#C1F651]/20 text-[#0B1B17] border border-[#C1F651]/30'
+                : 'text-slate-600 hover:text-[#0B1B17] hover:bg-slate-50 border border-transparent'
+            }`}
+          >
+            <Settings size={18} className={currentRoute === 'configuracoes' || currentRoute === 'checkout-plano' ? 'text-[#0B1B17]' : 'text-slate-500'} />
+            <span>Configurações</span>
+          </button>
+        )}
       </div>
 
       {/* Footer Section */}
@@ -1234,6 +1352,23 @@ function HomeView({ navigateTo }) {
   const [profile, setProfile] = useState('lojista'); // 'lojista' ou 'cliente'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const isHeaderActive = isScrolled || isServicesOpen;
+
+  const servicesTimeoutRef = useRef<any>(null);
+
+  const handleServicesEnter = () => {
+    if (servicesTimeoutRef.current) {
+      clearTimeout(servicesTimeoutRef.current);
+    }
+    setIsServicesOpen(true);
+  };
+
+  const handleServicesLeave = () => {
+    servicesTimeoutRef.current = setTimeout(() => {
+      setIsServicesOpen(false);
+    }, 250);
+  };
   
   // Simulador de Economia
   const [carPrice, setCarPrice] = useState(120000); // R$ 120.000
@@ -1447,9 +1582,10 @@ function HomeView({ navigateTo }) {
     <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative">
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-header {
-          background-color: rgba(11, 27, 23, 0.95);
+          background-color: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(11, 27, 23, 0.08);
         }
         .circular-text-container {
           animation: rotateCircular 20s linear infinite;
@@ -1491,8 +1627,8 @@ function HomeView({ navigateTo }) {
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
-      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass-header py-3.5 shadow-lg text-white' : 'py-5 text-white bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#0B1B17]' : 'py-5 text-white bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative">
           {/* Logo */}
           <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
             <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
@@ -1503,9 +1639,24 @@ function HomeView({ navigateTo }) {
           </a>
 
           {/* Menu Desktop */}
-          <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-white/90">
+          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}>
             <a href="#features" className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
-            <a href="#simulator" className="hover:text-[#C1F651] transition-colors duration-300">Simulador</a>
+            
+            {/* Dropdown Serviços */}
+            <div 
+              className="py-2"
+              onMouseEnter={handleServicesEnter}
+              onMouseLeave={handleServicesLeave}
+            >
+              <button 
+                type="button"
+                className={`flex items-center gap-1.5 hover:text-[#C1F651] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}
+              >
+                <span>Serviços</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F651]' : isHeaderActive ? 'text-[#0B1B17]/50' : 'text-white/50'}`} />
+              </button>
+            </div>
+
             <a href="#stats" className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
             <a href="#faq" className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
             <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('empresa'); }} className="hover:text-[#C1F651] transition-colors duration-300">Empresa</a>
@@ -1515,13 +1666,21 @@ function HomeView({ navigateTo }) {
           <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={() => navigateTo('login')} 
-              className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border border-white/30 text-white hover:border-white/80 hover:bg-white/10"
+              className={`text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border cursor-pointer ${
+                isHeaderActive 
+                  ? 'border-[#0B1B17]/30 text-[#0B1B17] hover:border-[#0B1B17]/80 hover:bg-[#0B1B17]/10' 
+                  : 'border border-white/30 text-white hover:border-white/80 hover:bg-white/10'
+              }`}
             >
               Acesso Lojista
             </button>
             <button 
               onClick={() => navigateTo('assinar')} 
-              className="bg-[#C1F651] text-[#0B1B17] text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-white hover:text-[#0B1B17] transition-all duration-300 shadow-md hover:shadow-lg"
+              className={`text-sm font-semibold px-6 py-2.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer ${
+                isHeaderActive 
+                  ? 'bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white' 
+                  : 'bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17]'
+              }`}
             >
               Assinar Reservacar
             </button>
@@ -1530,7 +1689,7 @@ function HomeView({ navigateTo }) {
           {/* Botão Menu Mobile */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 text-white" 
+            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#0B1B17]' : 'text-white'}`} 
             aria-label="Abrir Menu"
           >
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
@@ -1538,6 +1697,167 @@ function HomeView({ navigateTo }) {
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`}></span>
           </button>
         </div>
+
+        {isServicesOpen && (
+          <div 
+            className="absolute top-full left-0 w-full bg-white border-b border-slate-200/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
+            onMouseEnter={handleServicesEnter}
+            onMouseLeave={handleServicesLeave}
+          >
+            <div 
+              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#0B1B17]"
+              style={{
+                animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              {/* Botão de Fechar discreto */}
+              <button 
+                onClick={() => setIsServicesOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition cursor-pointer p-1 rounded-full hover:bg-slate-100"
+                type="button"
+                aria-label="Fechar menu"
+              >
+                <X size={16} />
+              </button>
+
+              {/* Coluna 1: Card de Destaque à Esquerda (4/12) */}
+              <div className="col-span-4 flex flex-col justify-between border-r border-slate-100 pr-6">
+                <div className="space-y-4">
+                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
+                    <img 
+                      src="https://images.unsplash.com/photo-1562141983-41057dfcc5e6?auto=format&fit=crop&w=800&q=80" 
+                      alt="Showroom Reservacar" 
+                      className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-700"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[#0B1B17] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
+                    <p className="text-[#6B7C77] text-xs leading-relaxed font-semibold">
+                      A plataforma inteligente para criar propostas, receber sinais Pix e vender veículos como um profissional.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <a 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('login'); }}
+                    className="inline-flex items-center gap-1 text-[#0B1B17] hover:text-[#C1F651] font-bold text-xs group transition-colors"
+                  >
+                    <span>Conhecer plataforma</span>
+                    <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Coluna 2: Recursos (5/12) */}
+              <div className="col-span-5 flex flex-col justify-between border-r border-slate-100 pr-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Recursos</span>
+                  </div>
+                  
+                  <div className="space-y-3.5">
+                    {/* Item 1: Criar proposta */}
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <Send size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Criar proposta</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
+                      </div>
+                    </a>
+
+                    {/* Item 2: Sinal Pix imediato */}
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <DollarSign size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Sinal Pix imediato</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
+                      </div>
+                    </a>
+
+                    {/* Item 3: Garantia de reserva */}
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <ShieldCheck size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Garantia de reserva</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
+                      </div>
+                    </a>
+
+                    {/* Item 4: Links temporários */}
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <LinkIcon size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Links temporários</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
+                      </div>
+                    </a>
+
+                    {/* Item 5: Painel de estoque */}
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <Car size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Painel de estoque</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna 3: Preços (3/12) */}
+              <div className="col-span-3 flex flex-col justify-start">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Preços</span>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <a 
+                      href="#simulator" 
+                      onClick={() => setIsServicesOpen(false)}
+                      className="group flex flex-col gap-1 text-[#6B7C77] hover:text-[#0B1B17] transition-colors p-2 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="font-extrabold text-xs text-[#0B1B17] group-hover:text-[#0b1b17] transition-colors">Planos e tarifas</span>
+                      <span className="text-[10px] text-[#6B7C77] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
       </header>
 
       {/* MENU MOBILE OVERLAY */}
@@ -1704,111 +2024,86 @@ function HomeView({ navigateTo }) {
         <div className="max-w-7xl mx-auto px-6">
           
           {/* Recurso 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-28 md:mb-36">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-xs font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" /> Transações Diretas Autenticadas
-              </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0B1B17] leading-tight">
-                Crie links de propostas sem atritos para seus clientes
-              </h2>
-              <p className="text-[#6B7C77] text-lg leading-relaxed">
-                Escreva propostas customizadas com as informações do veículo da tabela FIPE de forma automática. Compartilhe o link pelo WhatsApp. O cliente vê os detalhes, confere o laudo cautelar e reserva o carro na hora.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button 
-                  onClick={() => navigateTo('cadastrar-reserva')} 
-                  className="bg-[#0B1B17] text-[#F9F9F6] text-center font-bold px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300"
-                >
-                  Simular Reserva (Cliente)
-                </button>
-                <button 
-                  onClick={() => navigateTo('assinar')} 
-                  className="border border-[#0B1B17]/20 text-[#0B1B17] text-center font-bold px-6 py-3.5 rounded-full hover:bg-[#0B1B17]/5 transition-all duration-300"
-                >
-                  Assinar Reservacar
-                </button>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center mb-28 md:mb-36">
+            {/* Coluna da Esquerda: Imagem Vertical do Unsplash */}
+            <div className="lg:col-span-5 relative rounded-[24px] overflow-hidden aspect-[4/5] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-200/80 shadow-md">
+              <img 
+                src="https://images.unsplash.com/photo-1531535934200-759fd3ece786?auto=format&fit=crop&w=800&q=80" 
+                alt="Sua reserva para o próximo passo" 
+                className="w-full h-full object-cover"
+              />
             </div>
 
-            {/* Visual Interativo do Recurso: Gerador de Proposta Dinâmica */}
-            <div className="bg-white p-6 md:p-8 rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-[#C1F651]"></div>
-              
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Reservar com Garantia</span>
-                  <p className="text-base font-extrabold text-[#0B1B17]">Reservacar Soluções de Showroom</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs uppercase tracking-wider text-slate-400 font-bold">Proposta N°</span>
-                  <p className="text-sm font-mono text-[#0B1B17] font-semibold">#RC-2026-9844</p>
-                </div>
+            {/* Coluna da Direita: Conteúdo e Benefícios */}
+            <div className="lg:col-span-7 space-y-8">
+              <div className="space-y-4">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B17] leading-[1.1]">
+                  Sua reserva para o próximo passo
+                </h2>
+                <p className="text-[#6B7C77] text-base md:text-lg leading-relaxed font-medium">
+                  É fácil e simples reservar. E você economiza tempo e dinheiro em cada viagem, também.
+                </p>
               </div>
 
-              {/* Campos de Entrada Interativos */}
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Modelo do Veículo</label>
-                  <input 
-                    type="text" 
-                    value={invoiceCarName} 
-                    onChange={(e) => setInvoiceCarName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Sinal Pix Requerido (R$)</label>
-                    <input 
-                      type="number" 
-                      value={invoiceSinal} 
-                      onChange={(e) => setInvoiceSinal(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
-                    />
+              {/* Lista de Benefícios */}
+              <div className="space-y-5">
+                {/* Item 1 */}
+                <div className="flex items-start gap-4 pb-5 border-b border-slate-200/60">
+                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
+                    <Car size={20} className="text-[#0B1B17]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Meio de Pagamento</label>
-                    <select 
-                      value={invoiceCurrency} 
-                      onChange={(e) => setInvoiceCurrency(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0B1B17] focus:outline-none focus:border-[#C1F651] font-medium transition-colors"
-                    >
-                      <option value="BRL">Pix Direto (BRL)</option>
-                      <option value="BRL_HOLD">Pix Garantia (HOLD)</option>
-                    </select>
+                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
+                      Economize em locações nacionais e internacionais
+                    </h4>
+                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
+                      Acesso instantâneo a tarifas corporativas negociadas.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Item 2 */}
+                <div className="flex items-start gap-4 pb-5 border-b border-slate-200/60">
+                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
+                    <Key size={20} className="text-[#0B1B17]" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
+                      Frota variada e confirmada
+                    </h4>
+                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
+                      Garantia de categoria reservada direto com a locadora.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Item 3 */}
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
+                    <MapPin size={20} className="text-[#0B1B17]" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
+                      A única com cobertura global e suporte local 24/7
+                    </h4>
+                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
+                      Assistência em português em mais de 140 países.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Visualização Dinâmica em Tempo Real */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
-                <div className="flex justify-between text-xs text-slate-400 font-bold mb-2">
-                  <span>Especificação do Veículo</span>
-                  <span>Valor Reserva</span>
-                </div>
-                <div className="flex justify-between text-sm text-[#0B1B17] font-medium mb-1">
-                  <span className="truncate max-w-[200px]">{invoiceCarName}</span>
-                  <span className="font-bold font-mono">
-                    R$ {invoiceSinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400">Garante a retirada temporária do showroom físico por 24 horas.</p>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                  Link Pronto para Enviar
-                </span>
+              {/* Botão de Ação e Disclaimer */}
+              <div className="pt-2">
                 <button 
-                  onClick={simulateInvoiceSend} 
-                  className="bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] text-xs font-bold px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-1"
+                  onClick={() => navigateTo('cadastrar-reserva')} 
+                  className="bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-[#C1F651] font-extrabold text-sm px-8 py-3.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:scale-103 cursor-pointer"
                 >
-                  {invoiceSendStatus === 'enviar' && 'Simular Envio'}
-                  {invoiceSendStatus === 'enviando' && 'Enviando...'}
-                  {invoiceSendStatus === 'enviado' && 'Link Enviado! ✓'}
+                  Fazer reserva
                 </button>
+                <span className="block text-xs text-[#6B7C77] mt-4 leading-relaxed font-semibold">
+                  Reservacar é um serviço prestado em parceria com locadoras líderes de mercado. Capital em risco.
+                </span>
               </div>
             </div>
           </div>
@@ -2610,6 +2905,23 @@ function RankingGamificationPreview({ navigateTo }) {
 function EmpresaView({ navigateTo }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const isHeaderActive = isScrolled || isServicesOpen;
+
+  const servicesTimeoutRef = useRef<any>(null);
+
+  const handleServicesEnter = () => {
+    if (servicesTimeoutRef.current) {
+      clearTimeout(servicesTimeoutRef.current);
+    }
+    setIsServicesOpen(true);
+  };
+
+  const handleServicesLeave = () => {
+    servicesTimeoutRef.current = setTimeout(() => {
+      setIsServicesOpen(false);
+    }, 250);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -2638,9 +2950,10 @@ function EmpresaView({ navigateTo }) {
     <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative text-left">
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-header {
-          background-color: rgba(11, 27, 23, 0.95);
+          background-color: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(11, 27, 23, 0.08);
         }
         .premium-shadow {
           box-shadow: 0 20px 40px -15px rgba(11, 27, 23, 0.05);
@@ -2658,8 +2971,8 @@ function EmpresaView({ navigateTo }) {
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
-      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass-header py-3.5 shadow-lg text-white' : 'py-5 text-white bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#0B1B17]' : 'py-5 text-white bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative">
           {/* Logo */}
           <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
             <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
@@ -2670,9 +2983,24 @@ function EmpresaView({ navigateTo }) {
           </a>
 
           {/* Menu Desktop */}
-          <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-white/90">
+          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}>
             <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('features'); }} className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('simulator'); }} className="hover:text-[#C1F651] transition-colors duration-300">Simulador</a>
+            
+            {/* Dropdown Serviços */}
+            <div 
+              className="py-2"
+              onMouseEnter={handleServicesEnter}
+              onMouseLeave={handleServicesLeave}
+            >
+              <button 
+                type="button"
+                className={`flex items-center gap-1.5 hover:text-[#C1F651] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}
+              >
+                <span>Serviços</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F651]' : isHeaderActive ? 'text-[#0B1B17]/50' : 'text-white/50'}`} />
+              </button>
+            </div>
+
             <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('stats'); }} className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
             <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('faq'); }} className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
             <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C1F651] font-bold transition-colors duration-300 font-extrabold">Empresa</a>
@@ -2682,13 +3010,21 @@ function EmpresaView({ navigateTo }) {
           <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={() => navigateTo('login')} 
-              className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border border-white/30 text-white hover:border-white/80 hover:bg-white/10 cursor-pointer"
+              className={`text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border cursor-pointer ${
+                isHeaderActive 
+                  ? 'border-[#0B1B17]/30 text-[#0B1B17] hover:border-[#0B1B17]/80 hover:bg-[#0B1B17]/10' 
+                  : 'border border-white/30 text-white hover:border-white/80 hover:bg-white/10'
+              }`}
             >
               Acesso Lojista
             </button>
             <button 
               onClick={() => navigateTo('assinar')} 
-              className="bg-[#C1F651] text-[#0B1B17] text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-white hover:text-[#0B1B17] transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+              className={`text-sm font-semibold px-6 py-2.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer ${
+                isHeaderActive 
+                  ? 'bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white' 
+                  : 'bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17]'
+              }`}
             >
               Assinar Reservacar
             </button>
@@ -2697,7 +3033,7 @@ function EmpresaView({ navigateTo }) {
           {/* Botão Menu Mobile */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 text-white cursor-pointer" 
+            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#0B1B17]' : 'text-white'}`} 
             aria-label="Abrir Menu"
           >
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
@@ -2705,6 +3041,167 @@ function EmpresaView({ navigateTo }) {
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[7px] -rotate-45' : ''}`}></span>
           </button>
         </div>
+
+        {isServicesOpen && (
+          <div 
+            className="absolute top-full left-0 w-full bg-white border-b border-slate-200/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
+            onMouseEnter={handleServicesEnter}
+            onMouseLeave={handleServicesLeave}
+          >
+            <div 
+              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#0B1B17]"
+              style={{
+                animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              {/* Botão de Fechar discreto */}
+              <button 
+                onClick={() => setIsServicesOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition cursor-pointer p-1 rounded-full hover:bg-slate-100"
+                type="button"
+                aria-label="Fechar menu"
+              >
+                <X size={16} />
+              </button>
+
+              {/* Coluna 1: Card de Destaque à Esquerda (4/12) */}
+              <div className="col-span-4 flex flex-col justify-between border-r border-slate-100 pr-6">
+                <div className="space-y-4">
+                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
+                    <img 
+                      src="https://images.unsplash.com/photo-1562141983-41057dfcc5e6?auto=format&fit=crop&w=800&q=80" 
+                      alt="Showroom Reservacar" 
+                      className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-700"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[#0B1B17] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
+                    <p className="text-[#6B7C77] text-xs leading-relaxed font-semibold">
+                      A plataforma inteligente para criar propostas, receber sinais Pix e vender veículos como um profissional.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <a 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('login'); }}
+                    className="inline-flex items-center gap-1 text-[#0B1B17] hover:text-[#C1F651] font-bold text-xs group transition-colors"
+                  >
+                    <span>Conhecer plataforma</span>
+                    <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Coluna 2: Recursos (5/12) */}
+              <div className="col-span-5 flex flex-col justify-between border-r border-slate-100 pr-6">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Recursos</span>
+                  </div>
+                  
+                  <div className="space-y-3.5">
+                    {/* Item 1: Criar proposta */}
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <Send size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Criar proposta</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
+                      </div>
+                    </a>
+
+                    {/* Item 2: Sinal Pix imediato */}
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <DollarSign size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Sinal Pix imediato</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
+                      </div>
+                    </a>
+
+                    {/* Item 3: Garantia de reserva */}
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <ShieldCheck size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Garantia de reserva</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
+                      </div>
+                    </a>
+
+                    {/* Item 4: Links temporários */}
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <LinkIcon size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Links temporários</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
+                      </div>
+                    </a>
+
+                    {/* Item 5: Painel de estoque */}
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
+                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                        <Car size={14} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Painel de estoque</p>
+                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna 3: Preços (3/12) */}
+              <div className="col-span-3 flex flex-col justify-start">
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Preços</span>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <a 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('simulator'); }}
+                      className="group flex flex-col gap-1 text-[#6B7C77] hover:text-[#0B1B17] transition-colors p-2 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="font-extrabold text-xs text-[#0B1B17] group-hover:text-[#0b1b17] transition-colors">Planos e tarifas</span>
+                      <span className="text-[10px] text-[#6B7C77] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
       </header>
 
       {/* MENU MOBILE OVERLAY */}
@@ -3140,26 +3637,29 @@ function EmpresaView({ navigateTo }) {
 }
 
 // --- LOGIN VIEW ---
-function LoginView({ navigateTo }) {
+function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
+  const [email, setEmail] = React.useState(currentUserRole === 'owner' ? 'dono@bmwpremium.com.br' : 'vendedor@bmwpremium.com.br');
+  const [password, setPassword] = React.useState('123456');
+
+  React.useEffect(() => {
+    setEmail(currentUserRole === 'owner' ? 'dono@bmwpremium.com.br' : 'vendedor@bmwpremium.com.br');
+  }, [currentUserRole]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (currentUserRole === 'owner') {
+      navigateTo('hub');
+    } else {
+      navigateTo('dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#F9F9F6]">
       
       {/* Coluna Esquerda: Banner Visual do Showroom */}
       <div className="hidden lg:flex flex-col justify-between p-16 bg-[#0B1B17] relative overflow-hidden text-left min-h-screen">
-        {/* Linhas Verticais Decorativas do Anexo */}
-        <div className="absolute inset-0 flex justify-between px-20 pointer-events-none">
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-          <div className="w-[1px] h-full bg-white/[0.03]"></div>
-        </div>
-
-        {/* Efeitos de Luz (Glow) Verde-Limão e Brancos subindo da base */}
-        <div className="absolute bottom-[-150px] left-1/4 w-[400px] h-[400px] bg-[#C1F651]/15 rounded-full blur-[120px] pointer-events-none animate-pulse duration-[6000ms]"></div>
-        <div className="absolute bottom-[-180px] left-1/2 w-[300px] h-[300px] bg-white/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
+        {/* Fundo puramente sólido sem linhas verticais decorativas ou glows/blur decorativos (removidos por solicitação do usuário) */}
 
         {/* Logo superior */}
         <div className="z-10">
@@ -3219,15 +3719,42 @@ function LoginView({ navigateTo }) {
             </div>
           </div>
 
+          {/* Seletor de Perfil Flat */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setCurrentUserRole('owner')}
+              className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
+                currentUserRole === 'owner'
+                  ? 'bg-[#0B1B17] text-[#C1F651]'
+                  : 'text-slate-500 hover:text-slate-900 bg-transparent'
+              }`}
+            >
+              Dono da Loja
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentUserRole('employee')}
+              className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
+                currentUserRole === 'employee'
+                  ? 'bg-[#0B1B17] text-[#C1F651]'
+                  : 'text-slate-500 hover:text-slate-900 bg-transparent'
+              }`}
+            >
+              Funcionário / Vendedor
+            </button>
+          </div>
+
           {/* Formulário */}
-          <form onSubmit={(e) => { e.preventDefault(); navigateTo('hub'); }} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-550 uppercase tracking-wider">
                 E-mail Corporativo
               </label>
               <input 
                 type="email" 
-                defaultValue="vendedor@bmwpremium.com.br"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
                 required
               />
@@ -3244,7 +3771,8 @@ function LoginView({ navigateTo }) {
               </div>
               <input 
                 type="password" 
-                defaultValue="123456"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
                 required
               />

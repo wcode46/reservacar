@@ -2,14 +2,15 @@
 name: Reservacar
 description: Acelerador de Escassez Premium - Plataforma de reserva de veículos com sinal instantâneo.
 colors:
-  primary: "#2563eb"
-  primary-hover: "#1d4ed8"
+  primary: "#0B1B17"
+  primary-hover: "#122621"
   neutral-bg: "#ffffff"
   neutral-surface: "#f8f9fa"
   neutral-text: "#0f172a"
   neutral-text-muted: "#64748b"
   neutral-border: "#e2e8f0"
   accent-success: "#16a34a"
+  accent-highlight: "#C1F651"
 typography:
   display:
     fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif"
@@ -45,14 +46,14 @@ components:
 
 **Creative North Star: "Acelerador de Escassez Premium (Tema Claro & Flat)"**
 
-O sistema de design do Reservacar adota uma estética contemporânea, limpa e de alto contraste, utilizando o **Tema Claro (Light Mode)** por padrão. Abandonando a saturação do tema escuro tradicional de tecnologia, o Reservacar projeta profissionalismo e clareza por meio de superfícies brancas puras, tons equilibrados de cinza e preto para contraste forte, e o uso cirúrgico de um **Azul Cobalto Vibrante** para botões e chamadas à ação (CTAs) principais. 
+O sistema de design do Reservacar adota uma estética contemporânea, limpa e de alto contraste, utilizando o **Tema Claro (Light Mode)** por padrão. Abandonando a saturação do tema escuro tradicional de tecnologia, o Reservacar projeta profissionalismo e clareza por meio de superfícies brancas puras, tons equilibrados de cinza e preto para contraste forte, e o uso cirúrgico de **Preto Carbono** e um **Verde Limão Ácido** para botões e realces de status ativo. 
 
 Laços e linhas de borda finos e sutis são usados no lugar de negritos muito pesados ou sombras decorativas, apoiando-se em uma filosofia **100% Flat (Plana)**. A hierarquia visual e a profundidade são estabelecidas através de contrastes de cor de fundo, espessuras de bordas de 1px e tipografia Geist leve.
 
 **Key Characteristics:**
 * **Contraste Extremo**: Texto preto sobre fundo branco puro, otimizando a leitura sob qualquer iluminação.
 * **Layout Flat Puro**: Sem sombras de elevação, sem efeitos tridimensionais ou blurs de vidro.
-* **Accent Pontual**: O azul cobalto é a única cor de destaque ativo (usada em ≤10% da tela) para orientar o olhar do usuário.
+* **Accent Pontual**: O verde limão ácido é a única cor de destaque ativo (usada em ≤10% da tela) para orientar o olhar do usuário.
 * **Bordas Estruturais**: Uso de divisores cinza claro sólidos para separar seções e inputs com precisão.
 
 ## 2. Colors
@@ -60,20 +61,21 @@ Laços e linhas de borda finos e sutis são usados no lugar de negritos muito pe
 A paleta de cores é focada no contraste limpo e legibilidade.
 
 ### Primary
-- **Azul Cobalto Vibrante** (#2563eb): Usado apenas para elementos acionáveis primários (CTAs) e indicações de status ativo.
+- **Preto Carbono** (#0B1B17): Usado para botões de ação primários, cabeçalhos principais e identidade de marca.
 
 ### Neutral
 - **Branco Absoluto** (#ffffff): Fundo principal da aplicação e de cards de destaque.
 - **Cinza Off-White** (#f8f9fa): Fundo de páginas secundárias e áreas de agrupamento de dados.
-- **Preto Carbono** (#0f172a): Títulos principais, textos de corpo de alta leitura e ícones de alto contraste.
+- **Preto Carbono** (#0f172a / #0B1B17): Títulos principais, textos de corpo de alta leitura e ícones de alto contraste.
 - **Cinza Muted** (#64748b): Subtítulos, textos de apoio e rótulos secundários.
 - **Cinza Divisor** (#e2e8f0): Bordas de cards, divisores horizontais e contornos de inputs.
 
 ### Accent
 - **Verde Pix Comercial** (#16a34a): Usado estritamente para indicar sucesso financeiro (sinais recebidos, transações finalizadas).
+- **Verde Limão Ácido** (#C1F651): Usado para realçar itens selecionados, marcas ativas de menu e chamadas visuais.
 
 ### Named Rules
-**The Strict Neutral Rule.** Todos os elementos neutros devem usar a escala de cinza/preto definida sem qualquer tonalidade fria ou quente. A neutralidade deve ser absoluta para dar destaque ao Azul Cobalto.
+**The Strict Neutral Rule.** Todos os elementos neutros devem usar a escala de cinza/preto definida sem qualquer tonalidade fria ou quente. A neutralidade deve ser absoluta para dar destaque ao Verde Limão.
 
 ## 3. Typography
 
