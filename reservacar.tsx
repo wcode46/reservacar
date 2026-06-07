@@ -2123,239 +2123,79 @@ function HomeView({ navigateTo }) {
             </div>
           </div>
 
-          {/* Recurso 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center pt-12">
-            {/* Visualização Interativa */}
-            <div className="order-last lg:order-first bg-[#0B1B17] p-6 md:p-8 rounded-2xl border border-white/10 premium-shadow-dark text-white space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-lg text-white">Segurança nos Recebimentos</h4>
-                <span className="bg-white/10 text-[#C1F651] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Pix sem Intermediários</span>
-              </div>
-
-              <div className="space-y-4">
-                {/* VIA IDEAL: Transações Pix Diretas em Loop Infinito */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xs text-[#C1F651] font-bold px-1">
-                    <span>Fluxo de Recebimento Direto (Taxa Zero)</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#C1F651] animate-pulse"></span>
-                      Tempo Real
-                    </span>
-                  </div>
-                  <div className="relative overflow-hidden h-[180px] rounded-xl bg-black/20 border border-white/5 p-2">
-                    <div className="animate-vertical-marquee space-y-2">
-                      {/* Transação 1 */}
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">BMW 320i · Rafael Mendes</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 5.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-                      
-                      {/* Transação 2 */}
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Audi A3 · Carlos Andrade</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 1.500,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-
-                      {/* Transação 3 */}
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Mercedes C200 · Fernanda Lima</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 3.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-
-                      {/* Transação 4 */}
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Volvo XC60 · Marcos Silva</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 8.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-
-                      {/* Duplicados para o loop infinito sem saltos */}
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">BMW 320i · Rafael Mendes</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 5.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Audi A3 · Carlos Andrade</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 1.500,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Mercedes C200 · Fernanda Lima</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 3.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-[#C1F651]/40 transition-all hover:scale-[1.01] duration-200">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-emerald-600/20 rounded-lg flex items-center justify-center text-emerald-400 font-extrabold text-xs">
-                            Pix
-                          </div>
-                          <div>
-                            <p className="font-bold text-xs">Volvo XC60 · Marcos Silva</p>
-                            <p className="text-[10px] text-white/55">Sua Chave Pix · Direto na Conta</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-xs text-emerald-400 font-mono">R$ 8.000,00</p>
-                          <span className="text-[9px] text-white/45 bg-emerald-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Pago ✓</span>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Efeito de fade nas bordas do contâiner com cor de fundo #0B1B17 */}
-                    <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-[#0B1B17] to-transparent pointer-events-none"></div>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-[#0B1B17] to-transparent pointer-events-none"></div>
-                  </div>
-                </div>
-
-                {/* VIA TRADICIONAL: Gateways e Intermediários bloqueados */}
-                <div className="space-y-2 text-left">
-                  <div className="flex justify-between items-center text-xs text-slate-400 font-bold px-1">
-                    <span>Gateways Tradicionais</span>
-                    <span className="text-rose-400 font-semibold flex items-center gap-1">
-                      <Clock size={12} className="animate-pulse" />
-                      Retenção e Tarifas
-                    </span>
-                  </div>
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-red-500/20 transition-all space-y-3.5">
-                    {/* Item Comparativo 1 */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-400 font-extrabold text-xs">
-                          %
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs text-white">Gateways e Intermediários</p>
-                          <p className="text-[10px] text-white/55">Taxas altas por transação + Saque demorado</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-xs text-rose-450 font-mono">-R$ 195,00</p>
-                        <span className="text-[9px] text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded-full font-bold uppercase">Taxa Cobrada</span>
-                      </div>
-                    </div>
-
-                    {/* Timeline de Saque/Retenção Visual */}
-                    <div className="pt-3 border-t border-white/5 space-y-2">
-                      <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-white/40">Status do Saque</span>
-                        <span className="font-bold text-amber-400 flex items-center gap-1.5">
-                          <RefreshCw size={10} className="animate-spin text-amber-400" />
-                          Processando (14 dias restantes)
-                        </span>
-                      </div>
-                      {/* Barra de Progresso Lenta */}
-                      <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
-                        <div className="bg-amber-500 h-full w-[25%] animate-pulse"></div>
-                      </div>
-                      <div className="flex justify-between items-center text-[9px] text-white/40">
-                        <span>Transferência pendente</span>
-                        <span>Previsão: 17/06/2026</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-white/50">
-                <span>Tempo de liquidação</span>
-                <span className="font-bold text-white">Instantâneo (Pix Banco Central)</span>
+          {/* Recurso 2 (Como funciona o fluxo de propostas e reservas) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center pt-16 border-t border-slate-200/60 mt-16">
+            {/* Coluna da Esquerda: Título e Link */}
+            <div className="lg:col-span-4 space-y-6">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0B1B17] leading-[1.2]">
+                Propostas e reservas digitais em menos de 60 segundos
+              </h2>
+              <p className="text-[#6B7C77] text-base leading-relaxed font-medium">
+                Venda veículos com muito mais agilidade utilizando o fluxo de sinal via Pix do Reservacar.
+              </p>
+              <div className="pt-2">
+                <button 
+                  onClick={() => navigateTo('assinar')}
+                  className="inline-flex items-center gap-2 text-[#0B1B17] hover:text-[#C1F651] font-bold text-sm transition-all duration-300 group cursor-pointer"
+                >
+                  <span>Quero Assinar o Reservacar</span>
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+                </button>
               </div>
             </div>
 
-            {/* Texto de Vantagem */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-4 py-1.5 rounded-full text-xs font-bold">
-                <Sparkles className="w-3.5 h-3.5" /> Liquidação Imediata
+            {/* Coluna da Direita: Grid de Cards */}
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Card 1 */}
+              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
+                  1
+                </div>
+                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
+                  Cadastro do veículo
+                </h4>
+                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
+                  O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
+                </p>
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#0B1B17] leading-tight">
-                Pix direto para a sua conta. Sem comissão por reserva
-              </h2>
-              <p className="text-[#6B7C77] text-lg leading-relaxed">
-                Esquça os intermediários que cobram taxas abusivas e retêm o valor do sinal por semanas. Com o Reservacar, o cliente escaneia o Qr Code Pix e o dinheiro cai diretamente na conta bancária da sua concessionária na mesma hora.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <button 
-                  onClick={() => navigateTo('assinar')} 
-                  className="bg-[#0B1B17] text-[#F9F9F6] font-bold px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300"
-                >
-                  Quero Assinar o Reservacar
-                </button>
+
+              {/* Card 2 */}
+              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
+                  2
+                </div>
+                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
+                  Geração do link
+                </h4>
+                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
+                  Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
+                </p>
+              </div>
+
+              {/* Card 3 */}
+              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
+                  3
+                </div>
+                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
+                  Compartilhamento
+                </h4>
+                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
+                  O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
+                </p>
+              </div>
+
+              {/* Card 4 */}
+              <div className="bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold font-mono">
+                  4
+                </div>
+                <h4 className="font-extrabold text-[#0B1B17] text-base md:text-lg">
+                  Sinal confirmado
+                </h4>
+                <p className="text-[#6B7C77] text-xs sm:text-sm leading-relaxed font-semibold">
+                  O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
+                </p>
               </div>
             </div>
           </div>
