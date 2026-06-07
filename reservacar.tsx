@@ -2378,17 +2378,17 @@ function HomeView({ navigateTo }) {
             <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
               <button
                 onClick={() => navigateTo('assinar')}
-                className="w-full sm:w-auto bg-[#0B1B17] hover:bg-[#122621] text-white font-bold text-xs px-6 py-4 rounded-xl transition duration-150 flex items-center justify-between gap-4 group cursor-pointer animate-none"
+                className="w-full sm:w-auto bg-[#0B1B17] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] border border-[#0B1B17] transition-all duration-300 flex items-center justify-between gap-4 group cursor-pointer"
               >
                 <span>Assinar Reservacar</span>
-                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               <button
                 onClick={() => navigateTo('login')}
-                className="w-full sm:w-auto bg-white border border-slate-200 text-[#0B1B17] hover:bg-slate-50 font-bold text-xs px-6 py-4 rounded-xl transition duration-150 flex items-center justify-between gap-4 group cursor-pointer"
+                className="w-full sm:w-auto bg-transparent border border-[#0B1B17]/25 text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white font-bold text-xs px-6 py-3.5 rounded-full transition-all duration-300 flex items-center justify-between gap-4 group cursor-pointer"
               >
                 <span>Ver demonstracao</span>
-                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
               </button>
             </div>
           </div>
