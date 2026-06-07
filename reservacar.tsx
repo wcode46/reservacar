@@ -2516,58 +2516,86 @@ function HomeView({ navigateTo }) {
 
       {/* FAQ */}
       <section id="faq" className="py-24 md:py-32 bg-[#F9F9F6]">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#6B7C77] block mb-3">FAQ</span>
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17]">Perguntas Frequentes</h2>
-            <p className="text-[#6B7C77] mt-4">Esclareça suas dúvidas sobre o funcionamento do sinal Pix do Reservacar.</p>
-          </div>
-
-          <div className="space-y-4">
-            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 0 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
-              <button 
-                onClick={() => setActiveFaq(activeFaq === 0 ? null : 0)}
-                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
-              >
-                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Como o Reservacar garante a segurança da reserva?</span>
-                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 0 ? 'rotate-90' : ''}`} />
-              </button>
-              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 0 ? 'max-h-48' : 'max-h-0'}`}>
-                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
-                  O Reservacar gera Qr Codes de Pix dinâmicos vinculados diretamente à conta bancária de sua própria concessionária ou lojista. O dinheiro cai diretamente na sua conta, e o sistema detecta o pagamento de forma instantânea para atualizar a vitrine digital.
-                </p>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            
+            {/* Coluna da Esquerda: Card Escuro */}
+            <div className="lg:col-span-5 bg-[#0B1B17] rounded-[32px] p-8 md:p-12 text-[#F9F9F6] flex flex-col justify-between min-h-[380px] lg:min-h-full shadow-xl">
+              <div>
+                <span className="text-xs uppercase font-extrabold tracking-widest text-[#C1F651] block mb-4">FAQ</span>
+                <h2 className="text-4xl md:text-5xl font-normal text-white tracking-tight leading-[1.15] font-serif">
+                  Perguntas<br />Frequentes
+                </h2>
+              </div>
+              
+              <div className="flex flex-wrap gap-4 mt-12">
+                <a 
+                  href="#features"
+                  className="px-6 py-3 border border-white/20 hover:bg-white/5 text-white font-bold text-xs rounded-xl transition-all duration-300 text-center flex-1 sm:flex-none cursor-pointer"
+                >
+                  Saiba mais
+                </a>
+                <button 
+                  onClick={() => navigateTo('login')}
+                  className="px-6 py-3 bg-white text-[#0B1B17] font-bold text-xs rounded-xl hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 text-center flex-1 sm:flex-none cursor-pointer"
+                >
+                  Fale conosco
+                </button>
               </div>
             </div>
 
-            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 1 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
-              <button 
-                onClick={() => setActiveFaq(activeFaq === 1 ? null : 1)}
-                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
-              >
-                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Preciso pagar comissão sobre os veículos reservados?</span>
-                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 1 ? 'rotate-90' : ''}`} />
-              </button>
-              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 1 ? 'max-h-48' : 'max-h-0'}`}>
-                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
-                  Não! Diferente de outros portais, nós cobramos apenas uma assinatura mensal fixa de R$ 159. Todas as reservas e sinais Pix gerados em suas propostas vão inteiramente para a conta de sua empresa, sem taxas de intermediação.
-                </p>
-              </div>
+            {/* Coluna da Direita: Lista de Accordions */}
+            <div className="lg:col-span-7 space-y-4 flex flex-col justify-center">
+              {(() => {
+                const faqs = [
+                  {
+                    question: "Como o Reservacar garante a segurança da reserva?",
+                    answer: "O Reservacar gera Qr Codes de Pix dinâmicos vinculados diretamente à conta bancária de sua própria concessionária ou lojista. O dinheiro cai diretamente na sua conta, e o sistema detecta o pagamento de forma instantânea para atualizar a vitrine digital."
+                  },
+                  {
+                    question: "Preciso pagar comissão sobre os veículos reservados?",
+                    answer: "Não! Diferente de outros portais, nós cobramos apenas uma assinatura mensal fixa de R$ 159. Todas as reservas e sinais Pix gerados em suas propostas vão inteiramente para a conta de sua empresa, sem taxas de intermediação."
+                  },
+                  {
+                    question: "Como funciona o cronômetro psicológico da proposta?",
+                    answer: "Cada link de proposta enviado ao cliente possui um cronômetro regressivo psicológico configurado pela sua equipe de vendas (ex: 20 minutos). Isso gera um gatilho de escassez e urgência para motivar a reserva rápida do sinal via Pix."
+                  }
+                ];
+
+                return faqs.map((faq, index) => (
+                  <div 
+                    key={index}
+                    className="bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300 border border-[rgba(11,27,23,0.05)] overflow-hidden"
+                  >
+                    <button 
+                      onClick={() => setActiveFaq(activeFaq === index ? null : index)}
+                      className="w-full text-left p-6 sm:p-8 flex justify-between items-center focus:outline-none select-none cursor-pointer gap-4"
+                    >
+                      <span className="font-bold text-sm sm:text-base md:text-lg text-[#0B1B17] leading-snug">
+                        {faq.question}
+                      </span>
+                      <span className="text-xl sm:text-2xl font-light text-[#0B1B17] shrink-0 select-none">
+                        {activeFaq === index ? '−' : '+'}
+                      </span>
+                    </button>
+                    <div 
+                      className={`grid transition-all duration-300 ease-in-out ${
+                        activeFaq === index 
+                          ? 'grid-rows-[1fr] opacity-100' 
+                          : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <p className="px-6 sm:px-8 pb-6 sm:pb-8 text-xs sm:text-sm md:text-base text-[#6B7C77] leading-relaxed">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
 
-            <div className={`bg-white rounded-xl border overflow-hidden premium-shadow transition-all duration-300 ${activeFaq === 2 ? 'border-[#C1F651]' : 'border-[rgba(11,27,23,0.08)]'}`}>
-              <button 
-                onClick={() => setActiveFaq(activeFaq === 2 ? null : 2)}
-                className="w-full text-left p-6 flex justify-between items-center focus:outline-none select-none"
-              >
-                <span className="font-bold text-base md:text-lg text-[#0B1B17]">Como funciona o cronômetro psicológico da proposta?</span>
-                <ChevronRight className={`w-5 h-5 text-[#6B7C77] transition-transform duration-300 ${activeFaq === 2 ? 'rotate-90' : ''}`} />
-              </button>
-              <div className={`transition-all duration-300 ease-in-out bg-slate-50/50 overflow-hidden ${activeFaq === 2 ? 'max-h-48' : 'max-h-0'}`}>
-                <p className="p-6 pt-0 text-sm md:text-base text-[#6B7C77] leading-relaxed">
-                  Cada link de proposta enviado ao cliente possui um cronômetro regressivo psicológico configurado pela sua equipe de vendas (ex: 20 minutos). Isso gera um gatilho de escassez e urgência para motivar a reserva rápida do sinal via Pix.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
