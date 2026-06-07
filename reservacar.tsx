@@ -1375,6 +1375,21 @@ function HomeView({ navigateTo }) {
   const [reservasMes, setReservasMes] = useState(10); // 10 reservas/mês
   const [payoutMethod, setPayoutMethod] = useState('pix_direto'); // pix_direto vs gateway
   
+  // Estados para as push notifications animadas
+  const [activePushIndex, setActivePushIndex] = useState(0);
+  const [isPushVisible, setIsPushVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsPushVisible(false);
+      setTimeout(() => {
+        setActivePushIndex((prev) => (prev + 1) % 3);
+        setIsPushVisible(true);
+      }, 500);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, []);
+  
   // Gerador de Fatura/Proposta Interativo
   const [invoiceCarName, setInvoiceCarName] = useState('BMW 320i M Sport 2024');
   const [invoiceSinal, setInvoiceSinal] = useState(5000);
@@ -2380,12 +2395,84 @@ function HomeView({ navigateTo }) {
 
           {/* Container Escuro da Imagem */}
           <div className="bg-[#0B1B17] rounded-[32px] p-6 sm:p-10 md:p-14 lg:p-20 flex items-center justify-center">
-            <div className="max-w-4xl w-full rounded-[24px] overflow-hidden shadow-2xl">
+            <div className="max-w-4xl w-full rounded-[24px] overflow-hidden shadow-2xl relative">
               <img
                 src="https://i.imgur.com/bQ0jZH2.jpeg"
                 alt="Pix direto para a conta sem comissao"
                 className="w-full h-auto object-cover block"
               />
+              
+              {/* Overlay de Notificação Push Animada em Loop */}
+              {(() => {
+                const pushNotifications = [
+                  {
+                    type: 'dark',
+                    icon: (
+                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-[#C1F651]/10 flex items-center justify-center text-[#C1F651] shrink-0">
+                        <ShieldCheck className="w-2 h-2 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#C1F651]" />
+                      </div>
+                    ),
+                    title: "Seu veículo foi reservado",
+                    time: "12min ago"
+                  },
+                  {
+                    type: 'light',
+                    icon: (
+                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-black/5 flex items-center justify-center text-[#0B1B17] font-black text-[9px] xs:text-[11px] sm:text-xs md:text-sm shrink-0">
+                        $
+                      </div>
+                    ),
+                    title: (
+                      <span>
+                        Imagem nova add <span className="underline font-bold">visualizar</span>
+                      </span>
+                    ),
+                    time: "12min ago"
+                  },
+                  {
+                    type: 'dark',
+                    icon: (
+                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-[#C1F651]/10 flex items-center justify-center text-[#C1F651] font-black text-[9px] xs:text-[11px] sm:text-xs md:text-sm shrink-0">
+                        $
+                      </div>
+                    ),
+                    title: "Pix realizado com sucesso!",
+                    time: "12min ago"
+                  }
+                ];
+
+                const currentPush = pushNotifications[activePushIndex];
+
+                return (
+                  <div 
+                    className={`absolute top-[60.5%] left-[17%] w-[22.8%] h-[8.8%] flex items-center justify-between px-1.5 xs:px-2.5 sm:px-3 rounded-[4px] xs:rounded-[6px] sm:rounded-[8px] md:rounded-[12px] shadow-lg select-none transition-all duration-500 ease-out border ${
+                      isPushVisible 
+                        ? 'opacity-100 translate-y-0 scale-100' 
+                        : 'opacity-0 translate-y-1 scale-95'
+                    } ${
+                      currentPush.type === 'dark'
+                        ? 'bg-[#0B1B17] border-white/10 text-white'
+                        : 'bg-[#E2E6E4] border-black/5 text-[#0B1B17]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 overflow-hidden w-full">
+                      {currentPush.icon}
+                      <div 
+                        className="font-bold text-[6.5px] xs:text-[8px] sm:text-[10px] md:text-xs tracking-tight truncate pr-1"
+                        style={{ color: currentPush.type === 'dark' ? '#F9F9F6' : '#0B1B17' }}
+                      >
+                        {currentPush.title}
+                      </div>
+                    </div>
+                    <div 
+                      className="text-[5.5px] xs:text-[7px] sm:text-[9px] font-medium shrink-0"
+                      style={{ color: currentPush.type === 'dark' ? 'rgba(249, 249, 246, 0.4)' : 'rgba(11, 27, 23, 0.5)' }}
+                    >
+                      {currentPush.time}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
