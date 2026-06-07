@@ -1725,7 +1725,7 @@ function HomeView({ navigateTo }) {
                 <div className="space-y-4">
                   <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
                     <img 
-                      src="https://images.unsplash.com/photo-1562141983-41057dfcc5e6?auto=format&fit=crop&w=800&q=80" 
+                      src="https://i.imgur.com/cv0mLXh.jpeg" 
                       alt="Showroom Reservacar" 
                       className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-700"
                     />
@@ -2028,7 +2028,7 @@ function HomeView({ navigateTo }) {
             {/* Coluna da Esquerda: Imagem Vertical do Unsplash */}
             <div className="lg:col-span-5 relative rounded-[24px] overflow-hidden aspect-[4/5] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-200/80 shadow-md">
               <img 
-                src="https://images.unsplash.com/photo-1531535934200-759fd3ece786?auto=format&fit=crop&w=800&q=80" 
+                src="https://i.imgur.com/mtCb0l9.jpeg" 
                 alt="Sua reserva para o próximo passo" 
                 className="w-full h-full object-cover"
               />
@@ -3069,7 +3069,7 @@ function EmpresaView({ navigateTo }) {
                 <div className="space-y-4">
                   <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
                     <img 
-                      src="https://images.unsplash.com/photo-1562141983-41057dfcc5e6?auto=format&fit=crop&w=800&q=80" 
+                      src="https://i.imgur.com/cv0mLXh.jpeg" 
                       alt="Showroom Reservacar" 
                       className="w-full h-full object-cover opacity-90 hover:scale-102 transition-transform duration-700"
                     />
