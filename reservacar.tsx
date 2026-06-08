@@ -1891,9 +1891,24 @@ function HomeView({ navigateTo }) {
       </div>
 
       {/* HERO SECTION */}
-      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-24 md:pt-48 md:pb-36 overflow-hidden">
-        {/* Detalhes de Fundo (Glow sutil) */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-32 md:pt-48 md:pb-44 overflow-hidden">
+        {/* Vídeo de Fundo */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover opacity-30"
+          >
+            <source src="/video/hero-reserva.mp4" type="video/mp4" />
+            Seu navegador não suporta vídeos.
+          </video>
+          {/* Overlay de contraste do design system */}
+          <div className="absolute inset-0 bg-[#0B1B17]/65"></div>
+          {/* Detalhes de Fundo (Glow sutil) */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+        </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center">
@@ -1924,7 +1939,7 @@ function HomeView({ navigateTo }) {
             </h1>
             
             {/* Subtítulo */}
-            <p className="text-[#6B7C77] text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed">
+            <p className="text-[#A0B2AC] text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed font-semibold">
               {profile === 'lojista' ? (
                 "Sua vitrine digital sob medida. Compartilhe o link da proposta pelo WhatsApp, receba o sinal Pix diretamente na sua conta e segure a venda instantaneamente."
               ) : (
@@ -1933,59 +1948,19 @@ function HomeView({ navigateTo }) {
             </p>
 
             {/* CTAs principais */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-16 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
               <button 
                 onClick={() => navigateTo('cadastrar-reserva')} 
-                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] text-base font-bold px-8 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10"
+                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] text-base font-bold px-8 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10 cursor-pointer"
               >
                 Simular Reserva (Cliente)
               </button>
               <button 
                 onClick={() => navigateTo('assinar')} 
-                className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/5 text-base font-bold px-8 py-4 rounded-full transition-all duration-300"
+                className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/5 text-base font-bold px-8 py-4 rounded-full transition-all duration-300 cursor-pointer"
               >
                 Assinar Reservacar
               </button>
-            </div>
-
-            {/* Preview do Dashboard Interativo */}
-            <div className="w-full max-w-5xl relative mx-auto mt-4 rounded-2xl border border-white/10 bg-[#11221E]/90 premium-shadow-dark overflow-hidden p-4 md:p-6 text-left">
-              
-              {/* Barra Superior do Dashboard Mockup */}
-              <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-red-500/80"></span>
-                  <span className="w-3 h-3 rounded-full bg-yellow-500/80"></span>
-                  <span className="w-3 h-3 rounded-full bg-green-500/80"></span>
-                </div>
-                <div className="bg-white/5 px-4 py-1.5 rounded-lg text-xs font-mono text-white/50 tracking-wider">
-                  https://app.reservacar.com.br/dashboard
-                </div>
-                <div className="flex items-center gap-2 text-white/40">
-                  <Bell className="w-4 h-4" />
-                  <div className="w-6 h-6 rounded-full bg-[#C1F651]/20 flex items-center justify-center text-[10px] text-[#C1F651] font-bold">RC</div>
-                </div>
-              </div>
-
-              {/* Conteúdo Dinâmico do Dashboard */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-500">
-                {profile === 'lojista' ? talentDashboard : companyDashboard}
-              </div>
-
-              {/* Badge Flutuante Rotativo */}
-              <div className="absolute -right-6 -bottom-6 md:-right-8 md:-bottom-8 w-28 h-28 md:w-36 md:h-36 bg-[#C1F651] text-[#0B1B17] rounded-full flex items-center justify-center p-2 text-center pointer-events-none z-20 shadow-xl shadow-[#C1F651]/20">
-                <div className="circular-text-container relative w-full h-full flex items-center justify-center">
-                  <svg className="w-full h-full absolute inset-0" viewBox="0 0 100 100">
-                    <path id="textPath" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
-                    <text className="font-extrabold text-[8.5px] fill-[#0B1B17] uppercase tracking-widest">
-                      <textPath href="#textPath" startOffset="0%">
-                        VITRINE DIGITAL • PIX IMEDIATO • SHOWROOM
-                      </textPath>
-                    </text>
-                  </svg>
-                  <Car className="w-6 h-6 text-[#0B1B17] relative z-10" />
-                </div>
-              </div>
             </div>
 
           </div>
