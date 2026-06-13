@@ -1,19 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --animate-fade-in-down: fade-in-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-draw-line: draw-line 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-area: fade-in-area 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-pulse-ring: pulse-ring 2s infinite ease-in-out;
 
-  --color-brand-primary: #0B1B17;
-  --color-brand-primary-hover: #122621;
-  --color-brand-accent: #C1F651;
-  --color-brand-accent-hover: #b3e543;
-  --color-brand-bg-light: #F9F9F6;
+  /* inDrive design language: lime sobre preto/branco */
+  --color-brand-primary: #141414;
+  --color-brand-primary-hover: #2A2A26;
+  --color-brand-accent: #C1F11D;
+  --color-brand-accent-hover: #d4ff3d;
+  --color-brand-bg-light: #F4F4F2;
 
   @keyframes fade-in-down {
     from {
@@ -69,7 +70,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

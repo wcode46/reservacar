@@ -6,7 +6,7 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera
+  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera, PanelsTopLeft
 } from 'lucide-react';
 
 
@@ -89,6 +89,51 @@ const CAR_IMAGES = [
   { name: 'Electric JAC White', url: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80' },
 ];
 
+// --- FONTE ÚNICA DE VERDADE DOS PLANOS (consumida por Pricing, Assinatura e Checkout) ---
+const PLANOS = {
+  Basic: {
+    nome: 'Basic',
+    tag: 'Plano Básico',
+    precoMensal: 159.90,
+    precoAnual: 1599.00, // 2 meses grátis (mensal × 10)
+    limite: 10,
+    vendedores: '3',
+    nota: 'Recomendado para pequenas lojas',
+    suporte: 'E-mail',
+    relatorios: false,
+    destaque: false,
+    recursos: ['10 links de reserva ativos', 'Até 3 vendedores', 'Painel ao vivo', 'Busca FIPE automática', 'Pix direto na conta', 'Suporte por e-mail'],
+  },
+  Plus: {
+    nome: 'Plus',
+    tag: 'Plano Recomendado',
+    precoMensal: 239.90,
+    precoAnual: 2399.00,
+    limite: 30,
+    vendedores: '10',
+    nota: 'Melhor custo benefício',
+    suporte: 'Prioritário',
+    relatorios: true,
+    destaque: true,
+    recursos: ['30 links de reserva ativos', 'Até 10 vendedores', 'Painel ao vivo', 'Busca FIPE automática', 'Pix direto na conta', 'Relatórios avançados', 'Suporte prioritário'],
+  },
+  Premium: {
+    nome: 'Premium',
+    tag: 'Plano Corporativo',
+    precoMensal: 349.90,
+    precoAnual: 3499.00,
+    limite: 50,
+    vendedores: '∞',
+    nota: 'Exposição máxima do showroom',
+    suporte: '24h dedicado',
+    relatorios: true,
+    destaque: false,
+    recursos: ['50 links de reserva ativos', 'Vendedores ilimitados', 'Painel ao vivo', 'Busca FIPE automática', 'Pix direto na conta', 'Relatórios avançados', 'Suporte 24h dedicado'],
+  },
+};
+const PLANOS_ORDEM = ['Basic', 'Plus', 'Premium'];
+const formatBRL = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 const MOCK_BRANDS = [
   { codigo: 'BMW', nome: 'BMW' },
   { codigo: 'Audi', nome: 'Audi' },
@@ -157,15 +202,23 @@ export default function App() {
     ]
   });
   const [planoUpgrade, setPlanoUpgrade] = useState<string>('Plus');
+  const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null);
   const [reservaParaGerenciar, setReservaParaGerenciar] = useState<any>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(() => {
+    try { return localStorage.getItem('sidebarCollapsed') === '1'; } catch { return false; }
+  });
+  const setSidebarCollapsed = (v: boolean) => {
+    setSidebarCollapsedState(v);
+    try { localStorage.setItem('sidebarCollapsed', v ? '1' : '0'); } catch {}
+  };
   
   // Real-time live notifications (makes the dashboard dynamic!)
   const [liveNotifications, setLiveNotifications] = useState<any[]>([
-    { id: 1, type: 'pix', label: 'PIX RECEBIDO', color: 'text-emerald-600', text: 'Sinal de R$ 5.000 pago por Rafael Mendes — BMW 320i.', time: 'Há 4 min' },
-    { id: 2, type: 'view', label: 'VISUALIZAÇÃO', color: 'text-[#0B1B17]', text: 'Carlos S. abriu a proposta da Audi RS4 — terceira visita.', time: 'Agora' },
+    { id: 1, type: 'pix', label: 'PIX RECEBIDO', color: 'text-[#141414]', text: 'Sinal de R$ 5.000 pago por Rafael Mendes — BMW 320i.', time: 'Há 4 min' },
+    { id: 2, type: 'view', label: 'VISUALIZAÇÃO', color: 'text-[#141414]', text: 'Carlos S. abriu a proposta da Audi RS4 — terceira visita.', time: 'Agora' },
     { id: 3, type: 'urgente', label: 'URGÊNCIA', color: 'text-amber-700', text: 'Link da Mercedes C200 expira em menos de 5 min.', time: 'Agora' },
-    { id: 4, type: 'create', label: 'NOVA PROPOSTA', color: 'text-purple-600', text: 'Carla Silva gerou um link para JAC iEV 20.', time: 'Há 12 min' },
+    { id: 4, type: 'create', label: 'NOVA PROPOSTA', color: 'text-[#141414]', text: 'Carla Silva gerou um link para JAC iEV 20.', time: 'Há 12 min' },
   ]);
 
   // Initial Seed for Reservations (idêntico aos prints!)
@@ -272,43 +325,58 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
+  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans selection:bg-[#C1F651] selection:text-[#0B1B17] transition-colors duration-200">
+    <div className="min-h-screen bg-[#f8f9fa] text-[#141414] font-sans selection:bg-[#C1F11D] selection:text-[#141414] transition-colors duration-200">
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[99] max-w-sm bg-white border border-slate-200 border-l-4 border-[#0B1B17] text-slate-900 p-4 rounded-r-xl flex items-center gap-3 animate-bounce">
-          <Sparkles className="text-[#0B1B17] shrink-0" size={20} />
+        <div className="fixed bottom-6 right-6 z-[99] max-w-sm bg-white border border-[#E5E5E2] border-l-4 border-[#141414] text-[#141414] p-4 rounded-r-xl flex items-center gap-3 animate-bounce">
+          <Sparkles className="text-[#141414] shrink-0" size={20} />
           <span className="text-sm font-medium">{toastMessage.text}</span>
         </div>
       )}
 
       {/* Hide standard navbar on logged-in routes, preview layouts, the home landing page and login page */}
-      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && currentRoute !== 'empresa' && currentRoute !== 'login' && (
+      {!isLoggedRoute && currentRoute !== 'preview' && currentRoute !== 'mobile-preview' && currentRoute !== 'home' && currentRoute !== 'empresa' && currentRoute !== 'pricing' && currentRoute !== 'login' && (
         <Navbar currentRoute={currentRoute} navigateTo={navigateTo} />
       )}
 
       {/* Mobile Header for Logged-in Routes */}
       {isLoggedRoute && (
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6">
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-[#E5E5E2] z-40 flex items-center justify-between px-6">
           <button 
             onClick={() => setMobileSidebarOpen(true)}
-            className="p-2 text-slate-600 hover:text-[#0B1B17] transition"
+            className="p-2 text-[#6F6F6A] hover:text-[#141414] transition"
           >
             <Menu size={24} />
           </button>
-          <span className="font-extrabold text-slate-900 tracking-tight text-lg">Reservacar</span>
+          <span className="font-extrabold text-[#141414] tracking-tight text-lg">Reservacar</span>
           <div className="w-8"></div>
         </div>
       )}
 
+      {/* Topbar global (desktop) for Logged-in Routes */}
+      {isLoggedRoute && (
+        <Topbar
+          currentRoute={currentRoute}
+          navigateTo={navigateTo}
+          empresaLogada={empresaLogada}
+          liveNotifications={liveNotifications}
+          recentReservations={recentReservations}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          showToast={showToast}
+          setActiveReservation={setActiveReservation}
+        />
+      )}
+
       {/* Sidebar for Logged-in Routes */}
       {isLoggedRoute && (
-        <Sidebar 
-          currentRoute={currentRoute} 
-          navigateTo={navigateTo} 
+        <Sidebar
+          currentRoute={currentRoute}
+          navigateTo={navigateTo}
           empresaLogada={empresaLogada}
           isOpen={mobileSidebarOpen}
           setIsOpen={setMobileSidebarOpen}
@@ -317,12 +385,14 @@ export default function App() {
           recentReservations={recentReservations}
           showToast={showToast}
           currentUserRole={currentUserRole}
+          collapsed={sidebarCollapsed}
         />
       )}
-      
-      <main className={`transition-all duration-300 ${isLoggedRoute ? 'lg:pl-64 pt-16 lg:pt-0' : ''}`}>
+
+      <main className={`transition-all duration-300 ${isLoggedRoute ? `${sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-64'} pt-16` : ''}`}>
         {currentRoute === 'home' && <HomeView navigateTo={navigateTo} />}
         {currentRoute === 'empresa' && <EmpresaView navigateTo={navigateTo} />}
+        {currentRoute === 'pricing' && <PricingView navigateTo={navigateTo} setPlanoSelecionado={setPlanoSelecionado} />}
         {currentRoute === 'login' && (
           <LoginView 
             navigateTo={navigateTo} 
@@ -401,25 +471,38 @@ export default function App() {
         )}
 
         {currentRoute === 'assinar' && (
-          <AssinaturaEmpresaView 
-            navigateTo={navigateTo} 
+          <AssinaturaEmpresaView
+            navigateTo={navigateTo}
             showToast={showToast}
             setTotalReservasPlano={setTotalReservasPlano}
             setReservasUsadas={setReservasUsadas}
             setEmpresaLogada={setEmpresaLogada}
+            planoSelecionado={planoSelecionado}
           />
         )}
 
-        {currentRoute === 'configuracoes' && (
-          <ConfiguracoesView 
-            navigateTo={navigateTo} 
-            showToast={showToast}
-            empresaLogada={empresaLogada}
-            setEmpresaLogada={setEmpresaLogada}
-            totalReservasPlano={totalReservasPlano}
-            setTotalReservasPlano={setTotalReservasPlano}
-            setPlanoUpgrade={setPlanoUpgrade}
-          />
+        {['configuracoes', 'vendedores', 'relatorios', 'plano'].includes(currentRoute) && (
+          <ConfiguracoesHub currentRoute={currentRoute} navigateTo={navigateTo} empresaLogada={empresaLogada}>
+            {(currentRoute === 'configuracoes' || currentRoute === 'plano') && (
+              <ConfiguracoesView
+                embedded
+                section={currentRoute === 'plano' ? 'plano' : 'geral'}
+                navigateTo={navigateTo}
+                showToast={showToast}
+                empresaLogada={empresaLogada}
+                setEmpresaLogada={setEmpresaLogada}
+                totalReservasPlano={totalReservasPlano}
+                setTotalReservasPlano={setTotalReservasPlano}
+                setPlanoUpgrade={setPlanoUpgrade}
+              />
+            )}
+            {currentRoute === 'vendedores' && (
+              <VendedoresView embedded navigateTo={navigateTo} showToast={showToast} empresaLogada={empresaLogada} setEmpresaLogada={setEmpresaLogada} />
+            )}
+            {currentRoute === 'relatorios' && (
+              <RelatorioReservasView embedded navigateTo={navigateTo} showToast={showToast} recentReservations={recentReservations} setRecentReservations={setRecentReservations} />
+            )}
+          </ConfiguracoesHub>
         )}
 
         {currentRoute === 'checkout-plano' && (
@@ -444,23 +527,6 @@ export default function App() {
           />
         )}
 
-        {currentRoute === 'vendedores' && (
-          <VendedoresView 
-            navigateTo={navigateTo} 
-            showToast={showToast}
-            empresaLogada={empresaLogada}
-            setEmpresaLogada={setEmpresaLogada}
-          />
-        )}
-
-        {currentRoute === 'relatorios' && (
-          <RelatorioReservasView 
-            navigateTo={navigateTo} 
-            showToast={showToast}
-            recentReservations={recentReservations}
-            setRecentReservations={setRecentReservations}
-          />
-        )}
       </main>
       {/* O rodapé agora é embutido na própria HomeView */}
 
@@ -576,42 +642,42 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
   ];
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-lg w-full text-left relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-[#E5E5E2] rounded-3xl p-6 md:p-8 max-w-lg w-full text-left relative max-h-[90vh] overflow-y-auto">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 transition"
+          className="absolute top-4 right-4 text-[#B9B9B4] hover:text-[#141414] transition"
         >
           <X size={20} />
         </button>
 
-        <h3 className="text-xl font-bold text-slate-900 mb-1 tracking-tight">Gerenciar Reserva</h3>
-        <p className="text-slate-500 text-xs mb-6 font-medium uppercase tracking-wider border-b border-slate-100 pb-2">
+        <h3 className="text-xl font-bold text-[#141414] mb-1 tracking-tight">Gerenciar Reserva</h3>
+        <p className="text-[#8A8A85] text-xs mb-6 font-medium uppercase tracking-wider border-b border-[#EBEBE8] pb-2">
           {reserva.title}
         </p>
 
         <div className="space-y-5">
           {/* Info do Lead */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-150 p-4 rounded-2xl text-xs">
+          <div className="grid grid-cols-2 gap-4 bg-[#F4F4F2] border border-[#EBEBE8] p-4 rounded-2xl text-xs">
             <div>
-              <span className="block text-[9px] text-slate-450 font-bold uppercase tracking-wider mb-1">Lead Associado</span>
-              <strong className="text-slate-800 text-sm font-semibold">{reserva.clienteNome || 'Não informado'}</strong>
+              <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Lead Associado</span>
+              <strong className="text-[#2A2A26] text-sm font-semibold">{reserva.clienteNome || 'Não informado'}</strong>
             </div>
             <div>
-              <span className="block text-[9px] text-slate-450 font-bold uppercase tracking-wider mb-1">Criado em</span>
-              <strong className="text-slate-800 text-sm font-semibold font-mono">{reserva.created}</strong>
+              <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
+              <strong className="text-[#2A2A26] text-sm font-semibold font-mono">{reserva.created}</strong>
             </div>
           </div>
 
           {/* Galeria de Fotos */}
-          <div className="space-y-3 bg-slate-50 border border-slate-150 p-4 rounded-2xl">
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Galeria / Fotos do Veículo</label>
+          <div className="space-y-3 bg-[#F4F4F2] border border-[#EBEBE8] p-4 rounded-2xl">
+            <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Galeria / Fotos do Veículo</label>
             <div className="flex items-center gap-4">
-              <div className="w-24 h-16 rounded-xl overflow-hidden border border-slate-250 bg-white shrink-0 relative">
+              <div className="w-24 h-16 rounded-xl overflow-hidden border border-[#E5E5E2] bg-white shrink-0 relative">
                 {fotoUrl ? (
                   <img src={fotoUrl} alt="Veículo" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                  <div className="w-full h-full flex items-center justify-center text-[#B9B9B4]">
                     <Car size={24} />
                   </div>
                 )}
@@ -620,18 +686,18 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                 <button
                   type="button"
                   onClick={() => setShowPhotoSelector(!showPhotoSelector)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[#5F5F5A] bg-white border border-[#E5E5E2] hover:bg-[#F4F4F2] transition"
                 >
-                  <Camera size={14} className="text-[#0B1B17]" />
+                  <Camera size={14} className="text-[#141414]" />
                   <span>Atualizar Imagem</span>
                 </button>
-                <p className="text-[10px] text-slate-400 font-semibold leading-none">Selecione presets do showroom ou URL externa</p>
+                <p className="text-[10px] text-[#B9B9B4] font-semibold leading-none">Selecione presets do showroom ou URL externa</p>
               </div>
             </div>
 
             {showPhotoSelector && (
-              <div className="bg-white border border-slate-200 p-4 rounded-xl space-y-4 transition duration-150 mt-3">
-                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">Presets de Imagem</span>
+              <div className="bg-white border border-[#E5E5E2] p-4 rounded-xl space-y-4 transition duration-150 mt-3">
+                <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Presets de Imagem</span>
                 <div className="grid grid-cols-4 gap-2">
                   {CAR_IMAGES.map((img) => (
                     <button
@@ -642,7 +708,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                         setShowPhotoSelector(false);
                       }}
                       className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition ${
-                        fotoUrl === img.url ? 'border-[#0B1B17]' : 'border-transparent'
+                        fotoUrl === img.url ? 'border-[#141414]' : 'border-transparent'
                       }`}
                     >
                       <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
@@ -650,15 +716,15 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                   ))}
                 </div>
                 
-                <div className="border-t border-slate-100 pt-3 space-y-2">
-                  <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">URL do Veículo</span>
+                <div className="border-t border-[#EBEBE8] pt-3 space-y-2">
+                  <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">URL do Veículo</span>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       placeholder="https://exemplo.com/foto.jpg"
                       value={customUrl}
                       onChange={(e) => setCustomUrl(e.target.value)}
-                      className="flex-1 bg-white border border-slate-250 rounded-xl px-3 py-2.5 text-xs text-slate-800 outline-none focus:border-[#0B1B17] font-mono"
+                      className="flex-1 bg-white border border-[#E5E5E2] rounded-xl px-3 py-2.5 text-xs text-[#2A2A26] outline-none focus:border-[#141414] font-mono"
                     />
                     <button
                       type="button"
@@ -669,7 +735,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                           setShowPhotoSelector(false);
                         }
                       }}
-                      className="px-4 py-2.5 bg-[#0B1B17] hover:bg-[#122621] text-white rounded-xl text-xs font-bold transition"
+                      className="px-4 py-2.5 bg-[#141414] hover:bg-[#2A2A26] text-white rounded-xl text-xs font-bold transition"
                     >
                       Ok
                     </button>
@@ -681,16 +747,16 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
           {/* Valor do Sinal */}
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Valor do Sinal (R$)</label>
+            <label className="block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2">Valor do Sinal (R$)</label>
             {currentUserRole === 'owner' ? (
               <input 
                 type="text" 
                 value={sinal}
                 onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition font-mono"
+                className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition font-mono"
               />
             ) : (
-              <div className="w-full bg-slate-50 border border-slate-150 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 font-mono select-none">
+              <div className="w-full bg-[#F4F4F2] border border-[#EBEBE8] rounded-xl px-4 py-3 text-sm font-semibold text-[#8A8A85] font-mono select-none">
                 {formatCurrencyLocal(Number(sinal))}
               </div>
             )}
@@ -698,16 +764,16 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
           {/* Vendedor */}
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Atendente Responsável</label>
+            <label className="block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2">Atendente Responsável</label>
             {currentUserRole === 'owner' ? (
               <input 
                 type="text" 
                 value={vendedor}
                 onChange={(e) => setVendedor(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition"
+                className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition"
               />
             ) : (
-              <div className="w-full bg-slate-50 border border-slate-150 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 select-none">
+              <div className="w-full bg-[#F4F4F2] border border-[#EBEBE8] rounded-xl px-4 py-3 text-sm font-semibold text-[#8A8A85] select-none">
                 {vendedor}
               </div>
             )}
@@ -715,11 +781,11 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
           {/* Status */}
           <div>
-            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Status da Reserva</label>
+            <label className="block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2">Status da Reserva</label>
             <select 
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition"
+              className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition"
             >
               <option value="Active">Aguardando Sinal</option>
               <option value="Completed">PIX Recebido</option>
@@ -729,11 +795,11 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
           {/* Histórico fictício */}
           <div>
-            <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-3">Histórico da Proposta</span>
-            <div className="space-y-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl max-h-36 overflow-y-auto">
+            <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-3">Histórico da Proposta</span>
+            <div className="space-y-3 bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl max-h-36 overflow-y-auto">
               {historico.map((log, index) => (
-                <div key={index} className="flex items-start gap-2.5 text-xs text-slate-700">
-                  <span className="text-[10px] font-mono text-slate-400 mt-0.5">{log.time}</span>
+                <div key={index} className="flex items-start gap-2.5 text-xs text-[#5F5F5A]">
+                  <span className="text-[10px] font-mono text-[#B9B9B4] mt-0.5">{log.time}</span>
                   <p className="font-semibold">{log.text}</p>
                 </div>
               ))}
@@ -742,7 +808,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
         </div>
 
         {/* Rodapé Ações */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 mt-6 justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-[#EBEBE8] mt-6 justify-between">
           {status === 'Active' ? (
             <button
               onClick={() => onCancelReserva(reserva.id)}
@@ -756,13 +822,13 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="bg-white border border-slate-200 text-slate-700 font-bold py-3.5 px-5 rounded-xl text-xs hover:bg-slate-50 transition"
+              className="bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-3.5 px-5 rounded-xl text-xs hover:bg-[#F4F4F2] transition"
             >
               Descartar
             </button>
             <button
               onClick={handleSave}
-              className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold py-3.5 px-5 rounded-xl text-xs transition"
+              className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold py-3.5 px-5 rounded-xl text-xs transition"
             >
               Salvar Alterações
             </button>
@@ -774,10 +840,9 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 }
 
 // --- SIDEBAR ---
-function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner' }) {
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner', collapsed = false }) {
   const operacoesItems = [
-    ...(currentUserRole === 'owner' ? [{ id: 'hub', label: 'Painel central', icon: Laptop }] : []),
-    { id: 'sales-stats', label: 'Painel de vendas', icon: BarChart2 },
+    { id: 'sales-stats', label: 'Painel de loja', icon: BarChart2 },
     { id: 'dashboard', label: 'Nova proposta', icon: LinkIcon },
   ];
 
@@ -794,30 +859,34 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
   const activePlano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
   const linksDisponiveis = totalReservasPlano - reservasUsadas;
 
-  const renderNavGroup = (title: string, items: any[]) => (
-    <div className="space-y-1.5 px-4 pt-4">
-      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">{title}</span>
+  const renderNavGroup = (title: string, items: any[], isCol: boolean) => (
+    <div className={`space-y-1.5 pt-4 ${isCol ? 'px-2' : 'px-4'}`}>
+      {!isCol && <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest px-3 mb-2 block">{title}</span>}
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentRoute === item.id || (item.id === 'configuracoes' && currentRoute === 'checkout-plano');
         const showBadge = item.id === 'sales-stats';
-        
+
         return (
           <button
             key={item.id}
             onClick={() => handleNavigate(item.id)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 ${
-              isActive 
-                ? 'bg-[#C1F651]/20 text-[#0B1B17] border border-[#C1F651]/30' 
-                : 'text-slate-600 hover:text-[#0B1B17] hover:bg-slate-50 border border-transparent'
+            title={isCol ? item.label : undefined}
+            className={`w-full flex items-center rounded-xl text-sm font-semibold transition duration-150 ${isCol ? 'justify-center px-0 py-3' : 'justify-between px-4 py-3'} ${
+              isActive
+                ? 'bg-[#C1F11D]/20 text-[#141414] border border-[#C1F11D]/30'
+                : 'text-[#6F6F6A] hover:text-[#141414] hover:bg-[#F4F4F2] border border-transparent'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <Icon size={18} className={isActive ? 'text-[#0B1B17]' : 'text-slate-500'} />
-              <span>{item.label}</span>
+            <div className={`flex items-center ${isCol ? 'relative' : 'gap-3'}`}>
+              <Icon size={18} className={isActive ? 'text-[#141414]' : 'text-[#8A8A85]'} />
+              {!isCol && <span>{item.label}</span>}
+              {isCol && showBadge && recentReservations.length > 0 && (
+                <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#C1F11D] text-[#141414] text-[9px] font-bold rounded-full flex items-center justify-center">{recentReservations.length}</span>
+              )}
             </div>
-            {showBadge && (
-              <span className="w-5 h-5 bg-[#C1F651] text-[#0B1B17] text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+            {!isCol && showBadge && (
+              <span className="w-5 h-5 bg-[#C1F11D] text-[#141414] text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
                 {recentReservations.length}
               </span>
             )}
@@ -827,29 +896,32 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
     </div>
   );
 
-  const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-white text-slate-800">
+  const renderContent = (isCol: boolean) => (
+    <div className="h-full flex flex-col justify-between bg-white text-[#2A2A26]">
       <div>
-        {/* Brand Header */}
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-200">
-          <div className="w-10 h-10 bg-[#0B1B17] rounded-xl flex items-center justify-center shrink-0">
-            <Car size={22} className="text-white" />
+        {/* Brand Header (altura alinhada à topbar = 64px) */}
+        <div className={`h-16 flex items-center border-b border-[#E5E5E2] ${isCol ? 'justify-center px-2' : 'gap-2.5 px-6'}`}>
+          <div className="w-9 h-9 bg-[#141414] rounded-xl flex items-center justify-center shrink-0">
+            <Car size={20} className="text-white" />
           </div>
-          <div>
-            <span className="text-xl font-black tracking-tight text-slate-900 block">Reservacar</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block -mt-1">Central de Vendas</span>
-          </div>
+          {!isCol && (
+            <span className="text-xl font-black tracking-tight text-[#141414]">Reservacar</span>
+          )}
         </div>
 
         {/* Store Info */}
-        <div className="px-6 py-5 bg-slate-50/50">
-          <p className="text-sm font-bold text-slate-800 truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
-              {currentUserRole === 'owner' ? `Plano ${activePlano}` : 'Consultor / Vendedor'}
-            </span>
-          </div>
+        <div className={`bg-[#F4F4F2]/50 ${isCol ? 'px-2 py-4' : 'px-6 py-5'}`}>
+          {!isCol && (
+            <>
+              <p className="text-sm font-bold text-[#2A2A26] truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-2 h-2 rounded-full bg-[#C1F11D]"></span>
+                <span className="text-[11px] font-bold text-[#8A8A85] uppercase tracking-wide">
+                  {currentUserRole === 'owner' ? `Plano ${activePlano}` : 'Consultor / Vendedor'}
+                </span>
+              </div>
+            </>
+          )}
 
           {/* Botão de Atalho Criar Reserva */}
           <button
@@ -862,90 +934,81 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
               handleNavigate('cadastrar-reserva');
             }}
             aria-disabled={reservasUsadas >= totalReservasPlano}
-            className={`w-full mt-3.5 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
+            title={isCol ? 'Criar Reserva' : undefined}
+            className={`w-full flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition duration-150 ${isCol ? 'py-2.5' : 'mt-3.5 px-4 py-2.5'} ${
               reservasUsadas >= totalReservasPlano
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                : 'bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6]'
+                ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]'
+                : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'
             }`}
           >
-            <Plus size={14} className={reservasUsadas >= totalReservasPlano ? 'text-slate-400' : 'text-[#C1F651]'} />
-            <span>Criar Reserva</span>
+            <Plus size={14} className={reservasUsadas >= totalReservasPlano ? 'text-[#B9B9B4]' : 'text-[#C1F11D]'} />
+            {!isCol && <span>Criar Reserva</span>}
           </button>
         </div>
 
         {/* Navigation Items */}
         <nav className="space-y-4">
-          {renderNavGroup('Operações', operacoesItems)}
-          {currentUserRole === 'owner' && renderNavGroup('Gestão', gestaoItems)}
+          {renderNavGroup('Operações', operacoesItems, isCol)}
+          {currentUserRole === 'owner' && renderNavGroup('Gestão', gestaoItems, isCol)}
         </nav>
       </div>
 
-      {/* Widget de Uso de Créditos (Flat & Premium com mt-8) */}
-      <div className="px-6 py-5 border-t border-slate-200 bg-slate-50/50 text-left mt-8">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Uso do Plano</span>
-          <span className="text-[11px] font-black text-slate-900">{reservasUsadas}/{totalReservasPlano}</span>
+      {/* Widget de Uso de Créditos */}
+      {!isCol && (
+        <div className="px-6 py-5 border-t border-[#E5E5E2] bg-[#F4F4F2]/50 text-left mt-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Uso do Plano</span>
+            <span className="text-[11px] font-black text-[#141414]">{reservasUsadas}/{totalReservasPlano}</span>
+          </div>
+          <div className="w-full bg-[#EBEBE8] h-2.5 rounded-full overflow-hidden border border-[#E5E5E2]">
+            <div className="bg-[#141414] h-full transition-all duration-[800ms] ease-out-expo origin-left transform" style={{ width: `${Math.min(100, (reservasUsadas / totalReservasPlano) * 100)}%` }}></div>
+          </div>
+          <p className="text-[10px] text-[#B9B9B4] mt-2 font-bold uppercase tracking-wide">{linksDisponiveis} links disponíveis</p>
+          {currentUserRole === 'owner' && (
+            <button onClick={() => handleNavigate('plano')} className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#141414] bg-[#C1F11D]/20 hover:bg-[#C1F11D]/35 transition duration-150 cursor-pointer">
+              <ArrowUp size={14} className="stroke-[2.5px]" />
+              <span>Fazer Upgrade de Plano</span>
+            </button>
+          )}
         </div>
-        
-        {/* Barra de Progresso Flat */}
-        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
-          <div 
-            className="bg-[#0B1B17] h-full transition-all duration-[800ms] ease-out-expo origin-left transform"
-            style={{ 
-              width: `${Math.min(100, (reservasUsadas / totalReservasPlano) * 100)}%` 
-            }}
-          ></div>
-        </div>
-        <p className="text-[10px] text-slate-450 mt-2 font-bold uppercase tracking-wide">
-          {linksDisponiveis} links disponíveis
-        </p>
-
-        {currentUserRole === 'owner' && (
-          <button
-            onClick={() => handleNavigate('checkout-plano')}
-            className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#0B1B17] bg-[#C1F651]/20 hover:bg-[#C1F651]/35 hover:text-[#0B1B17] transition duration-150 cursor-pointer"
-          >
-            <ArrowUp size={14} className="stroke-[2.5px]" />
-            <span>Fazer Upgrade de Plano</span>
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Suporte e Configurações */}
-      <div className="px-4 pt-3 pb-1 space-y-1 bg-white text-left">
-        {/* Suporte */}
+      <div className={`pt-3 pb-1 space-y-1 bg-white text-left ${isCol ? 'px-2' : 'px-4'}`}>
         <button
           onClick={() => showToast('Suporte Reservacar: Entre em contato pelo e-mail suporte@reservacar.com.br ou WhatsApp!', 'info')}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#0B1B17] hover:bg-slate-50 transition duration-150 cursor-pointer"
+          title={isCol ? 'Suporte' : undefined}
+          className={`w-full flex items-center rounded-xl text-sm font-semibold text-[#6F6F6A] hover:text-[#141414] hover:bg-[#F4F4F2] transition duration-150 cursor-pointer ${isCol ? 'justify-center py-3' : 'gap-3 px-4 py-3'}`}
         >
-          <HelpCircle size={18} className="text-slate-500" />
-          <span>Suporte</span>
+          <HelpCircle size={18} className="text-[#8A8A85]" />
+          {!isCol && <span>Suporte</span>}
         </button>
 
-        {/* Configurações */}
         {currentUserRole === 'owner' && (
           <button
             onClick={() => handleNavigate('configuracoes')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition duration-150 cursor-pointer ${
-              currentRoute === 'configuracoes' || currentRoute === 'checkout-plano'
-                ? 'bg-[#C1F651]/20 text-[#0B1B17] border border-[#C1F651]/30'
-                : 'text-slate-600 hover:text-[#0B1B17] hover:bg-slate-50 border border-transparent'
+            title={isCol ? 'Configurações' : undefined}
+            className={`w-full flex items-center rounded-xl text-sm font-semibold transition duration-150 cursor-pointer ${isCol ? 'justify-center py-3' : 'gap-3 px-4 py-3'} ${
+              currentRoute === 'configuracoes' || currentRoute === 'plano' || currentRoute === 'checkout-plano'
+                ? 'bg-[#C1F11D]/20 text-[#141414] border border-[#C1F11D]/30'
+                : 'text-[#6F6F6A] hover:text-[#141414] hover:bg-[#F4F4F2] border border-transparent'
             }`}
           >
-            <Settings size={18} className={currentRoute === 'configuracoes' || currentRoute === 'checkout-plano' ? 'text-[#0B1B17]' : 'text-slate-500'} />
-            <span>Configurações</span>
+            <Settings size={18} className={currentRoute === 'configuracoes' || currentRoute === 'plano' || currentRoute === 'checkout-plano' ? 'text-[#141414]' : 'text-[#8A8A85]'} />
+            {!isCol && <span>Configurações</span>}
           </button>
         )}
       </div>
 
       {/* Footer Section */}
-      <div className="px-4 pt-2 pb-4 border-t border-slate-200 bg-slate-50/30">
+      <div className={`pt-2 pb-4 border-t border-[#E5E5E2] bg-[#F4F4F2]/30 ${isCol ? 'px-2' : 'px-4'}`}>
         <button
           onClick={() => handleNavigate('home')}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition duration-150"
+          title={isCol ? 'Sair da Loja' : undefined}
+          className={`w-full flex items-center rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition duration-150 ${isCol ? 'justify-center py-3' : 'gap-3 px-4 py-3'}`}
         >
           <LogOut size={18} />
-          <span>Sair da Loja</span>
+          {!isCol && <span>Sair da Loja</span>}
         </button>
       </div>
     </div>
@@ -954,35 +1017,236 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
   return (
     <>
       {/* Desktop Sidebar (Permanent) */}
-      <aside className="hidden lg:block fixed top-0 bottom-0 left-0 w-64 bg-white border-r border-slate-200 z-30">
-        {sidebarContent}
+      <aside className={`hidden lg:block fixed top-0 bottom-0 left-0 bg-white border-r border-[#E5E5E2] z-30 transition-all duration-300 ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+        {renderContent(collapsed)}
       </aside>
 
       {/* Mobile Drawer Overlay */}
       {isOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
-            onClick={() => setIsOpen(false)}
-          ></div>
-
-          {/* Drawer Panel */}
+          <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsOpen(false)}></div>
           <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white z-50 h-full">
-            {/* Close button inside drawer */}
             <div className="absolute top-4 right-4 z-10">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
-              >
+              <button onClick={() => setIsOpen(false)} className="p-2 rounded-xl text-[#8A8A85] hover:text-[#2A2A26] hover:bg-[#EBEBE8] transition">
                 <X size={20} />
               </button>
             </div>
-            {sidebarContent}
+            {renderContent(false)}
           </div>
         </div>
       )}
     </>
+  );
+}
+
+// --- CONFIGURAÇÕES HUB (área com abas estilo Workspace Settings) ---
+const CONFIG_TABS = [
+  { id: 'configuracoes', label: 'Geral' },
+  { id: 'vendedores', label: 'Vendedores' },
+  { id: 'plano', label: 'Plano' },
+  { id: 'relatorios', label: 'Relatórios' },
+];
+function ConfiguracoesHub({ currentRoute, navigateTo, empresaLogada, children }) {
+  const slug = (empresaLogada?.nome || 'bmw-premium').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return (
+    <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto text-left">
+      <div className="mb-6">
+        <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Configurações</h1>
+        <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">{empresaLogada?.nome || 'BMW Premium SP'} · reservacar.app/{slug}</p>
+      </div>
+      <div className="flex items-center gap-7 border-b border-[#E5E5E2] mb-8 overflow-x-auto">
+        {CONFIG_TABS.map(t => {
+          const active = currentRoute === t.id || (t.id === 'plano' && currentRoute === 'checkout-plano');
+          return (
+            <button key={t.id} onClick={() => navigateTo(t.id)}
+              className={`relative pb-3 text-sm font-bold transition cursor-pointer whitespace-nowrap ${active ? 'text-[#141414]' : 'text-[#8A8A85] hover:text-[#141414]'}`}>
+              {t.label}
+              {active && <span className="absolute -bottom-px left-0 w-full h-0.5 bg-[#C1F11D] rounded-full"></span>}
+            </button>
+          );
+        })}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// --- MINI SPARKLINE (KPI cards estilo Meridian) ---
+function MiniSpark({ trend = 'up' }: { trend?: 'up' | 'down' }) {
+  const up = 'M0 27 L14 23 L28 25 L42 17 L56 19 L70 11 L84 13 L100 5';
+  const down = 'M0 7 L14 9 L28 8 L42 14 L56 12 L70 18 L84 21 L100 27';
+  const d = trend === 'down' ? down : up;
+  const stroke = trend === 'down' ? '#E11D48' : '#141414';
+  return (
+    <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="w-full h-8 mt-3 -mb-1">
+      <path d={`${d} L100 32 L0 32 Z`} fill={stroke} fillOpacity="0.06" />
+      <path d={d} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// --- TOPBAR GLOBAL (app do lojista, estilo Meridian) ---
+const ROUTE_LABELS: any = {
+  hub: 'Painel de loja', 'sales-stats': 'Painel de loja', dashboard: 'Nova proposta',
+  vendedores: 'Vendedores', relatorios: 'Relatórios', configuracoes: 'Configurações',
+  plano: 'Configurações', 'checkout-plano': 'Configurações', 'cadastrar-reserva': 'Nova proposta',
+};
+
+function Topbar({ currentRoute, navigateTo, empresaLogada, liveNotifications = [], recentReservations = [], collapsed, setCollapsed, showToast, setActiveReservation }) {
+  const [query, setQuery] = useState('');
+  const [openMenu, setOpenMenu] = useState<null | 'notif' | 'avatar' | 'search'>(null);
+  const refreshedAt = useMemo(() => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), []);
+
+  const iniciais = (empresaLogada?.nome || 'BMW Premium SP').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
+
+  const resultados = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return { propostas: [], vendedores: [] };
+    const propostas = recentReservations.filter((r: any) =>
+      [r.title, r.clienteNome, r.vendedores].filter(Boolean).some((s: string) => s.toLowerCase().includes(q))
+    ).slice(0, 5);
+    const vendedores = (empresaLogada?.vendedores || []).filter((v: any) => v.nome.toLowerCase().includes(q)).slice(0, 4);
+    return { propostas, vendedores };
+  }, [query, recentReservations, empresaLogada]);
+
+  const fechar = () => setOpenMenu(null);
+
+  return (
+    <header
+      className="hidden lg:flex fixed top-0 right-0 h-16 bg-white border-b border-[#EBEBE8] z-40 items-center justify-between px-5 gap-4 transition-all duration-300"
+      style={{ left: collapsed ? 72 : 256 }}
+    >
+      {/* Esquerda: toggle + breadcrumb */}
+      <div className="flex items-center gap-3 shrink-0">
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          className="p-2 rounded-lg text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2] transition cursor-pointer"
+        >
+          <PanelsTopLeft size={18} />
+        </button>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-[#8A8A85] font-semibold">{empresaLogada?.nome || 'BMW Premium SP'}</span>
+          <span className="text-[#D9D9D5]">/</span>
+          <span className="text-[#141414] font-bold">{ROUTE_LABELS[currentRoute] || 'Painel'}</span>
+        </div>
+      </div>
+
+      {/* Centro: busca */}
+      <div className="flex-1 max-w-md relative">
+        <div className="flex items-center gap-2 bg-[#F4F4F2] rounded-full px-4 h-10 border border-transparent focus-within:border-[#D9D9D5] transition">
+          <Search size={15} className="text-[#8A8A85] shrink-0" />
+          <input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpenMenu(e.target.value ? 'search' : null); }}
+            onFocus={() => query && setOpenMenu('search')}
+            placeholder="Buscar propostas, vendedores..."
+            className="flex-1 bg-transparent text-sm font-medium text-[#141414] outline-none placeholder:text-[#B9B9B4]"
+          />
+          <span className="text-[10px] font-bold text-[#B9B9B4] bg-white border border-[#E5E5E2] rounded px-1.5 py-0.5 shrink-0">⌘K</span>
+        </div>
+
+        {openMenu === 'search' && query && (
+          <div className="absolute top-12 left-0 w-full bg-white border border-[#E5E5E2] rounded-2xl shadow-xl p-2 z-50 max-h-80 overflow-y-auto">
+            {resultados.propostas.length === 0 && resultados.vendedores.length === 0 && (
+              <p className="text-xs text-[#8A8A85] font-medium px-3 py-3">Nenhum resultado para "{query}".</p>
+            )}
+            {resultados.propostas.length > 0 && (
+              <div className="mb-1">
+                <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest px-3 py-1.5 block">Propostas</span>
+                {resultados.propostas.map((r: any) => (
+                  <button key={r.id} onClick={() => { setActiveReservation && setActiveReservation(r); navigateTo('preview'); setQuery(''); fechar(); }}
+                    className="w-full text-left flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-[#F4F4F2] transition cursor-pointer">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#141414] truncate">{r.title}</p>
+                      <p className="text-[11px] text-[#8A8A85] font-medium truncate">{r.vendedores} · {r.clienteNome || 'Sem cliente'}</p>
+                    </div>
+                    <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || r.signal || 0)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {resultados.vendedores.length > 0 && (
+              <div>
+                <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest px-3 py-1.5 block">Vendedores</span>
+                {resultados.vendedores.map((v: any) => (
+                  <button key={v.id} onClick={() => { navigateTo('vendedores'); setQuery(''); fechar(); }}
+                    className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#F4F4F2] transition cursor-pointer">
+                    <span className="w-7 h-7 rounded-full bg-[#141414] text-white text-[10px] font-bold flex items-center justify-center shrink-0">{v.nome.split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#141414] truncate">{v.nome}</p>
+                      <p className="text-[11px] text-[#8A8A85] font-medium truncate">{v.cargo}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Direita: refreshed + notif + avatar */}
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden xl:flex items-center gap-2 text-xs font-semibold text-[#8A8A85] mr-1">
+          <span>Atualizado {refreshedAt}</span>
+          <RefreshCw size={13} className="text-[#B9B9B4]" />
+        </div>
+
+        {/* Notificações */}
+        <div className="relative">
+          <button onClick={() => setOpenMenu(openMenu === 'notif' ? null : 'notif')}
+            className="relative p-2 rounded-lg text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2] transition cursor-pointer">
+            <Bell size={18} />
+            {liveNotifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{liveNotifications.length}</span>
+            )}
+          </button>
+          {openMenu === 'notif' && (
+            <div className="absolute top-12 right-0 w-80 bg-white border border-[#E5E5E2] rounded-2xl shadow-xl p-2 z-50">
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm font-extrabold text-[#141414]">Atividade</span>
+                <span className="text-[10px] font-bold text-[#8A8A85] uppercase tracking-wider">últimas 72h</span>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {liveNotifications.map((n: any) => (
+                  <div key={n.id} className="flex gap-2.5 px-3 py-2.5 rounded-xl hover:bg-[#F4F4F2] transition">
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.type === 'urgente' ? 'bg-amber-500' : n.type === 'pix' ? 'bg-[#1E9E5A]' : 'bg-[#141414]'}`}></span>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-black text-[#8A8A85] uppercase tracking-wide">{n.label}</p>
+                      <p className="text-xs font-semibold text-[#2A2A26] leading-snug mt-0.5">{n.text}</p>
+                      <p className="text-[10px] text-[#B9B9B4] font-medium mt-0.5">{n.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Avatar */}
+        <div className="relative">
+          <button onClick={() => setOpenMenu(openMenu === 'avatar' ? null : 'avatar')}
+            className="flex items-center gap-1.5 cursor-pointer">
+            <span className="w-9 h-9 rounded-full bg-[#141414] text-white text-xs font-black flex items-center justify-center">{iniciais}</span>
+            <ChevronDown size={14} className="text-[#8A8A85]" />
+          </button>
+          {openMenu === 'avatar' && (
+            <div className="absolute top-12 right-0 w-56 bg-white border border-[#E5E5E2] rounded-2xl shadow-xl p-2 z-50">
+              <div className="px-3 py-2 border-b border-[#EBEBE8] mb-1">
+                <p className="text-sm font-extrabold text-[#141414] truncate">{empresaLogada?.nome || 'BMW Premium SP'}</p>
+                <p className="text-[11px] text-[#8A8A85] font-medium truncate">{empresaLogada?.email || 'contato@loja.com'}</p>
+              </div>
+              <button onClick={() => { navigateTo('configuracoes'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#2A2A26] hover:bg-[#F4F4F2] transition cursor-pointer"><Settings size={16} className="text-[#8A8A85]" /> Configurações</button>
+              <button onClick={() => { showToast('Suporte Reservacar: suporte@reservacar.com.br', 'info'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#2A2A26] hover:bg-[#F4F4F2] transition cursor-pointer"><HelpCircle size={16} className="text-[#8A8A85]" /> Suporte</button>
+              <button onClick={() => { navigateTo('home'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"><LogOut size={16} /> Sair da Loja</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Backdrop para fechar dropdowns */}
+      {openMenu && <div className="fixed inset-0 z-40" onClick={fechar}></div>}
+    </header>
   );
 }
 
@@ -1009,16 +1273,16 @@ function Navbar({ currentRoute, navigateTo }) {
     <nav className={`fixed w-full z-50 transition-all duration-300 ${
       isTransparent 
         ? 'bg-transparent border-b border-transparent' 
-        : 'bg-white/95 backdrop-blur-md border-b border-slate-200'
+        : 'bg-white/95 backdrop-blur-md border-b border-[#E5E5E2]'
     }`}>
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center cursor-pointer gap-3" onClick={() => navigateTo('home')}>
-            <div className="w-10 h-10 bg-[#0B1B17] rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#141414] rounded-xl flex items-center justify-center">
               <Car size={22} className="text-white" />
             </div>
             <span className={`text-2xl font-black tracking-tight transition-colors duration-300 ${
-              isTransparent ? 'text-white' : 'text-slate-900'
+              isTransparent ? 'text-white' : 'text-[#141414]'
             }`}>
               Reservacar
             </span>
@@ -1030,7 +1294,7 @@ function Navbar({ currentRoute, navigateTo }) {
                 <button 
                   onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className={`text-sm font-semibold transition py-2 ${
-                    isTransparent ? 'text-white/85 hover:text-white' : 'text-slate-650 hover:text-[#0B1B17]'
+                    isTransparent ? 'text-white/85 hover:text-white' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Pagina Inicial
@@ -1038,7 +1302,7 @@ function Navbar({ currentRoute, navigateTo }) {
                 <a 
                   href="#sobre"
                   className={`text-sm font-semibold transition py-2 ${
-                    isTransparent ? 'text-white/85 hover:text-white' : 'text-slate-650 hover:text-[#0B1B17]'
+                    isTransparent ? 'text-white/85 hover:text-white' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Sobre nos
@@ -1046,7 +1310,7 @@ function Navbar({ currentRoute, navigateTo }) {
                 <a 
                   href="#precos"
                   className={`text-sm font-semibold transition py-2 ${
-                    isTransparent ? 'text-white/85 hover:text-white' : 'text-slate-650 hover:text-[#0B1B17]'
+                    isTransparent ? 'text-white/85 hover:text-white' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Precos
@@ -1054,7 +1318,7 @@ function Navbar({ currentRoute, navigateTo }) {
                 <button 
                   onClick={() => navigateTo('assinar')}
                   className={`text-sm font-semibold transition py-2 ${
-                    isTransparent ? 'text-white/85 hover:text-white' : 'text-slate-650 hover:text-[#0B1B17]'
+                    isTransparent ? 'text-white/85 hover:text-white' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Assinar
@@ -1062,14 +1326,14 @@ function Navbar({ currentRoute, navigateTo }) {
                 <a 
                   href="#contato"
                   className={`text-sm font-semibold transition py-2 ${
-                    isTransparent ? 'text-white/85 hover:text-white' : 'text-slate-650 hover:text-[#0B1B17]'
+                    isTransparent ? 'text-white/85 hover:text-white' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Contato
                 </a>
                 <button 
                   onClick={() => navigateTo('login')}
-                  className="flex items-center space-x-2 bg-[#0B1B17] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#122621] transition"
+                  className="flex items-center space-x-2 bg-[#141414] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2A2A26] transition"
                 >
                   <LogIn size={16} />
                   <span>Acesso Lojista</span>
@@ -1082,24 +1346,24 @@ function Navbar({ currentRoute, navigateTo }) {
                   onClick={() => navigateTo('configuracoes')}
                   className={`p-2.5 rounded-xl transition flex items-center justify-center mr-2 border ${
                     currentRoute === 'configuracoes'
-                      ? 'bg-[#C1F651]/20 text-[#0B1B17] border-[#C1F651]/30'
-                      : 'text-slate-500 hover:text-[#0B1B17] hover:bg-slate-50 border-transparent'
+                      ? 'bg-[#C1F11D]/20 text-[#141414] border-[#C1F11D]/30'
+                      : 'text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2] border-transparent'
                   }`}
                   title="Configurações"
                 >
                   <Settings size={18} />
                 </button>
                 <button 
-                  onClick={() => navigateTo('hub')}
+                  onClick={() => navigateTo('sales-stats')}
                   className={`text-sm font-semibold transition mr-4 py-2 ${
-                    currentRoute === 'hub' ? 'text-[#0B1B17] font-bold' : 'text-slate-600 hover:text-[#0B1B17]'
+                    currentRoute === 'hub' ? 'text-[#141414] font-bold' : 'text-[#6F6F6A] hover:text-[#141414]'
                   }`}
                 >
                   Painel Principal
                 </button>
                 <button 
                   onClick={() => navigateTo('home')}
-                  className="text-sm font-semibold bg-white hover:bg-slate-50 px-5 py-2.5 rounded-xl text-slate-800 transition border border-slate-200"
+                  className="text-sm font-semibold bg-white hover:bg-[#F4F4F2] px-5 py-2.5 rounded-xl text-[#2A2A26] transition border border-[#E5E5E2]"
                 >
                   Sair
                 </button>
@@ -1193,21 +1457,21 @@ function PricingLandingHero({
       <div className="max-w-4xl mx-auto px-6 w-full flex flex-col items-center">
         
         {/* Mockup do Celular centralizado no topo */}
-        <div className="relative w-[280px] h-[230px] bg-black rounded-t-[40px] border-t-[8px] border-x-[8px] border-slate-900 shadow-2xl overflow-hidden mb-12 select-none flex flex-col">
+        <div className="relative w-[280px] h-[230px] bg-black rounded-t-[40px] border-t-[8px] border-x-[8px] border-[#141414] shadow-2xl overflow-hidden mb-12 select-none flex flex-col">
           {/* Notch superior do iPhone */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-900 rounded-b-2xl z-30 flex items-center justify-center">
-            <div className="w-2 h-2 bg-slate-950 rounded-full mr-1.5" />
-            <div className="w-5 h-0.5 bg-slate-950 rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-[#141414] rounded-b-2xl z-30 flex items-center justify-center">
+            <div className="w-2 h-2 bg-[#141414] rounded-full mr-1.5" />
+            <div className="w-5 h-0.5 bg-[#141414] rounded-full" />
           </div>
 
           {/* Tela Interna */}
           <div className="relative flex-1 flex flex-col pt-7 px-3 bg-black">
             {/* Barra de Status */}
-            <div className="flex justify-between items-center text-[8px] font-bold text-slate-500 px-1 mb-4 z-20">
+            <div className="flex justify-between items-center text-[8px] font-bold text-[#8A8A85] px-1 mb-4 z-20">
               <span>{phone?.time || "9:41"}</span>
               <div className="flex items-center gap-1">
-                <Smartphone size={8} className="text-slate-500" />
-                <span className="w-3 h-1.5 border border-slate-500 rounded-sm bg-slate-500" />
+                <Smartphone size={8} className="text-[#8A8A85]" />
+                <span className="w-3 h-1.5 border border-[#8A8A85] rounded-sm bg-[#8A8A85]" />
               </div>
             </div>
 
@@ -1233,7 +1497,7 @@ function PricingLandingHero({
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-white block leading-tight">{item.name || "Veiculo Reservado"}</span>
-                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
+                        <span className="text-[8px] text-[#B9B9B4] block mt-0.5">{item.time}</span>
                       </div>
                     </div>
                     <span className="text-[10px] font-black text-white tracking-tight">{item.price}</span>
@@ -1254,7 +1518,7 @@ function PricingLandingHero({
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-white block leading-tight">{item.name || "Veiculo Reservado"}</span>
-                        <span className="text-[8px] text-slate-400 block mt-0.5">{item.time}</span>
+                        <span className="text-[8px] text-[#B9B9B4] block mt-0.5">{item.time}</span>
                       </div>
                     </div>
                     <span className="text-[10px] font-black text-white tracking-tight">{item.price}</span>
@@ -1270,7 +1534,7 @@ function PricingLandingHero({
           {title}
         </h1>
         
-        <p className="text-sm md:text-base font-medium text-slate-400 mb-8 leading-relaxed max-w-xl">
+        <p className="text-sm md:text-base font-medium text-[#B9B9B4] mb-8 leading-relaxed max-w-xl">
           {description}
         </p>
 
@@ -1279,13 +1543,13 @@ function PricingLandingHero({
           <div className="flex flex-col items-center gap-1 mb-2">
             <div className="flex items-baseline gap-2.5">
               <span className="text-3xl md:text-4xl font-black text-white tracking-tight">{price.current}</span>
-              <span className="text-sm font-medium text-slate-500 line-through">{price.original}</span>
+              <span className="text-sm font-medium text-[#8A8A85] line-through">{price.original}</span>
             </div>
           </div>
         )}
 
         {availability && (
-          <div className="text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-8">
+          <div className="text-[10px] font-bold tracking-wider text-[#8A8A85] uppercase mb-8">
             {availability}
           </div>
         )}
@@ -1295,7 +1559,7 @@ function PricingLandingHero({
           {primaryAction && (
             <button 
               onClick={primaryAction.onClick}
-              className="w-full sm:w-auto bg-white text-black hover:bg-slate-100 px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-transparent shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="w-full sm:w-auto bg-white text-black hover:bg-[#EBEBE8] px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-transparent shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               {primaryAction.label}
             </button>
@@ -1303,7 +1567,7 @@ function PricingLandingHero({
           {secondaryAction && (
             <button 
               onClick={secondaryAction.onClick}
-              className="w-full sm:w-auto bg-transparent text-white hover:bg-white/5 px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-white/20 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-350 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="w-full sm:w-auto bg-transparent text-white hover:bg-white/5 px-8 py-3.5 rounded-full text-xs font-bold transition duration-250 border border-white/20 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9D9D5] focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               {secondaryAction.label}
             </button>
@@ -1313,7 +1577,7 @@ function PricingLandingHero({
         {/* Trusted By */}
         {trustedBy && (
           <div className="mt-16 w-full">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-6 block text-center">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-[#8A8A85] mb-6 block text-center">
               {trustedBy.heading}
             </h4>
             
@@ -1328,13 +1592,13 @@ function PricingLandingHero({
               <div className="flex gap-16 md:gap-24 items-center animate-marquee whitespace-nowrap">
                 {/* Primeira metade */}
                 {trustedBy.logos.map((logo, idx) => (
-                  <div key={`orig-${idx}`} className="text-slate-500 hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
+                  <div key={`orig-${idx}`} className="text-[#8A8A85] hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
                     {logo}
                   </div>
                 ))}
                 {/* Segunda metade duplicada */}
                 {trustedBy.logos.map((logo, idx) => (
-                  <div key={`dup-${idx}`} className="text-slate-500 hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
+                  <div key={`dup-${idx}`} className="text-[#8A8A85] hover:text-white transition duration-200 opacity-60 hover:opacity-100 shrink-0">
                     {logo}
                   </div>
                 ))}
@@ -1484,14 +1748,14 @@ function HomeView({ navigateTo }) {
         <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Sinais Pix Recebidos</span>
         <div className="space-y-1">
           <p className="text-3xl font-extrabold text-white font-mono">R$ 14.250,00</p>
-          <p className="text-xs text-[#C1F651] font-bold flex items-center gap-1">
+          <p className="text-xs text-[#C1F11D] font-bold flex items-center gap-1">
             <TrendingUp size={14} /> +12% em relação ao mês anterior
           </p>
         </div>
         <div className="pt-2">
           <button 
             onClick={() => navigateTo('login')}
-            className="w-full bg-[#C1F651] text-[#0B1B17] py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-1"
+            className="w-full bg-[#C1F11D] text-[#141414] py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-1"
           >
             <Send size={14} /> Acessar Painel Lojista
           </button>
@@ -1501,7 +1765,7 @@ function HomeView({ navigateTo }) {
       <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4 md:col-span-2">
         <div className="flex justify-between items-center">
           <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider">Links de Reservas Recentes</span>
-          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full font-bold">Ativas</span>
+          <span className="text-[10px] text-[#C1F11D] bg-[#C1F11D]/10 px-2.5 py-0.5 rounded-full font-bold">Ativas</span>
         </div>
         <div className="space-y-3">
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
@@ -1514,7 +1778,7 @@ function HomeView({ navigateTo }) {
             </div>
             <div className="text-right">
               <p className="text-xs font-bold font-mono text-white">R$ 269.000</p>
-              <span className="text-[9px] text-emerald-400 font-bold">Reservado</span>
+              <span className="text-[9px] text-[#C1F11D] font-bold">Reservado</span>
             </div>
           </div>
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
@@ -1542,14 +1806,14 @@ function HomeView({ navigateTo }) {
         <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Garantia e Segurança</span>
         <div className="space-y-1">
           <p className="text-3xl font-extrabold text-white font-mono">100% Protegido</p>
-          <p className="text-xs text-[#C1F651] font-bold flex items-center gap-1">
+          <p className="text-xs text-[#C1F11D] font-bold flex items-center gap-1">
             <ShieldCheck size={14} /> Pix direto para a concessionária
           </p>
         </div>
         <div className="pt-2">
           <button 
             onClick={() => navigateTo('cadastrar-reserva')}
-            className="w-full bg-white/10 text-white py-2 rounded-lg text-xs font-bold hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all flex items-center justify-center gap-1"
+            className="w-full bg-white/10 text-white py-2 rounded-lg text-xs font-bold hover:bg-[#C1F11D] hover:text-[#141414] transition-all flex items-center justify-center gap-1"
           >
             <Sparkles size={14} /> Simular Minha Reserva
           </button>
@@ -1559,12 +1823,12 @@ function HomeView({ navigateTo }) {
       <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4 md:col-span-2">
         <div className="flex justify-between items-center">
           <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider">Sua Proposta Recebida</span>
-          <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full font-bold">Exclusiva</span>
+          <span className="text-[10px] text-[#C1F11D] bg-[#C1F11D]/10 px-2.5 py-0.5 rounded-full font-bold">Exclusiva</span>
         </div>
         <div className="space-y-3">
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-[#C1F651]/10 flex items-center justify-center font-bold text-xs text-[#C1F651]">VOLVO</div>
+              <div className="w-8 h-8 rounded bg-[#C1F11D]/10 flex items-center justify-center font-bold text-xs text-[#C1F11D]">VOLVO</div>
               <div>
                 <p className="text-xs font-bold text-white">Volvo XC60 Hybrid 2024</p>
                 <p className="text-[10px] text-white/40">Sinal Requerido: R$ 8.000,00</p>
@@ -1572,12 +1836,12 @@ function HomeView({ navigateTo }) {
             </div>
             <div className="text-right">
               <p className="text-xs font-bold font-mono text-white">R$ 399.900</p>
-              <span className="text-[9px] text-[#C1F651] font-bold">Aguardando Seu Pix</span>
+              <span className="text-[9px] text-[#C1F11D] font-bold">Aguardando Seu Pix</span>
             </div>
           </div>
           <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-indigo-500/10 flex items-center justify-center font-bold text-xs text-indigo-400">TOYOTA</div>
+              <div className="w-8 h-8 rounded bg-[#C1F11D]/10 flex items-center justify-center font-bold text-xs text-[#C1F11D]">TOYOTA</div>
               <div>
                 <p className="text-xs font-bold text-white">Toyota Corolla Altis 2023</p>
                 <p className="text-[10px] text-white/40">Sinal Pago: R$ 3.000,00</p>
@@ -1585,7 +1849,7 @@ function HomeView({ navigateTo }) {
             </div>
             <div className="text-right">
               <p className="text-xs font-bold font-mono text-white">R$ 145.000</p>
-              <span className="text-[9px] text-emerald-400 font-bold">Aprovado e Reservado</span>
+              <span className="text-[9px] text-[#C1F11D] font-bold">Aprovado e Reservado</span>
             </div>
           </div>
         </div>
@@ -1594,13 +1858,13 @@ function HomeView({ navigateTo }) {
   );
 
   return (
-    <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative">
+    <div className="bg-[#F4F4F2] text-[#141414] font-sans overflow-x-hidden antialiased min-h-screen relative">
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-header {
           background-color: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(11, 27, 23, 0.08);
+          border-bottom: 1px solid rgba(20, 20, 20, 0.08);
         }
         .circular-text-container {
           animation: rotateCircular 20s linear infinite;
@@ -1610,7 +1874,7 @@ function HomeView({ navigateTo }) {
           100% { transform: rotate(360deg); }
         }
         .premium-shadow {
-          box-shadow: 0 20px 40px -15px rgba(11, 27, 23, 0.05);
+          box-shadow: 0 20px 40px -15px rgba(20, 20, 20, 0.05);
         }
         .premium-shadow-dark {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -1642,20 +1906,20 @@ function HomeView({ navigateTo }) {
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
-      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#0B1B17]' : 'py-5 text-white bg-transparent'}`}>
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#141414]' : 'py-5 text-white bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative">
           {/* Logo */}
           <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
-            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
-              <Car size={18} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F11D] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#141414]" />
             </div>
             <span className="font-black">Reservacar</span>
-            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F11D]">®</span>
           </a>
 
           {/* Menu Desktop */}
-          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}>
-            <a href="#features" className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
+          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#141414]/90' : 'text-white/90'}`}>
+            <a href="#features" className="hover:text-[#C1F11D] transition-colors duration-300">Funcionalidades</a>
             
             {/* Dropdown Serviços */}
             <div 
@@ -1665,16 +1929,16 @@ function HomeView({ navigateTo }) {
             >
               <button 
                 type="button"
-                className={`flex items-center gap-1.5 hover:text-[#C1F651] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}
+                className={`flex items-center gap-1.5 hover:text-[#C1F11D] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#141414]/90' : 'text-white/90'}`}
               >
                 <span>Serviços</span>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F651]' : isHeaderActive ? 'text-[#0B1B17]/50' : 'text-white/50'}`} />
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F11D]' : isHeaderActive ? 'text-[#141414]/50' : 'text-white/50'}`} />
               </button>
             </div>
 
-            <a href="#stats" className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
-            <a href="#faq" className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('empresa'); }} className="hover:text-[#C1F651] transition-colors duration-300">Empresa</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('pricing'); }} className="hover:text-[#C1F11D] transition-colors duration-300">Pricing</a>
+            <a href="#faq" className="hover:text-[#C1F11D] transition-colors duration-300">FAQ</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('empresa'); }} className="hover:text-[#C1F11D] transition-colors duration-300">Empresa</a>
           </nav>
 
           {/* Ações */}
@@ -1683,7 +1947,7 @@ function HomeView({ navigateTo }) {
               onClick={() => navigateTo('login')} 
               className={`text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border cursor-pointer ${
                 isHeaderActive 
-                  ? 'border-[#0B1B17]/30 text-[#0B1B17] hover:border-[#0B1B17]/80 hover:bg-[#0B1B17]/10' 
+                  ? 'border-[#141414]/30 text-[#141414] hover:border-[#141414]/80 hover:bg-[#141414]/10' 
                   : 'border border-white/30 text-white hover:border-white/80 hover:bg-white/10'
               }`}
             >
@@ -1693,8 +1957,8 @@ function HomeView({ navigateTo }) {
               onClick={() => navigateTo('assinar')} 
               className={`text-sm font-semibold px-6 py-2.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer ${
                 isHeaderActive 
-                  ? 'bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white' 
-                  : 'bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17]'
+                  ? 'bg-[#C1F11D] text-[#141414] hover:bg-[#141414] hover:text-white' 
+                  : 'bg-[#C1F11D] text-[#141414] hover:bg-white hover:text-[#141414]'
               }`}
             >
               Assinar Reservacar
@@ -1704,7 +1968,7 @@ function HomeView({ navigateTo }) {
           {/* Botão Menu Mobile */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#0B1B17]' : 'text-white'}`} 
+            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#141414]' : 'text-white'}`} 
             aria-label="Abrir Menu"
           >
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
@@ -1715,12 +1979,12 @@ function HomeView({ navigateTo }) {
 
         {isServicesOpen && (
           <div 
-            className="absolute top-full left-0 w-full bg-white border-b border-slate-200/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
+            className="absolute top-full left-0 w-full bg-white border-b border-[#E5E5E2]/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
             onMouseEnter={handleServicesEnter}
             onMouseLeave={handleServicesLeave}
           >
             <div 
-              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#0B1B17]"
+              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#141414]"
               style={{
                 animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
@@ -1728,7 +1992,7 @@ function HomeView({ navigateTo }) {
               {/* Botão de Fechar discreto */}
               <button 
                 onClick={() => setIsServicesOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition cursor-pointer p-1 rounded-full hover:bg-slate-100"
+                className="absolute top-4 right-4 text-[#B9B9B4] hover:text-[#5F5F5A] transition cursor-pointer p-1 rounded-full hover:bg-[#EBEBE8]"
                 type="button"
                 aria-label="Fechar menu"
               >
@@ -1736,9 +2000,9 @@ function HomeView({ navigateTo }) {
               </button>
 
               {/* Coluna 1: Card de Destaque à Esquerda (4/12) */}
-              <div className="col-span-4 flex flex-col justify-between border-r border-slate-100 pr-6">
+              <div className="col-span-4 flex flex-col justify-between border-r border-[#EBEBE8] pr-6">
                 <div className="space-y-4">
-                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
+                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#141414] to-[#2E2E2A] border border-[#EBEBE8]">
                     <img 
                       src="https://i.imgur.com/cv0mLXh.jpeg" 
                       alt="Showroom Reservacar" 
@@ -1746,8 +2010,8 @@ function HomeView({ navigateTo }) {
                     />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[#0B1B17] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
-                    <p className="text-[#6B7C77] text-xs leading-relaxed font-semibold">
+                    <h4 className="font-extrabold text-[#141414] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
+                    <p className="text-[#8A8A85] text-xs leading-relaxed font-semibold">
                       A plataforma inteligente para criar propostas, receber sinais Pix e vender veículos como um profissional.
                     </p>
                   </div>
@@ -1756,7 +2020,7 @@ function HomeView({ navigateTo }) {
                   <a 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('login'); }}
-                    className="inline-flex items-center gap-1 text-[#0B1B17] hover:text-[#C1F651] font-bold text-xs group transition-colors"
+                    className="inline-flex items-center gap-1 text-[#141414] hover:text-[#C1F11D] font-bold text-xs group transition-colors"
                   >
                     <span>Conhecer plataforma</span>
                     <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
@@ -1765,10 +2029,10 @@ function HomeView({ navigateTo }) {
               </div>
 
               {/* Coluna 2: Recursos (5/12) */}
-              <div className="col-span-5 flex flex-col justify-between border-r border-slate-100 pr-6">
+              <div className="col-span-5 flex flex-col justify-between border-r border-[#EBEBE8] pr-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Recursos</span>
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest block pb-1 border-b border-[#EBEBE8]">Recursos</span>
                   </div>
                   
                   <div className="space-y-3.5">
@@ -1776,14 +2040,14 @@ function HomeView({ navigateTo }) {
                     <a 
                       href="#features" 
                       onClick={() => setIsServicesOpen(false)}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <Send size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Criar proposta</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Criar proposta</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
                       </div>
                     </a>
 
@@ -1791,14 +2055,14 @@ function HomeView({ navigateTo }) {
                     <a 
                       href="#features" 
                       onClick={() => setIsServicesOpen(false)}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <DollarSign size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Sinal Pix imediato</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Sinal Pix imediato</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
                       </div>
                     </a>
 
@@ -1806,14 +2070,14 @@ function HomeView({ navigateTo }) {
                     <a 
                       href="#features" 
                       onClick={() => setIsServicesOpen(false)}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <ShieldCheck size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Garantia de reserva</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Garantia de reserva</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
                       </div>
                     </a>
 
@@ -1821,14 +2085,14 @@ function HomeView({ navigateTo }) {
                     <a 
                       href="#features" 
                       onClick={() => setIsServicesOpen(false)}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <LinkIcon size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Links temporários</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Links temporários</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
                       </div>
                     </a>
 
@@ -1836,14 +2100,14 @@ function HomeView({ navigateTo }) {
                     <a 
                       href="#features" 
                       onClick={() => setIsServicesOpen(false)}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <Car size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Painel de estoque</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Painel de estoque</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
                       </div>
                     </a>
                   </div>
@@ -1854,17 +2118,17 @@ function HomeView({ navigateTo }) {
               <div className="col-span-3 flex flex-col justify-start">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Preços</span>
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest block pb-1 border-b border-[#EBEBE8]">Preços</span>
                   </div>
                   
                   <div className="pt-2">
-                    <a 
-                      href="#simulator" 
-                      onClick={() => setIsServicesOpen(false)}
-                      className="group flex flex-col gap-1 text-[#6B7C77] hover:text-[#0B1B17] transition-colors p-2 rounded-xl hover:bg-slate-50"
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('pricing'); }}
+                      className="group flex flex-col gap-1 text-[#8A8A85] hover:text-[#141414] transition-colors p-2 rounded-xl hover:bg-[#F4F4F2]"
                     >
-                      <span className="font-extrabold text-xs text-[#0B1B17] group-hover:text-[#0b1b17] transition-colors">Planos e tarifas</span>
-                      <span className="text-[10px] text-[#6B7C77] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
+                      <span className="font-extrabold text-xs text-[#141414] group-hover:text-[#141414] transition-colors">Planos e tarifas</span>
+                      <span className="text-[10px] text-[#8A8A85] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
                     </a>
                   </div>
                 </div>
@@ -1876,22 +2140,22 @@ function HomeView({ navigateTo }) {
       </header>
 
       {/* MENU MOBILE OVERLAY */}
-      <div className={`fixed inset-0 bg-[#0B1B17] text-[#F9F9F6] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-0 bg-[#141414] text-[#F4F4F2] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <nav className="flex flex-col gap-6 text-2xl font-bold">
-          <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Funcionalidades</a>
-          <a href="#simulator" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Simulador de Taxas</a>
-          <a href="#stats" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Métricas de Impacto</a>
-          <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); navigateTo('empresa'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Empresa</a>
+          <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Funcionalidades</a>
+          <a href="#simulator" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Simulador de Taxas</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); navigateTo('pricing'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Pricing</a>
+          <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); navigateTo('empresa'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Empresa</a>
         </nav>
         <div className="flex flex-col gap-4 mt-auto">
           <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('login'); }} className="w-full text-center border border-white/20 text-white font-semibold py-3.5 rounded-full hover:bg-white/10 transition-colors">Acesso Lojista</button>
-          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F651] text-[#0B1B17] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F11D] text-[#141414] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
         </div>
       </div>
 
       {/* HERO SECTION */}
-      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-32 md:pt-48 md:pb-44 overflow-hidden">
+      <section className="relative bg-[#141414] text-[#F4F4F2] pt-36 pb-32 md:pt-48 md:pb-44 overflow-hidden">
         {/* Vídeo de Fundo */}
         <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
           <video
@@ -1905,9 +2169,9 @@ function HomeView({ navigateTo }) {
             Seu navegador não suporta vídeos.
           </video>
           {/* Overlay de contraste do design system */}
-          <div className="absolute inset-0 bg-[#0B1B17]/65"></div>
+          <div className="absolute inset-0 bg-[#141414]/65"></div>
           {/* Detalhes de Fundo (Glow sutil) */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F11D]/10 rounded-full blur-[120px] pointer-events-none"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -1917,13 +2181,13 @@ function HomeView({ navigateTo }) {
             <div className="inline-flex bg-white/5 p-1 rounded-full mb-8 border border-white/10 premium-shadow">
               <button 
                 onClick={() => setProfile('lojista')} 
-                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'lojista' ? 'bg-[#C1F651] text-[#0B1B17]' : 'text-white/70 hover:text-white'}`}
+                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'lojista' ? 'bg-[#C1F11D] text-[#141414]' : 'text-white/70 hover:text-white'}`}
               >
                 Para Lojistas
               </button>
               <button 
                 onClick={() => setProfile('cliente')} 
-                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'cliente' ? 'bg-[#C1F651] text-[#0B1B17]' : 'text-white/70 hover:text-white'}`}
+                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 ${profile === 'cliente' ? 'bg-[#C1F11D] text-[#141414]' : 'text-white/70 hover:text-white'}`}
               >
                 Para Clientes
               </button>
@@ -1932,14 +2196,14 @@ function HomeView({ navigateTo }) {
             {/* Título Hero */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl leading-[1.1] mb-6 transition-all duration-300">
               {profile === 'lojista' ? (
-                <>Vendas e reservas digitais de veículos com <span className="text-[#C1F651]">garantia de sinal Pix</span>.</>
+                <>Vendas e reservas digitais de veículos com <span className="text-[#C1F11D]">garantia de sinal Pix</span>.</>
               ) : (
-                <>Garanta seu próximo carro antes de ir <span className="text-[#C1F651]">ao showroom</span>.</>
+                <>Garanta seu próximo carro antes de ir <span className="text-[#C1F11D]">ao showroom</span>.</>
               )}
             </h1>
             
             {/* Subtítulo */}
-            <p className="text-[#A0B2AC] text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed font-semibold">
+            <p className="text-[#B9B9B4] text-lg sm:text-xl max-w-2xl mb-10 leading-relaxed font-semibold">
               {profile === 'lojista' ? (
                 "Sua vitrine digital sob medida. Compartilhe o link da proposta pelo WhatsApp, receba o sinal Pix diretamente na sua conta e segure a venda instantaneamente."
               ) : (
@@ -1951,7 +2215,7 @@ function HomeView({ navigateTo }) {
             <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
               <button 
                 onClick={() => navigateTo('cadastrar-reserva')} 
-                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] text-base font-bold px-8 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10 cursor-pointer"
+                className="w-full sm:w-auto bg-[#C1F11D] text-[#141414] text-base font-bold px-8 py-4 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F11D]/10 cursor-pointer"
               >
                 Simular Reserva (Cliente)
               </button>
@@ -1968,39 +2232,39 @@ function HomeView({ navigateTo }) {
       </section>
 
       {/* MARCAS PARCEIRAS */}
-      <section className="py-12 bg-[#F9F9F6] border-y border-[rgba(11,27,23,0.08)]">
+      <section className="py-12 bg-[#F4F4F2] border-y border-[rgba(20,20,20,0.08)]">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#6B7C77] mb-8">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-[#8A8A85] mb-8">
             Utilizado por lojas de todas as marcas e capitais
           </p>
           
           {/* Contêiner do Carrossel com máscara de fade nas laterais */}
           <div className="relative w-full overflow-hidden py-4 select-none">
             {/* Fade Esquerdo */}
-            <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-[#F9F9F6] via-[#F9F9F6]/80 to-transparent z-10 pointer-events-none" />
+            <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-[#F4F4F2] via-[#F4F4F2]/80 to-transparent z-10 pointer-events-none" />
             {/* Fade Direito */}
-            <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-l from-[#F9F9F6] via-[#F9F9F6]/80 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-l from-[#F4F4F2] via-[#F4F4F2]/80 to-transparent z-10 pointer-events-none" />
             
             {/* Pista do Carrossel (itens duplicados para loop contínuo) */}
             <div className="flex gap-16 md:gap-24 items-center animate-marquee whitespace-nowrap">
               {/* Primeira metade */}
               <div className="flex gap-16 md:gap-24 shrink-0">
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200">
-                  <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200">
+                  <span className="text-xs bg-[#E5E5E2] px-1.5 py-0.5 rounded text-[#2A2A26] font-black">PIX</span> Liquidação Imediata
                 </div>
               </div>
               {/* Segunda metade duplicada para o loop perfeito */}
               <div className="flex gap-16 md:gap-24 shrink-0">
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
-                <div className="flex items-center gap-2 font-bold text-lg text-[#0B1B17]/60 hover:text-[#0B1B17] transition duration-200">
-                  <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 font-black">PIX</span> Liquidação Imediata
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Audi Center</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> BMW Premium</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Toyota Elite</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200"><Car className="w-5 h-5" /> Porsche Service</div>
+                <div className="flex items-center gap-2 font-bold text-lg text-[#141414]/60 hover:text-[#141414] transition duration-200">
+                  <span className="text-xs bg-[#E5E5E2] px-1.5 py-0.5 rounded text-[#2A2A26] font-black">PIX</span> Liquidação Imediata
                 </div>
               </div>
             </div>
@@ -2009,334 +2273,225 @@ function HomeView({ navigateTo }) {
         </div>
       </section>
 
-      {/* SEÇÃO DE RECURSOS (FEATURES) */}
-      <section id="features" className="py-24 md:py-36 bg-[#F9F9F6]">
+      {/* SEÇÃO DE RECURSOS (FEATURES) — linha de valores rápidos estilo PicPay */}
+      <section id="features" className="py-20 md:py-28 bg-[#F4F4F2]">
         <div className="max-w-7xl mx-auto px-6">
-          
-          {/* Recurso 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center mb-28 md:mb-36">
-            {/* Coluna da Esquerda: Imagem Vertical do Unsplash */}
-            <div className="lg:col-span-5 relative rounded-[24px] overflow-hidden aspect-[4/5] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-200/80 shadow-md">
-              <img 
-                src="https://i.imgur.com/mtCb0l9.jpeg" 
-                alt="Sua reserva para o próximo passo" 
+          <div className="max-w-2xl mb-14">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#8A8A85] block mb-4">Para sua loja</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[#141414] leading-[1.1]">
+              O Reservacar ajuda você a vender de onde você estiver
+            </h2>
+          </div>
+
+          {/* Grid de 4 colunas concisas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border-t border-[rgba(20,20,20,0.1)] pt-12">
+            {[
+              { icon: Smartphone, title: 'Proposta digital', text: 'Monte a proposta do veículo em segundos e envie pelo WhatsApp.' },
+              { icon: CircleDollarSign, title: 'Sinal via Pix', text: 'O cliente paga o sinal direto na sua conta, sem comissão.' },
+              { icon: ShieldCheck, title: 'Reserva garantida', text: 'O veículo fica travado para o comprador no ato do pagamento.' },
+              { icon: BarChart2, title: 'Painel ao vivo', text: 'Acompanhe propostas, sinais e equipe em tempo real.' },
+            ].map((item, i) => (
+              <div key={i} className="space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-[#C1F11D]/20 flex items-center justify-center">
+                  <item.icon size={22} className="text-[#141414]" />
+                </div>
+                <h4 className="font-extrabold text-[#141414] text-base">{item.title}</h4>
+                <p className="text-[#8A8A85] text-sm leading-relaxed font-medium">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAIXA VERDE FULL-WIDTH — venda online ou presencial (estilo PicPay) */}
+      <section id="propostas-fluxo" className="py-20 md:py-28 bg-[#141414] text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Coluna texto */}
+            <div className="space-y-8">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.1]">
+                Feche a venda em menos de 60 segundos
+              </h2>
+              <ul className="space-y-5">
+                {[
+                  'Monte a proposta com preço FIPE preenchido automaticamente.',
+                  'Gere um link exclusivo com cronômetro de urgência e botão Pix.',
+                  'Receba o sinal direto na conta e trave a reserva na hora.',
+                ].map((t, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <CheckCircle2 size={22} className="text-[#C1F11D] shrink-0 mt-0.5" />
+                    <span className="text-[#E5E5E0] text-base md:text-lg font-medium leading-relaxed">{t}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <button
+                  onClick={() => navigateTo('assinar')}
+                  className="w-full sm:w-auto bg-[#C1F11D] text-[#141414] font-extrabold text-sm px-8 py-3.5 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F11D]/10 cursor-pointer"
+                >
+                  Assinar Reservacar
+                </button>
+                <button
+                  onClick={() => navigateTo('login')}
+                  className="w-full sm:w-auto bg-transparent border border-white/20 hover:border-white text-white hover:bg-white/5 font-extrabold text-sm px-8 py-3.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Ver demonstração</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+            {/* Coluna imagem */}
+            <div className="relative rounded-[24px] overflow-hidden aspect-[4/3] shadow-2xl border border-white/10">
+              <img
+                src="https://i.imgur.com/mtCb0l9.jpeg"
+                alt="Vendedor fechando uma reserva pelo celular"
                 className="w-full h-full object-cover"
               />
             </div>
-
-            {/* Coluna da Direita: Conteúdo e Benefícios */}
-            <div className="lg:col-span-7 space-y-8">
-              <div className="space-y-4">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[#0B1B17] leading-[1.1]">
-                  Sua reserva para o próximo passo
-                </h2>
-                <p className="text-[#6B7C77] text-base md:text-lg leading-relaxed font-medium">
-                  É fácil e simples reservar. E você economiza tempo e dinheiro em cada viagem, também.
-                </p>
-              </div>
-
-              {/* Lista de Benefícios */}
-              <div className="space-y-5">
-                {/* Item 1 */}
-                <div className="flex items-start gap-4 pb-5 border-b border-slate-200/60">
-                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
-                    <Car size={20} className="text-[#0B1B17]" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
-                      Economize em locações nacionais e internacionais
-                    </h4>
-                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
-                      Acesso instantâneo a tarifas corporativas negociadas.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Item 2 */}
-                <div className="flex items-start gap-4 pb-5 border-b border-slate-200/60">
-                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
-                    <Key size={20} className="text-[#0B1B17]" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
-                      Frota variada e confirmada
-                    </h4>
-                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
-                      Garantia de categoria reservada direto com a locadora.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Item 3 */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center bg-white shrink-0 shadow-sm">
-                    <MapPin size={20} className="text-[#0B1B17]" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-[#0B1B17] text-sm md:text-base leading-snug">
-                      A única com cobertura global e suporte local 24/7
-                    </h4>
-                    <p className="text-[#6B7C77] text-xs md:text-sm leading-normal font-semibold mt-1">
-                      Assistência em português em mais de 140 países.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Botão de Ação e Disclaimer */}
-              <div className="pt-2">
-                <button 
-                  onClick={() => navigateTo('cadastrar-reserva')} 
-                  className="bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-[#C1F651] font-extrabold text-sm px-8 py-3.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:scale-103 cursor-pointer"
-                >
-                  Fazer reserva
-                </button>
-                <span className="block text-xs text-[#6B7C77] mt-4 leading-relaxed font-semibold">
-                  Reservacar é um serviço prestado em parceria com locadoras líderes de mercado. Capital em risco.
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO DE PROPOSTAS E RESERVAS DIGITAIS (FULL WIDTH VERDE ESCURO) */}
-      <section id="propostas-fluxo" className="py-24 bg-[#0B1B17] text-white">
+      {/* CARDS EMPILHADOS — recursos principais (estilo "Crédito disponível" PicPay) */}
+      <section id="simulator" className="py-20 md:py-28 bg-[#F4F4F2] text-[#141414]">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-[1.15]">
-              Propostas e reservas digitais<br className="hidden sm:inline" /> em menos de 60 segundos
+          <div className="max-w-2xl mb-12">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#8A8A85] block mb-4">Recursos</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[#141414] leading-[1.1]">
+              Tudo que sua loja precisa para vender mais
             </h2>
-            <p className="text-[#A0B2AC] text-base md:text-lg leading-relaxed font-medium mt-6">
-              Venda veículos com muito mais agilidade utilizando o fluxo de sinal via Pix do Reservacar.
-            </p>
-            
-            {/* Botões de Ação Centralizados */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
-              <button
-                onClick={() => navigateTo('assinar')}
-                className="w-full sm:w-auto bg-[#C1F651] text-[#0B1B17] font-extrabold text-sm px-8 py-3.5 rounded-full hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg shadow-[#C1F651]/10 cursor-pointer"
-              >
-                Assinar Reservacar
-              </button>
-              <button
-                onClick={() => navigateTo('login')}
-                className="w-full sm:w-auto bg-transparent border border-white/20 hover:border-white text-white hover:bg-white/5 font-extrabold text-sm px-8 py-3.5 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Ver demonstracao</span>
-                <ChevronRight size={14} />
-              </button>
-            </div>
           </div>
 
-          {/* Linha Divisória Fina */}
-          <div className="w-full border-t border-white/10 mb-16"></div>
-
-          {/* Grid de 4 Colunas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            {/* Coluna 1: Cadastro */}
-            <div className="space-y-4">
-              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                Cadastro
-              </h3>
-              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
-                O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
-              </p>
-            </div>
-
-            {/* Coluna 2: link */}
-            <div className="space-y-4">
-              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                link
-              </h3>
-              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
-                Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
-              </p>
-            </div>
-
-            {/* Coluna 3: compartilhe */}
-            <div className="space-y-4">
-              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                compartilhe
-              </h3>
-              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
-                O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
-              </p>
-            </div>
-
-            {/* Coluna 4: Sinal */}
-            <div className="space-y-4">
-              <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
-                Sinal
-              </h3>
-              <p className="text-[#A0B2AC] text-xs sm:text-sm leading-relaxed font-semibold">
-                O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO PIX DIRETO (SUBSTITUTO DO SIMULADOR) */}
-      <section id="simulator" className="py-24 bg-[#F9F9F6] text-[#0B1B17]">
-        <div className="max-w-7xl mx-auto px-6">
-          
-          {/* Cabeçalho de Alinhamento Flex */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#0B1B17] leading-[1.15]">
-                Pix direto para a sua conta.<br />
-                Sem comissão por reserva
-              </h2>
-            </div>
-            <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
-              <button
-                onClick={() => navigateTo('assinar')}
-                className="w-full sm:w-auto bg-[#0B1B17] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-full hover:bg-[#C1F651] hover:text-[#0B1B17] border border-[#0B1B17] transition-all duration-300 flex items-center justify-between gap-4 group cursor-pointer"
+          <div className="space-y-6">
+            {[
+              {
+                dark: false,
+                tag: 'Pix direto',
+                title: 'Sinal na sua conta, sem comissão',
+                text: 'O cliente paga o sinal via Pix diretamente na proposta. O dinheiro cai na conta da sua loja na hora — você paga só a assinatura fixa mensal.',
+                cta: 'Assinar Reservacar', action: () => navigateTo('assinar'),
+                img: 'https://i.imgur.com/bQ0jZH2.jpeg',
+              },
+              {
+                dark: true,
+                tag: 'Link inteligente',
+                title: 'Proposta com cronômetro de urgência',
+                text: 'Cada link tem countdown regressivo, valor do sinal e botão Pix. O gatilho de escassez acelera a decisão do comprador.',
+                cta: 'Ver demonstração', action: () => navigateTo('login'),
+                img: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
+              },
+              {
+                dark: false,
+                tag: 'Painel ao vivo',
+                title: 'Acompanhe sua equipe em tempo real',
+                text: 'Veja propostas abertas, sinais recebidos e o desempenho de cada vendedor num só painel, atualizado ao vivo.',
+                cta: 'Simular reserva', action: () => navigateTo('cadastrar-reserva'),
+                img: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
+              },
+            ].map((c, i) => (
+              <div
+                key={i}
+                className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center rounded-[28px] p-8 md:p-12 border ${
+                  c.dark
+                    ? 'bg-[#141414] text-white border-white/10'
+                    : 'bg-white text-[#141414] border-[rgba(20,20,20,0.08)] premium-shadow'
+                } ${i % 2 === 1 ? 'md:[&>*:first-child]:order-2' : ''}`}
               >
-                <span>Assinar Reservacar</span>
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
-              </button>
-              <button
-                onClick={() => navigateTo('login')}
-                className="w-full sm:w-auto bg-transparent border border-[#0B1B17]/25 text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white font-bold text-xs px-6 py-3.5 rounded-full transition-all duration-300 flex items-center justify-between gap-4 group cursor-pointer"
-              >
-                <span>Ver demonstracao</span>
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Container Escuro da Imagem */}
-          <div className="bg-[#0B1B17] rounded-[32px] p-6 sm:p-10 md:p-14 lg:p-20 flex items-center justify-center">
-            <div className="max-w-4xl w-full rounded-[24px] overflow-hidden shadow-2xl relative">
-              <img
-                src="https://i.imgur.com/bQ0jZH2.jpeg"
-                alt="Pix direto para a conta sem comissao"
-                className="w-full h-auto object-cover block"
-              />
-              
-              {/* Overlay de Notificação Push Animada em Loop */}
-              {(() => {
-                const pushNotifications = [
-                  {
-                    type: 'dark',
-                    icon: (
-                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-[#C1F651]/10 flex items-center justify-center text-[#C1F651] shrink-0">
-                        <ShieldCheck className="w-2 h-2 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#C1F651]" />
-                      </div>
-                    ),
-                    title: "Seu veículo foi reservado",
-                    time: "12min ago"
-                  },
-                  {
-                    type: 'light',
-                    icon: (
-                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-black/5 flex items-center justify-center text-[#0B1B17] font-black text-[9px] xs:text-[11px] sm:text-xs md:text-sm shrink-0">
-                        $
-                      </div>
-                    ),
-                    title: (
-                      <span>
-                        Imagem nova add <span className="underline font-bold">visualizar</span>
-                      </span>
-                    ),
-                    time: "12min ago"
-                  },
-                  {
-                    type: 'dark',
-                    icon: (
-                      <div className="w-3.5 h-3.5 xs:w-5 xs:h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-sm sm:rounded-lg bg-[#C1F651]/10 flex items-center justify-center text-[#C1F651] font-black text-[9px] xs:text-[11px] sm:text-xs md:text-sm shrink-0">
-                        $
-                      </div>
-                    ),
-                    title: "Pix realizado com sucesso!",
-                    time: "12min ago"
-                  }
-                ];
-
-                const currentPush = pushNotifications[activePushIndex];
-
-                return (
-                  <div 
-                    className={`absolute top-[60.5%] left-[17%] w-[22.8%] h-[8.8%] flex items-center justify-between px-1.5 xs:px-2.5 sm:px-3 rounded-[4px] xs:rounded-[6px] sm:rounded-[8px] md:rounded-[12px] shadow-lg select-none transition-all duration-500 ease-out border ${
-                      isPushVisible 
-                        ? 'opacity-100 translate-y-0 scale-100' 
-                        : 'opacity-0 translate-y-1 scale-95'
-                    } ${
-                      currentPush.type === 'dark'
-                        ? 'bg-[#0B1B17] border-white/10 text-white'
-                        : 'bg-[#E2E6E4] border-black/5 text-[#0B1B17]'
+                <div className="space-y-4">
+                  <span className={`text-xs font-extrabold uppercase tracking-widest ${c.dark ? 'text-[#C1F11D]' : 'text-[#8A8A85]'}`}>{c.tag}</span>
+                  <h3 className={`text-2xl md:text-3xl font-black tracking-tight leading-tight ${c.dark ? 'text-white' : 'text-[#141414]'}`}>{c.title}</h3>
+                  <p className={`text-sm md:text-base leading-relaxed font-medium ${c.dark ? 'text-[#B9B9B4]' : 'text-[#8A8A85]'}`}>{c.text}</p>
+                  <button
+                    onClick={c.action}
+                    className={`inline-flex items-center gap-2 font-extrabold text-sm px-7 py-3 rounded-full transition-all duration-300 cursor-pointer mt-2 ${
+                      c.dark
+                        ? 'bg-[#C1F11D] text-[#141414] hover:bg-white'
+                        : 'bg-[#141414] text-[#F4F4F2] hover:bg-[#C1F11D] hover:text-[#141414]'
                     }`}
                   >
-                    <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 overflow-hidden w-full">
-                      {currentPush.icon}
-                      <div 
-                        className="font-bold text-[6.5px] xs:text-[8px] sm:text-[10px] md:text-xs tracking-tight truncate pr-1"
-                        style={{ color: currentPush.type === 'dark' ? '#F9F9F6' : '#0B1B17' }}
-                      >
-                        {currentPush.title}
-                      </div>
-                    </div>
-                    <div 
-                      className="text-[5.5px] xs:text-[7px] sm:text-[9px] font-medium shrink-0"
-                      style={{ color: currentPush.type === 'dark' ? 'rgba(249, 249, 246, 0.4)' : 'rgba(11, 27, 23, 0.5)' }}
-                    >
-                      {currentPush.time}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
+                    <span>{c.cta}</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+                <div className="relative rounded-[20px] overflow-hidden aspect-[4/3] shadow-lg">
+                  <img src={c.img} alt={c.title} className="w-full h-full object-cover" />
+                </div>
+              </div>
+            ))}
           </div>
-
         </div>
       </section>
 
       {/* METRICAS */}
-      <section id="stats" className="py-24 bg-[#F9F9F6] border-b border-[rgba(11,27,23,0.08)]">
+      <section id="stats" className="py-24 bg-[#F4F4F2] border-b border-[rgba(20,20,20,0.08)]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
-              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(20,20,20,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
                 R$ {bilhoes.toFixed(1)}M+
               </h3>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Sinais Processados (BRL)</p>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Sinais Processados (BRL)</p>
             </div>
-            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
-              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(20,20,20,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
                 {clientes}k+
               </h3>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Carros Reservados Ativos</p>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Carros Reservados Ativos</p>
             </div>
-            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(11,27,23,0.08)] premium-shadow">
-              <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0B1B17] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="space-y-3 p-6 bg-white rounded-2xl border border-[rgba(20,20,20,0.08)] premium-shadow">
+              <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0B1B17] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
                 {aprovacao.toFixed(1)}%
               </h3>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-[#6B7C77]">Aprovação Legal e Conformidade</p>
+              <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Aprovação Legal e Conformidade</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DECLARAÇÃO DE FECHAMENTO (estilo "Com PicPay, descomplicada") */}
+      <section className="py-24 md:py-36 bg-[#F4F4F2] text-center">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-[#141414] leading-[1.05]">
+            Com o Reservacar,<br />vender carro é <span className="text-[#C1F11D] [text-shadow:0_1px_0_rgba(20,20,20,0.15)]">descomplicado</span>.
+          </h2>
+          <p className="text-[#8A8A85] text-base md:text-lg font-medium mt-6 max-w-xl mx-auto leading-relaxed">
+            Proposta, sinal Pix e reserva garantida em um só lugar. Comece hoje mesmo.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+            <button
+              onClick={() => navigateTo('assinar')}
+              className="w-full sm:w-auto bg-[#141414] text-[#F4F4F2] font-extrabold text-base px-8 py-4 rounded-full hover:bg-[#C1F11D] hover:text-[#141414] hover:scale-105 transition-all duration-300 cursor-pointer"
+            >
+              Assinar Reservacar
+            </button>
+            <button
+              onClick={() => navigateTo('cadastrar-reserva')}
+              className="w-full sm:w-auto border border-[#141414]/20 text-[#141414] hover:bg-[#141414]/5 font-extrabold text-base px-8 py-4 rounded-full transition-all duration-300 cursor-pointer"
+            >
+              Simular reserva
+            </button>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-24 md:py-32 bg-[#F9F9F6]">
+      <section id="faq" className="py-24 md:py-32 bg-[#F4F4F2]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             
             {/* Coluna da Esquerda: Card Escuro */}
-            <div className="lg:col-span-5 bg-[#0B1B17] rounded-[32px] p-8 md:p-12 text-[#F9F9F6] flex flex-col justify-between min-h-[380px] lg:min-h-full shadow-xl">
+            <div className="lg:col-span-5 bg-[#141414] rounded-[32px] p-8 md:p-12 text-[#F4F4F2] flex flex-col justify-between min-h-[380px] lg:min-h-full shadow-xl">
               <div>
-                <span className="text-xs uppercase font-extrabold tracking-widest text-[#C1F651] block mb-4">FAQ</span>
+                <span className="text-xs uppercase font-extrabold tracking-widest text-[#C1F11D] block mb-4">FAQ</span>
                 <h2 className="text-4xl md:text-5xl font-normal text-white tracking-tight leading-[1.15] font-serif">
                   Perguntas<br />Frequentes
                 </h2>
@@ -2351,7 +2506,7 @@ function HomeView({ navigateTo }) {
                 </a>
                 <button 
                   onClick={() => navigateTo('login')}
-                  className="px-6 py-3 bg-white text-[#0B1B17] font-bold text-xs rounded-xl hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 text-center flex-1 sm:flex-none cursor-pointer"
+                  className="px-6 py-3 bg-white text-[#141414] font-bold text-xs rounded-xl hover:bg-[#C1F11D] hover:text-[#141414] transition-all duration-300 text-center flex-1 sm:flex-none cursor-pointer"
                 >
                   Fale conosco
                 </button>
@@ -2379,16 +2534,16 @@ function HomeView({ navigateTo }) {
                 return faqs.map((faq, index) => (
                   <div 
                     key={index}
-                    className="bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300 border border-[rgba(11,27,23,0.05)] overflow-hidden"
+                    className="bg-white rounded-[20px] shadow-sm hover:shadow-md transition-all duration-300 border border-[rgba(20,20,20,0.05)] overflow-hidden"
                   >
                     <button 
                       onClick={() => setActiveFaq(activeFaq === index ? null : index)}
                       className="w-full text-left p-6 sm:p-8 flex justify-between items-center focus:outline-none select-none cursor-pointer gap-4"
                     >
-                      <span className="font-bold text-sm sm:text-base md:text-lg text-[#0B1B17] leading-snug">
+                      <span className="font-bold text-sm sm:text-base md:text-lg text-[#141414] leading-snug">
                         {faq.question}
                       </span>
-                      <span className="text-xl sm:text-2xl font-light text-[#0B1B17] shrink-0 select-none">
+                      <span className="text-xl sm:text-2xl font-light text-[#141414] shrink-0 select-none">
                         {activeFaq === index ? '−' : '+'}
                       </span>
                     </button>
@@ -2400,7 +2555,7 @@ function HomeView({ navigateTo }) {
                       }`}
                     >
                       <div className="overflow-hidden">
-                        <p className="px-6 sm:px-8 pb-6 sm:pb-8 text-xs sm:text-sm md:text-base text-[#6B7C77] leading-relaxed">
+                        <p className="px-6 sm:px-8 pb-6 sm:pb-8 text-xs sm:text-sm md:text-base text-[#8A8A85] leading-relaxed">
                           {faq.answer}
                         </p>
                       </div>
@@ -2415,22 +2570,22 @@ function HomeView({ navigateTo }) {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#0B1B17] text-[#F9F9F6] pt-20 pb-10 border-t border-white/10 relative z-10">
+      <footer className="bg-[#141414] text-[#F4F4F2] pt-20 pb-10 border-t border-white/10 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
             <div className="lg:col-span-2 space-y-6">
               <div className="text-2xl font-extrabold tracking-tight flex items-center gap-1">
                 <span className="font-black text-white">Reservacar</span>
-                <span className="text-xs font-bold align-super text-[#C1F651]">®</span>
+                <span className="text-xs font-bold align-super text-[#C1F11D]">®</span>
               </div>
-              <p className="text-[#6B7C77] text-sm max-w-sm leading-relaxed">
+              <p className="text-[#8A8A85] text-sm max-w-sm leading-relaxed">
                 Infraestrutura digital completa para concessionárias e lojistas de automóveis gerenciarem suas propostas, coletarem sinais Pix e fecharem mais vendas.
               </p>
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Funcionalidades</h4>
-              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F11D]">Funcionalidades</h4>
+              <ul className="space-y-2.5 text-sm text-[#8A8A85]">
                 <li><button onClick={() => navigateTo('cadastrar-reserva')} className="hover:text-white transition-colors">Simular Reserva</button></li>
                 <li><button onClick={() => navigateTo('assinar')} className="hover:text-white transition-colors">Planos de Assinatura</button></li>
                 <li><button onClick={() => navigateTo('login')} className="hover:text-white transition-colors">Login Lojista</button></li>
@@ -2438,8 +2593,8 @@ function HomeView({ navigateTo }) {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Recursos</h4>
-              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F11D]">Recursos</h4>
+              <ul className="space-y-2.5 text-sm text-[#8A8A85]">
                 <li><a href="#" className="hover:text-white transition-colors">Central de Ajuda</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Políticas de Uso</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Calculadora de Taxa</a></li>
@@ -2447,8 +2602,8 @@ function HomeView({ navigateTo }) {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F651]">Jurídico</h4>
-              <ul className="space-y-2.5 text-sm text-[#6B7C77]">
+              <h4 className="text-sm font-extrabold uppercase tracking-widest text-[#C1F11D]">Jurídico</h4>
+              <ul className="space-y-2.5 text-sm text-[#8A8A85]">
                 <li><a href="#" className="hover:text-white transition-colors">Política de Privacidade</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Termos de Serviço</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Regulação LGPD</a></li>
@@ -2456,11 +2611,11 @@ function HomeView({ navigateTo }) {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#6B7C77] font-medium">
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#8A8A85] font-medium">
             <p>&copy; 2026 Reservacar. Todos os direitos reservados. Todas as marcas registradas de veículos pertencem aos seus respectivos proprietários.</p>
             <div className="flex items-center gap-2">
               <span>Segurança e Criptografia Pix direta de ponta a ponta</span>
-              <Shield className="w-4 h-4 text-[#C1F651]" />
+              <Shield className="w-4 h-4 text-[#C1F11D]" />
             </div>
           </div>
         </div>
@@ -2472,17 +2627,17 @@ function HomeView({ navigateTo }) {
 // --- NEW COMPONENT: FOOTER (Estilo Revolut escuro) ---
 function Footer({ navigateTo }) {
   return (
-    <footer className="bg-[#0f172a] text-slate-400 pt-20 pb-12 border-t border-slate-800">
+    <footer className="bg-[#0f172a] text-[#B9B9B4] pt-20 pb-12 border-t border-[#2A2A26]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         
         <div className="mb-16 text-left">
-          <span className="text-xs font-bold text-[#C1F651] uppercase tracking-widest block mb-3">PRONTO PARA ACELERAR?</span>
+          <span className="text-xs font-bold text-[#C1F11D] uppercase tracking-widest block mb-3">PRONTO PARA ACELERAR?</span>
           <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 max-w-2xl leading-tight">
             Revolucione as vendas do seu showroom de veículos.
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16 border-t border-b border-slate-800 py-12 text-left">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16 border-t border-b border-[#2A2A26] py-12 text-left">
           <div>
             <h4 className="text-white font-bold text-sm mb-4">Plataforma</h4>
             <ul className="space-y-2 text-xs">
@@ -2520,15 +2675,15 @@ function Footer({ navigateTo }) {
         </div>
 
         {/* Textos legais pequenos e direitos autorais */}
-        <div className="text-left text-[11px] text-slate-500 leading-relaxed space-y-4">
+        <div className="text-left text-[11px] text-[#8A8A85] leading-relaxed space-y-4">
           <p>
             O Reservacar é uma plataforma de tecnologia voltada para a otimização e aceleração de processos comerciais em concessionárias multimarcas de seminovos. Não somos uma instituição financeira ou intermediador direto de pagamentos. As transações financeiras (sinais via Pix) são liquidadas diretamente entre o comprador final (lead) e a concessionária parceira através dos provedores de pagamento integrados à conta bancária de cada concessionária, sob total responsabilidade dos envolvidos.
           </p>
           <p>
             A segurança dos dados é garantida através de segurança avançada e conformidade total com a Lei Geral de Proteção de Dados (LGPD). A expiração dos cronômetros e a trava de showroom são lógicas simuladas configuradas livremente pelas equipes comerciais a fim de otimizar sua taxa de conversão local.
           </p>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-8 border-t border-slate-800 gap-4 mt-8">
-            <span className="text-[11px] font-semibold text-slate-600">© 2026 Reservacar Ltda. Todos os direitos reservados. CNPJ 12.345.678/0001-90.</span>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-8 border-t border-[#2A2A26] gap-4 mt-8">
+            <span className="text-[11px] font-semibold text-[#6F6F6A]">© 2026 Reservacar Ltda. Todos os direitos reservados. CNPJ 12.345.678/0001-90.</span>
             <div className="flex gap-4 text-xs font-semibold">
               <a href="#" className="hover:text-white transition">Privacidade</a>
               <a href="#" className="hover:text-white transition">Termos</a>
@@ -2563,37 +2718,37 @@ function LinkGeneratorPreview({ navigateTo }) {
   };
 
   return (
-    <div className="grid-bg-dark p-8 rounded-2xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 text-white min-h-[460px]">
+    <div className="grid-bg-dark p-8 rounded-2xl border border-[#141414] flex flex-col justify-between hover:border-[#2A2A26] transition-colors duration-200 text-white min-h-[460px]">
       <div className="space-y-6">
-        <div className="w-12 h-12 bg-white/10 text-[#C1F651] rounded-xl flex items-center justify-center">
+        <div className="w-12 h-12 bg-white/10 text-[#C1F11D] rounded-xl flex items-center justify-center">
           <LinkIcon className="w-6 h-6" />
         </div>
         <div className="space-y-2">
           <h4 className="text-lg font-bold text-white">Gerador de Links de Reserva</h4>
-          <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm text-[#B9B9B4] leading-relaxed">
             Crie propostas personalizadas com FIPE, urgência e Pix integrado em menos de 60 segundos.
           </p>
         </div>
         
         {/* Preview da Interface do Link */}
-        <div className="bg-white border border-white/10 rounded-xl p-4 space-y-4 text-slate-900 shadow-xl">
+        <div className="bg-white border border-white/10 rounded-xl p-4 space-y-4 text-[#141414] shadow-xl">
           <span className="text-[10px] font-bold text-[#6b7c77] uppercase tracking-wider block text-left">Link de Reserva Gerado</span>
-          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-center justify-between bg-[#F4F4F2] border border-[#E5E5E2] rounded-lg px-3 py-2.5">
             <div className="flex items-center gap-2 overflow-hidden w-full">
               <LinkIcon className="w-4 h-4 text-[#6b7c77] shrink-0" />
               <span className="text-xs text-[#0f172a] font-mono truncate">reservacar.com/reserva/bmw...</span>
             </div>
             <button 
               onClick={handleCopy}
-              className="text-slate-400 hover:text-[#0b1b17] transition-colors p-1"
+              className="text-[#B9B9B4] hover:text-[#141414] transition-colors p-1"
               title="Copiar Link"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-[#141414]" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
           <button 
             onClick={handleShare}
-            className="w-full bg-[#0b1b17] hover:bg-[#C1F651] hover:text-[#0b1b17] text-white text-xs font-bold py-3 rounded-lg transition-colors duration-200"
+            className="w-full bg-[#141414] hover:bg-[#C1F11D] hover:text-[#141414] text-white text-xs font-bold py-3 rounded-lg transition-colors duration-200"
           >
             {shared ? "Compartilhado!" : "Compartilhar"}
           </button>
@@ -2603,7 +2758,7 @@ function LinkGeneratorPreview({ navigateTo }) {
       <a 
         href="#" 
         onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} 
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#C1F651] transition-colors pt-6"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#C1F11D] transition-colors pt-6"
       >
         Conhecer funcionalidade
         <ArrowRight size={14} />
@@ -2616,29 +2771,29 @@ function LiveDashboardPreview({ navigateTo }) {
   const [proposalActive, setProposalActive] = useState(true);
 
   return (
-    <div className="grid-bg-light p-8 rounded-2xl border border-[rgba(11,27,23,0.06)] flex flex-col justify-between hover:border-slate-300 transition-colors duration-200 text-[#0b1b17] min-h-[460px]">
+    <div className="grid-bg-light p-8 rounded-2xl border border-[rgba(20,20,20,0.06)] flex flex-col justify-between hover:border-[#D9D9D5] transition-colors duration-200 text-[#141414] min-h-[460px]">
       <div className="space-y-6">
-        <div className="w-12 h-12 bg-[#C1F651]/20 text-[#0b1b17] rounded-xl flex items-center justify-center">
+        <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-xl flex items-center justify-center">
           <BarChart2 className="w-6 h-6" />
         </div>
         <div className="space-y-2">
-          <h4 className="text-lg font-bold text-[#0b1b17]">Painel de vendas</h4>
+          <h4 className="text-lg font-bold text-[#141414]">Painel de vendas</h4>
           <p className="text-sm text-[#6b7c77] leading-relaxed">
             Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.
           </p>
         </div>
 
         {/* Preview da Interface de Status */}
-        <div className="bg-white border border-[rgba(11,27,23,0.06)] rounded-xl p-4 space-y-3 shadow-xl">
+        <div className="bg-white border border-[rgba(20,20,20,0.06)] rounded-xl p-4 space-y-3 shadow-xl">
           <div className="flex items-center justify-between bg-white border border-[#e2e8f0] rounded-lg p-3">
             <span className="text-xs font-bold text-[#0f172a]">Status da Proposta</span>
             <div className="flex items-center gap-3">
-              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${proposalActive ? 'text-emerald-800 bg-emerald-50' : 'text-slate-500 bg-slate-100'}`}>
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${proposalActive ? 'text-[#141414] bg-[#C1F11D]/15' : 'text-[#8A8A85] bg-[#EBEBE8]'}`}>
                 {proposalActive ? "Ativa" : "Inativa"}
               </span>
               <button 
                 onClick={() => setProposalActive(!proposalActive)}
-                className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${proposalActive ? 'bg-[#0b1b17]' : 'bg-slate-200'}`}
+                className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none ${proposalActive ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}
                 aria-label="Alternar status da proposta"
               >
                 <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-200 ${proposalActive ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -2658,7 +2813,7 @@ function LiveDashboardPreview({ navigateTo }) {
       <a 
         href="#" 
         onClick={(e) => { e.preventDefault(); navigateTo('login'); }} 
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0b1b17] hover:text-[#C1F651] transition-colors pt-6"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#141414] hover:text-[#C1F11D] transition-colors pt-6"
       >
         Conhecer funcionalidade
         <ArrowRight size={14} />
@@ -2669,87 +2824,87 @@ function LiveDashboardPreview({ navigateTo }) {
 
 function RankingGamificationPreview({ navigateTo }) {
   return (
-    <div className="bg-[#C1F651] p-8 rounded-2xl border border-[#C1F651] hover:brightness-[1.01] transition-all duration-200 md:col-span-2 text-[#0b1b17] relative overflow-hidden">
+    <div className="bg-[#C1F11D] p-8 rounded-2xl border border-[#C1F11D] hover:brightness-[1.01] transition-all duration-200 md:col-span-2 text-[#141414] relative overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
         
         {/* Esquerda: Informações */}
         <div className="lg:col-span-6 space-y-6 text-left">
           <div className="space-y-3">
-            <h4 className="text-2xl font-bold text-[#0b1b17] flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-[#0b1b17] rounded-lg flex items-center justify-center text-[#C1F651] shrink-0">
+            <h4 className="text-2xl font-bold text-[#141414] flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center text-[#C1F11D] shrink-0">
                 <Trophy className="w-4 h-4 fill-current" />
               </div>
               Ranking e Gamificação
             </h4>
-            <p className="text-sm text-[#0b1b17]/80 leading-relaxed">
+            <p className="text-sm text-[#141414]/80 leading-relaxed">
               Motive sua equipe com metas, ranking de vendedores e badges de performance por período.
             </p>
           </div>
 
           <button 
             onClick={() => navigateTo('login')}
-            className="bg-[#0b1b17] hover:bg-white hover:text-[#0b1b17] text-[#C1F651] text-xs font-bold px-6 py-3 rounded-full transition-colors duration-200 focus:outline-none shadow-md"
+            className="bg-[#141414] hover:bg-white hover:text-[#141414] text-[#C1F11D] text-xs font-bold px-6 py-3 rounded-full transition-colors duration-200 focus:outline-none shadow-md"
           >
             Conhecer funcionalidade
           </button>
 
-          <div className="space-y-3.5 pt-4 border-t border-[#0b1b17]/10">
-            <div className="flex items-center gap-2.5 text-xs font-bold text-[#0b1b17]">
+          <div className="space-y-3.5 pt-4 border-t border-[#141414]/10">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-[#141414]">
               {/* Ícone de toggle/barra simulado */}
-              <div className="w-8 h-4 bg-[#0b1b17] rounded-full p-0.5 flex items-center justify-end shrink-0">
+              <div className="w-8 h-4 bg-[#141414] rounded-full p-0.5 flex items-center justify-end shrink-0">
                 <div className="bg-white w-3 h-3 rounded-full" />
               </div>
               <span>Metas e objetivos de equipe.</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs font-bold text-[#0b1b17]">
-              <Star className="w-5 h-5 text-[#0b1b17] shrink-0" />
+            <div className="flex items-center gap-2.5 text-xs font-bold text-[#141414]">
+              <Star className="w-5 h-5 text-[#141414] shrink-0" />
               <span>Badges e medalhas de conquista.</span>
             </div>
           </div>
         </div>
 
         {/* Direita: Preview Visual */}
-        <div className="lg:col-span-6 bg-white border border-[#0b1b17]/10 rounded-xl p-4 space-y-4 shadow-xl">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-            <div className="w-16 h-2 bg-slate-100 rounded"></div>
-            <div className="w-10 h-2 bg-slate-100 rounded"></div>
+        <div className="lg:col-span-6 bg-white border border-[#141414]/10 rounded-xl p-4 space-y-4 shadow-xl">
+          <div className="flex justify-between items-center pb-2 border-b border-[#EBEBE8]">
+            <div className="w-16 h-2 bg-[#EBEBE8] rounded"></div>
+            <div className="w-10 h-2 bg-[#EBEBE8] rounded"></div>
           </div>
 
           <div className="space-y-2.5">
             <span className="text-[10px] font-bold text-[#6b7c77] uppercase tracking-wider block mb-1 text-left">Top 3 Vendedores</span>
             
             {/* Carlos Pereira */}
-            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
+            <div className="flex items-center justify-between bg-white border border-[#EBEBE8] rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-50 text-blue-800 font-bold rounded-full flex items-center justify-center text-[10px]">
                   CP
                 </div>
-                <span className="text-xs font-bold text-slate-800">Carlos Pereira</span>
+                <span className="text-xs font-bold text-[#2A2A26]">Carlos Pereira</span>
               </div>
-              <span className="text-xs font-mono font-extrabold text-slate-400">#1</span>
+              <span className="text-xs font-mono font-extrabold text-[#B9B9B4]">#1</span>
             </div>
 
             {/* Ana Souza */}
-            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
+            <div className="flex items-center justify-between bg-white border border-[#EBEBE8] rounded-lg p-2.5 hover:translate-x-1 transition-transform duration-200">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-emerald-50 text-emerald-800 font-bold rounded-full flex items-center justify-center text-[10px]">
+                <div className="w-8 h-8 bg-[#C1F11D]/15 text-[#141414] font-bold rounded-full flex items-center justify-center text-[10px]">
                   AS
                 </div>
-                <span className="text-xs font-bold text-slate-800">Ana Souza</span>
+                <span className="text-xs font-bold text-[#2A2A26]">Ana Souza</span>
               </div>
-              <span className="text-xs font-mono font-extrabold text-slate-400">#2</span>
+              <span className="text-xs font-mono font-extrabold text-[#B9B9B4]">#2</span>
             </div>
 
             {/* Badge */}
-            <div className="flex items-center justify-between bg-white border border-slate-100 rounded-lg p-2.5">
+            <div className="flex items-center justify-between bg-white border border-[#EBEBE8] rounded-lg p-2.5">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 bg-[#C1F651]/10 rounded flex items-center justify-center text-[#C1F651] shrink-0">
+                <div className="w-7 h-7 bg-[#C1F11D]/10 rounded flex items-center justify-center text-[#C1F11D] shrink-0">
                   <Trophy className="w-4 h-4 fill-current" />
                 </div>
-                <span className="text-xs font-bold text-slate-800">Badge de Performance (Mês)</span>
+                <span className="text-xs font-bold text-[#2A2A26]">Badge de Performance (Mês)</span>
               </div>
-              <div className="w-6 h-6 bg-[#C1F651] rounded flex items-center justify-center">
-                <Star className="w-3.5 h-3.5 text-[#0b1b17] fill-[#0b1b17]" />
+              <div className="w-6 h-6 bg-[#C1F11D] rounded flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 text-[#141414] fill-[#141414]" />
               </div>
             </div>
           </div>
@@ -2761,7 +2916,8 @@ function RankingGamificationPreview({ navigateTo }) {
 }
 
 // --- EMPRESA VIEW ---
-function EmpresaView({ navigateTo }) {
+// --- HEADER COMPARTILHADO (home / empresa / pricing) ---
+function SiteHeader({ navigateTo, activePage = '' }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
@@ -2805,84 +2961,75 @@ function EmpresaView({ navigateTo }) {
     }, 150);
   };
 
+  const navLink = (active: boolean) => active
+    ? 'text-[#C1F11D] font-bold transition-colors duration-300 font-extrabold'
+    : 'hover:text-[#C1F11D] transition-colors duration-300';
+
   return (
-    <div className="bg-[#F9F9F6] text-[#0B1B17] font-sans overflow-x-hidden antialiased min-h-screen relative text-left">
+    <>
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-header {
           background-color: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(11, 27, 23, 0.08);
+          border-bottom: 1px solid rgba(20, 20, 20, 0.08);
         }
-        .premium-shadow {
-          box-shadow: 0 20px 40px -15px rgba(11, 27, 23, 0.05);
-        }
-        .premium-shadow-dark {
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        .grid-bg-dark {
-          background-color: #0b1b17;
-        }
-        .grid-bg-light {
-          background-color: #f9f9f6;
-        }
-
       `}} />
 
       {/* HEADER / NAVEGAÇÃO */}
-      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#0B1B17]' : 'py-5 text-white bg-transparent'}`}>
+      <header id="main-header" className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isHeaderActive ? 'glass-header py-3.5 shadow-sm text-[#141414]' : 'py-5 text-white bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative">
           {/* Logo */}
           <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight">
-            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
-              <Car size={18} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F11D] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#141414]" />
             </div>
             <span className="font-black">Reservacar</span>
-            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F11D]">®</span>
           </a>
 
           {/* Menu Desktop */}
-          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}>
-            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('features'); }} className="hover:text-[#C1F651] transition-colors duration-300">Funcionalidades</a>
-            
+          <nav className={`hidden md:flex items-center gap-8 font-medium text-sm transition-colors duration-300 ${isHeaderActive ? 'text-[#141414]/90' : 'text-white/90'}`}>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('features'); }} className="hover:text-[#C1F11D] transition-colors duration-300">Funcionalidades</a>
+
             {/* Dropdown Serviços */}
-            <div 
+            <div
               className="py-2"
               onMouseEnter={handleServicesEnter}
               onMouseLeave={handleServicesLeave}
             >
-              <button 
+              <button
                 type="button"
-                className={`flex items-center gap-1.5 hover:text-[#C1F651] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#0B1B17]/90' : 'text-white/90'}`}
+                className={`flex items-center gap-1.5 hover:text-[#C1F11D] transition-colors duration-300 font-medium text-sm bg-transparent border-none cursor-pointer outline-none ${isHeaderActive ? 'text-[#141414]/90' : 'text-white/90'}`}
               >
                 <span>Serviços</span>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F651]' : isHeaderActive ? 'text-[#0B1B17]/50' : 'text-white/50'}`} />
+                <ChevronDown size={14} className={`transition-transform duration-300 ${isServicesOpen ? 'rotate-180 text-[#C1F11D]' : isHeaderActive ? 'text-[#141414]/50' : 'text-white/50'}`} />
               </button>
             </div>
 
-            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('stats'); }} className="hover:text-[#C1F651] transition-colors duration-300">Impacto</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('faq'); }} className="hover:text-[#C1F651] transition-colors duration-300">FAQ</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C1F651] font-bold transition-colors duration-300 font-extrabold">Empresa</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('pricing'); }} className={navLink(activePage === 'pricing')}>Pricing</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); handleHomeAnchor('faq'); }} className="hover:text-[#C1F11D] transition-colors duration-300">FAQ</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); activePage === 'empresa' ? window.scrollTo({ top: 0, behavior: 'smooth' }) : navigateTo('empresa'); }} className={navLink(activePage === 'empresa')}>Empresa</a>
           </nav>
 
           {/* Ações */}
           <div className="hidden md:flex items-center gap-4">
-            <button 
-              onClick={() => navigateTo('login')} 
+            <button
+              onClick={() => navigateTo('login')}
               className={`text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-300 border cursor-pointer ${
-                isHeaderActive 
-                  ? 'border-[#0B1B17]/30 text-[#0B1B17] hover:border-[#0B1B17]/80 hover:bg-[#0B1B17]/10' 
+                isHeaderActive
+                  ? 'border-[#141414]/30 text-[#141414] hover:border-[#141414]/80 hover:bg-[#141414]/10'
                   : 'border border-white/30 text-white hover:border-white/80 hover:bg-white/10'
               }`}
             >
               Acesso Lojista
             </button>
-            <button 
-              onClick={() => navigateTo('assinar')} 
+            <button
+              onClick={() => navigateTo('assinar')}
               className={`text-sm font-semibold px-6 py-2.5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer ${
-                isHeaderActive 
-                  ? 'bg-[#C1F651] text-[#0B1B17] hover:bg-[#0B1B17] hover:text-white' 
-                  : 'bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17]'
+                isHeaderActive
+                  ? 'bg-[#C1F11D] text-[#141414] hover:bg-[#141414] hover:text-white'
+                  : 'bg-[#C1F11D] text-[#141414] hover:bg-white hover:text-[#141414]'
               }`}
             >
               Assinar Reservacar
@@ -2890,9 +3037,9 @@ function EmpresaView({ navigateTo }) {
           </div>
 
           {/* Botão Menu Mobile */}
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#0B1B17]' : 'text-white'}`} 
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`md:hidden flex flex-col justify-between w-6 h-4 focus:outline-none z-50 cursor-pointer ${isHeaderActive ? 'text-[#141414]' : 'text-white'}`}
             aria-label="Abrir Menu"
           >
             <span className={`w-full h-[2px] bg-current transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[7px] rotate-45' : ''}`}></span>
@@ -2903,12 +3050,12 @@ function EmpresaView({ navigateTo }) {
 
         {isServicesOpen && (
           <div 
-            className="absolute top-full left-0 w-full bg-white border-b border-slate-200/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
+            className="absolute top-full left-0 w-full bg-white border-b border-[#E5E5E2]/80 shadow-xl z-50 animate-[fadeIn_0.25s_ease-out-expo]"
             onMouseEnter={handleServicesEnter}
             onMouseLeave={handleServicesLeave}
           >
             <div 
-              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#0B1B17]"
+              className="max-w-7xl mx-auto px-6 py-6 grid grid-cols-12 gap-8 text-left relative text-[#141414]"
               style={{
                 animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
@@ -2916,7 +3063,7 @@ function EmpresaView({ navigateTo }) {
               {/* Botão de Fechar discreto */}
               <button 
                 onClick={() => setIsServicesOpen(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition cursor-pointer p-1 rounded-full hover:bg-slate-100"
+                className="absolute top-4 right-4 text-[#B9B9B4] hover:text-[#5F5F5A] transition cursor-pointer p-1 rounded-full hover:bg-[#EBEBE8]"
                 type="button"
                 aria-label="Fechar menu"
               >
@@ -2924,9 +3071,9 @@ function EmpresaView({ navigateTo }) {
               </button>
 
               {/* Coluna 1: Card de Destaque à Esquerda (4/12) */}
-              <div className="col-span-4 flex flex-col justify-between border-r border-slate-100 pr-6">
+              <div className="col-span-4 flex flex-col justify-between border-r border-[#EBEBE8] pr-6">
                 <div className="space-y-4">
-                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#0B1B17] to-[#172B25] border border-slate-100">
+                  <div className="rounded-xl overflow-hidden aspect-[16/10] bg-gradient-to-br from-[#141414] to-[#2E2E2A] border border-[#EBEBE8]">
                     <img 
                       src="https://i.imgur.com/cv0mLXh.jpeg" 
                       alt="Showroom Reservacar" 
@@ -2934,8 +3081,8 @@ function EmpresaView({ navigateTo }) {
                     />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[#0B1B17] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
-                    <p className="text-[#6B7C77] text-xs leading-relaxed font-semibold">
+                    <h4 className="font-extrabold text-[#141414] text-sm tracking-wider uppercase mb-1.5">Showroom Virtual</h4>
+                    <p className="text-[#8A8A85] text-xs leading-relaxed font-semibold">
                       A plataforma inteligente para criar propostas, receber sinais Pix e vender veículos como um profissional.
                     </p>
                   </div>
@@ -2944,7 +3091,7 @@ function EmpresaView({ navigateTo }) {
                   <a 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('login'); }}
-                    className="inline-flex items-center gap-1 text-[#0B1B17] hover:text-[#C1F651] font-bold text-xs group transition-colors"
+                    className="inline-flex items-center gap-1 text-[#141414] hover:text-[#C1F11D] font-bold text-xs group transition-colors"
                   >
                     <span>Conhecer plataforma</span>
                     <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
@@ -2953,10 +3100,10 @@ function EmpresaView({ navigateTo }) {
               </div>
 
               {/* Coluna 2: Recursos (5/12) */}
-              <div className="col-span-5 flex flex-col justify-between border-r border-slate-100 pr-6">
+              <div className="col-span-5 flex flex-col justify-between border-r border-[#EBEBE8] pr-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Recursos</span>
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest block pb-1 border-b border-[#EBEBE8]">Recursos</span>
                   </div>
                   
                   <div className="space-y-3.5">
@@ -2964,14 +3111,14 @@ function EmpresaView({ navigateTo }) {
                     <a 
                       href="#" 
                       onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <Send size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Criar proposta</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Criar proposta</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Gere propostas personalizadas pelo celular</p>
                       </div>
                     </a>
 
@@ -2979,14 +3126,14 @@ function EmpresaView({ navigateTo }) {
                     <a 
                       href="#" 
                       onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <DollarSign size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Sinal Pix imediato</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Sinal Pix imediato</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Receba sinais Pix direto na sua conta</p>
                       </div>
                     </a>
 
@@ -2994,14 +3141,14 @@ function EmpresaView({ navigateTo }) {
                     <a 
                       href="#" 
                       onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <ShieldCheck size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Garantia de reserva</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Garantia de reserva</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Segurança jurídica para lojistas e clientes</p>
                       </div>
                     </a>
 
@@ -3009,14 +3156,14 @@ function EmpresaView({ navigateTo }) {
                     <a 
                       href="#" 
                       onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <LinkIcon size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Links temporários</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Links temporários</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Gatilho de urgência com cronômetro regressivo</p>
                       </div>
                     </a>
 
@@ -3024,14 +3171,14 @@ function EmpresaView({ navigateTo }) {
                     <a 
                       href="#" 
                       onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('features'); }}
-                      className="flex items-center gap-3.5 group/item text-[#6B7C77] hover:text-[#0B1B17] transition-colors"
+                      className="flex items-center gap-3.5 group/item text-[#8A8A85] hover:text-[#141414] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-[#C1F651]/15 text-[#0B1B17] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F651] transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-[#C1F11D]/15 text-[#141414] flex items-center justify-center shrink-0 group-hover/item:bg-[#C1F11D] transition-colors">
                         <Car size={14} />
                       </div>
                       <div>
-                        <p className="font-bold text-xs text-[#0B1B17] group-hover/item:text-[#0B1B17]">Painel de estoque</p>
-                        <p className="text-[10px] text-[#6B7C77] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
+                        <p className="font-bold text-xs text-[#141414] group-hover/item:text-[#141414]">Painel de estoque</p>
+                        <p className="text-[10px] text-[#8A8A85] leading-normal font-semibold">Acompanhe veículos reservados em tempo real</p>
                       </div>
                     </a>
                   </div>
@@ -3042,17 +3189,17 @@ function EmpresaView({ navigateTo }) {
               <div className="col-span-3 flex flex-col justify-start">
                 <div className="space-y-4">
                   <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">Preços</span>
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest block pb-1 border-b border-[#EBEBE8]">Preços</span>
                   </div>
                   
                   <div className="pt-2">
                     <a 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); handleHomeAnchor('simulator'); }}
-                      className="group flex flex-col gap-1 text-[#6B7C77] hover:text-[#0B1B17] transition-colors p-2 rounded-xl hover:bg-slate-50"
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setIsServicesOpen(false); navigateTo('pricing'); }}
+                      className="group flex flex-col gap-1 text-[#8A8A85] hover:text-[#141414] transition-colors p-2 rounded-xl hover:bg-[#F4F4F2]"
                     >
-                      <span className="font-extrabold text-xs text-[#0B1B17] group-hover:text-[#0b1b17] transition-colors">Planos e tarifas</span>
-                      <span className="text-[10px] text-[#6B7C77] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
+                      <span className="font-extrabold text-xs text-[#141414] group-hover:text-[#141414] transition-colors">Planos e tarifas</span>
+                      <span className="text-[10px] text-[#8A8A85] leading-relaxed font-semibold">Compare a economia em relação a intermediários</span>
                     </a>
                   </div>
                 </div>
@@ -3064,249 +3211,137 @@ function EmpresaView({ navigateTo }) {
       </header>
 
       {/* MENU MOBILE OVERLAY */}
-      <div className={`fixed inset-0 bg-[#0B1B17] text-[#F9F9F6] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-0 bg-[#141414] text-[#F4F4F2] z-40 flex flex-col justify-between p-8 pt-32 transition-all duration-500 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <nav className="flex flex-col gap-6 text-2xl font-bold">
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('features'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Funcionalidades</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('simulator'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Simulador de Taxas</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('stats'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Métricas de Impacto</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('faq'); }} className="hover:text-[#C1F651] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[#C1F651] transition-colors duration-300 inline-block">Empresa</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('features'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Funcionalidades</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('simulator'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Simulador de Taxas</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); navigateTo('pricing'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Pricing</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); handleHomeAnchor('faq'); }} className="hover:text-[#C1F11D] transition-colors duration-300 inline-block">Perguntas Frequentes</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); activePage === 'empresa' ? window.scrollTo({ top: 0, behavior: 'smooth' }) : navigateTo('empresa'); }} className="text-[#C1F11D] transition-colors duration-300 inline-block">Empresa</a>
         </nav>
         <div className="flex flex-col gap-4 mt-auto">
           <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('login'); }} className="w-full text-center border border-white/20 text-white font-semibold py-3.5 rounded-full hover:bg-white/10 transition-colors">Acesso Lojista</button>
-          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F651] text-[#0B1B17] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
+          <button onClick={() => { setIsMobileMenuOpen(false); navigateTo('assinar'); }} className="w-full text-center bg-[#C1F11D] text-[#141414] font-semibold py-3.5 rounded-full hover:bg-white transition-colors">Assinar Reservacar</button>
         </div>
       </div>
+    </>
+  );
+}
 
-      {/* HERO SECTION */}
-      <section className="relative bg-[#0B1B17] text-[#F9F9F6] pt-36 pb-24 md:pt-48 md:pb-36 overflow-hidden">
-        {/* Detalhes de Fundo (Glow sutil) */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F651]/10 rounded-full blur-[120px] pointer-events-none"></div>
+// --- ABOUT / EMPRESA VIEW ---
+function EmpresaView({ navigateTo }) {
+  return (
+    <div className="bg-[#F4F4F2] text-[#141414] font-sans overflow-x-hidden antialiased min-h-screen relative text-left">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .premium-shadow {
+          box-shadow: 0 20px 40px -15px rgba(20, 20, 20, 0.05);
+        }
+        .premium-shadow-dark {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .grid-bg-dark {
+          background-color: #141414;
+        }
+        .grid-bg-light {
+          background-color: #f9f9f6;
+        }
+      `}} />
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            
-            {/* Visual (SVG) */}
-            <div className="w-full max-w-lg mx-auto bg-[#D6EAD8] rounded-2xl overflow-hidden premium-shadow-dark border border-white/10">
-              <svg viewBox="0 0 640 520" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-                <rect width="640" height="520" fill="#C8E6CA"/>
-                <ellipse cx="320" cy="420" rx="260" ry="80" fill="rgba(44,107,47,.12)"/>
-                <circle cx="320" cy="160" r="72" fill="#8BC34A" opacity=".6"/>
-                <rect x="268" y="228" width="104" height="140" rx="20" fill="#558B2F" opacity=".7"/>
-                <rect x="302" y="248" width="56" height="96" rx="10" fill="#E8F5E9"/>
-                <rect x="310" y="258" width="40" height="68" rx="6" fill="#33691E" opacity=".8"/>
-                <circle cx="330" cy="336" r="5" fill="#8BC34A"/>
-                <path d="M268 270 Q230 310 240 350" stroke="#558B2F" stroke-width="22" stroke-linecap="round" fill="none" opacity=".7"/>
-                <path d="M372 270 Q410 310 400 350" stroke="#558B2F" stroke-width="22" stroke-linecap="round" fill="none" opacity=".7"/>
-                <rect x="80" y="80" width="160" height="52" rx="12" fill="white" opacity=".9"/>
-                <circle cx="106" cy="106" r="14" fill="#2C6B2F"/>
-                <text x="128" y="101" font-family="sans-serif" font-size="10" fill="#111" font-weight="600">Sinal confirmado</text>
-                <text x="128" y="116" font-family="sans-serif" font-size="12" fill="#2C6B2F" font-weight="700">R$ 5.000 via Pix</text>
-                <rect x="380" y="120" width="176" height="48" rx="12" fill="#0F1C0F" opacity=".85"/>
-                <text x="400" y="140" font-family="sans-serif" font-size="10" fill="rgba(255,255,255,.6)">Link expira em</text>
-                <text x="400" y="158" font-family="monospace" font-size="16" fill="#5CB85C" font-weight="700">23:47</text>
-              </svg>
-            </div>
+      <SiteHeader navigateTo={navigateTo} activePage="empresa" />
 
-            {/* Conteúdo Textual */}
-            <div className="space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 bg-[#C1F651]/20 text-[#C1F651] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
-                Quem somos
-              </div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] text-white">
-                A plataforma que transforma interesse em sinal — <span className="text-[#C1F651]">na hora certa</span>
-              </h1>
-              <p className="text-[#6B7C77] text-lg leading-relaxed">
-                Nascemos para resolver o maior problema do vendedor de carros: o lead some antes de fechar. O Reservacar cria o ambiente de urgência e comprometimento que faltava, conectando o momento de interesse ao pagamento do sinal via Pix em minutos.
-              </p>
-              <button 
-                onClick={() => navigateTo('cadastrar-reserva')}
-                className="bg-[#C1F651] text-[#0B1B17] hover:bg-white hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#C1F651]/10 text-sm cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                Criar meu primeiro link
-              </button>
-            </div>
+      {/* HERO SECTION (texto direto, sem ilustração) */}
+      <section className="relative bg-[#141414] text-[#F4F4F2] pt-40 pb-24 md:pt-52 md:pb-32 overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F11D]/10 rounded-full blur-[120px] pointer-events-none"></div>
 
+        <div className="max-w-3xl mx-auto px-6 relative z-10 text-center space-y-7">
+          <div className="inline-flex items-center gap-2 bg-[#C1F11D]/20 text-[#C1F11D] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
+            Quem somos
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] text-white">
+            Transformamos interesse em sinal — <span className="text-[#C1F11D]">na hora certa</span>
+          </h1>
+          <p className="text-[#B9B9B4] text-lg leading-relaxed max-w-2xl mx-auto">
+            O lead some antes de fechar. O Reservacar cria a urgência e o compromisso que faltavam, conectando o interesse ao sinal via Pix em minutos.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <button
+              onClick={() => navigateTo('cadastrar-reserva')}
+              className="w-full sm:w-auto bg-[#C1F11D] text-[#141414] hover:bg-white transition-all duration-300 font-bold px-8 py-4 rounded-full text-sm cursor-pointer"
+            >
+              Criar meu primeiro link
+            </button>
+            <button
+              onClick={() => navigateTo('login')}
+              className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/5 transition-all duration-300 font-bold px-8 py-4 rounded-full text-sm cursor-pointer"
+            >
+              Falar com a equipe
+            </button>
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO PROBLEMA */}
-      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] text-left border-y border-[rgba(11,27,23,0.06)]">
-        <div className="max-w-4xl mx-auto px-6 space-y-6">
+      {/* SEÇÃO PROBLEMA (curta) */}
+      <section className="py-20 bg-[#F4F4F2] text-[#141414] text-center border-y border-[rgba(20,20,20,0.06)]">
+        <div className="max-w-3xl mx-auto px-6 space-y-5">
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
             A indecisão do comprador custa caro para quem vende
           </h2>
-          <p className="text-[#6B7C77] text-lg leading-relaxed">
-            No mercado automotivo, tempo é rival do vendedor. O cliente visita o showroom, sai "para pensar", e nunca mais volta — ou volta apenas para avisar que comprou com o concorrente. O Reservacar existe porque vimos isso acontecer todos os dias, e entendemos que a solução não é pressionar mais: é criar o compromisso certo, na hora certa, com a ferramenta certa.
+          <p className="text-[#8A8A85] text-lg leading-relaxed">
+            O cliente sai "para pensar" e não volta. A solução não é pressionar mais: é criar o compromisso certo, na hora certa, com a ferramenta certa.
           </p>
         </div>
       </section>
 
-      {/* SEÇÃO MISSÃO */}
-      <section className="py-24 md:py-32 bg-[#0B1B17] text-[#F9F9F6]">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
-          <div className="max-w-3xl mx-auto space-y-4">
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              Cuidar do resultado do vendedor é cuidar do futuro da concessionária
-            </h2>
-            <p className="text-[#6B7C77] text-lg md:text-xl leading-relaxed">
-              Pesquisa com mais de 400 vendedores mostrou que o maior gargalo não é a abordagem — é a falta de comprometimento formal do lead antes de ir embora.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-            {/* Pilar 1 */}
-            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
-              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      {/* SEÇÃO NÚMEROS (única, ícones lucide) */}
+      <section className="py-20 md:py-28 bg-[#141414] text-[#F4F4F2]">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-14">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight max-w-2xl mx-auto">
+            Resultado que dá para medir
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
+            {[
+              { icon: TrendingUp, num: '+73%', title: 'Conversão com urgência', text: 'Propostas com countdown convertem 73% mais que abordagens sem prazo.' },
+              { icon: Clock, num: '1h 48m', title: 'Velocidade de fechamento', text: 'Do link ao sinal via Pix, nossos clientes fecham em menos de 2 horas.' },
+              { icon: DollarSign, num: 'R$ 2,1Bi', title: 'Em veículos reservados', text: 'Volume de propostas geradas e sinais confirmados desde o lançamento.' },
+            ].map((p, i) => (
+              <div key={i} className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-4 hover:border-white/10 transition-all duration-300">
+                <div className="w-12 h-12 bg-[#C1F11D]/10 text-[#C1F11D] rounded-xl flex items-center justify-center">
+                  <p.icon size={24} />
+                </div>
+                <span className="text-4xl font-black text-[#C1F11D] block font-mono">{p.num}</span>
+                <h4 className="text-lg font-bold text-white">{p.title}</h4>
+                <p className="text-sm text-[#B9B9B4] leading-relaxed">{p.text}</p>
               </div>
-              <div className="space-y-2">
-                <span className="text-4xl font-black text-[#C1F651] block font-mono">+73%</span>
-                <h4 className="text-lg font-bold text-white">Conversão com urgência</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Propostas com countdown ativo convertem 73% mais do que abordagens sem prazo definido.
-                </p>
-              </div>
-            </div>
-
-            {/* Pilar 2 */}
-            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
-              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div className="space-y-2">
-                <span className="text-4xl font-black text-[#C1F651] block font-mono">1h 48m</span>
-                <h4 className="text-lg font-bold text-white">Velocidade média de fechamento</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Da criação do link ao recebimento do sinal via Pix, nossos clientes fecham em menos de 2 horas.
-                </p>
-              </div>
-            </div>
-
-            {/* Pilar 3 */}
-            <div className="bg-white/5 p-8 rounded-2xl border border-white/5 space-y-5 hover:border-white/10 transition-all duration-300">
-              <div className="w-12 h-12 bg-[#C1F651]/10 text-[#C1F651] rounded-xl flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <div className="space-y-2">
-                <span className="text-4xl font-black text-[#C1F651] block font-mono">R$ 2,1Bi</span>
-                <h4 className="text-lg font-bold text-white">Em veículos reservados</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Volume acumulado de propostas geradas e sinais confirmados pela plataforma desde o lançamento.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO CTA SPLIT */}
-      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            
-            {/* Conteúdo Textual */}
-            <div className="space-y-6 text-left">
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
-                Vamos juntos transformar o seu processo de vendas?
-              </h2>
-              <p className="text-[#6B7C77] text-lg leading-relaxed">
-                Com o Reservacar, você e sua equipe têm acesso a links de reserva personalizados, painel de vendas ao vivo, comparação FIPE e toda a inteligência para fechar mais rápido. Tudo para eliminar o "vou pensar" da sua rotina.
-              </p>
-              <button 
-                onClick={() => navigateTo('login')}
-                className="bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#0B1B17]/10 text-sm cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" className="w-4 h-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Falar com nossa equipe
-              </button>
-            </div>
-
-            {/* Visual (SVG) */}
-            <div className="w-full max-w-lg mx-auto bg-[#E8F5E9] rounded-2xl overflow-hidden border border-[rgba(11,27,23,0.08)] premium-shadow">
-              <svg viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-                <rect width="640" height="420" fill="#C8E6CA"/>
-                <rect x="120" y="200" width="400" height="120" rx="20" fill="#2C6B2F" opacity=".8"/>
-                <rect x="160" y="160" width="300" height="80" rx="16" fill="#33691E" opacity=".9"/>
-                <rect x="180" y="175" width="80" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
-                <rect x="280" y="175" width="80" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
-                <rect x="380" y="175" width="60" height="55" rx="8" fill="#A5D6A7" opacity=".7"/>
-                <circle cx="200" cy="320" r="40" fill="#111"/>
-                <circle cx="200" cy="320" r="24" fill="#333"/>
-                <circle cx="440" cy="320" r="40" fill="#111"/>
-                <circle cx="440" cy="320" r="24" fill="#333"/>
-                <ellipse cx="520" cy="235" rx="22" ry="14" fill="#FFF59D" opacity=".9"/>
-                <rect x="360" y="60" width="220" height="100" rx="14" fill="white" opacity=".95"/>
-                <text x="380" y="85" font-family="sans-serif" font-size="10" fill="#9E9C96" font-weight="600">PROPOSTA GERADA</text>
-                <text x="380" y="108" font-family="sans-serif" font-size="14" fill="#111" font-weight="700">BMW 320i 2023</text>
-                <text x="380" y="126" font-family="sans-serif" font-size="11" fill="#2C6B2F" font-weight="600">R$ 214.900 · Sinal R$ 5.000</text>
-                <rect x="380" y="138" width="140" height="12" rx="4" fill="#E8F5E9"/>
-                <rect x="380" y="138" width="98" height="12" rx="4" fill="#2C6B2F"/>
-              </svg>
-            </div>
-
+      {/* SEÇÃO QUOTE / CASE (sem ilustração, centralizado) */}
+      <section className="py-20 md:py-28 bg-[#F4F4F2] text-[#141414] border-t border-[rgba(20,20,20,0.06)]">
+        <div className="max-w-3xl mx-auto px-6 text-center space-y-6">
+          <div className="flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#8A8A85]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#C1F11D] inline-block"></span>
+            BMW Premium SP
           </div>
-        </div>
-      </section>
-
-      {/* SEÇÃO QUOTE / CASE */}
-      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] border-t border-[rgba(11,27,23,0.06)]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            
-            {/* Visual (SVG) */}
-            <div className="w-full max-w-sm mx-auto bg-[#1A2F1A] rounded-2xl overflow-hidden border border-white/10 premium-shadow">
-              <svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-                <rect width="380" height="380" fill="#1A2F1A"/>
-                <ellipse cx="190" cy="380" rx="160" ry="60" fill="rgba(92,184,92,.08)"/>
-                <circle cx="190" cy="150" r="80" fill="#2C6B2F" opacity=".5"/>
-                <rect x="130" y="225" width="120" height="155" rx="18" fill="#33691E" opacity=".6"/>
-                <circle cx="190" cy="150" r="55" fill="#558B2F" opacity=".7"/>
-                <circle cx="175" cy="140" r="6" fill="#C8E6CA" opacity=".8"/>
-                <circle cx="205" cy="140" r="6" fill="#C8E6CA" opacity=".8"/>
-                <path d="M175 165 Q190 178 205 165" stroke="#C8E6CA" stroke-width="3" stroke-linecap="round" fill="none" opacity=".8"/>
-              </svg>
-            </div>
-
-            {/* Texto de Depoimento */}
-            <div className="space-y-6 text-left">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#6B7C77]">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#C1F651] inline-block"></span>
-                BMW Premium SP
-              </div>
-              <blockquote className="text-xl md:text-2xl font-bold italic text-slate-800 leading-relaxed">
-                "Com o Reservacar, nosso time parou de perder leads para o silêncio. O link de reserva com o countdown faz o trabalho que nenhum follow-up manual conseguia fazer. Em 3 meses, nossa taxa de conversão saiu de 34% para 71%."
-              </blockquote>
-              <p className="text-sm font-bold text-slate-700">
-                Marcos Souza — Gerente Comercial, BMW Premium SP
-              </p>
-              <div>
-                <a 
-                  href="#" 
-                  onClick={(e) => { e.preventDefault(); navigateTo('assinar'); }}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-[#0B1B17] hover:text-[#C1F651] transition-all border-b-2 border-[#0B1B17] pb-1"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  Ver o case completo
-                </a>
-              </div>
-            </div>
-
-          </div>
+          <blockquote className="text-xl md:text-3xl font-bold italic text-[#141414] leading-relaxed">
+            "Nosso time parou de perder leads para o silêncio. Em 3 meses, a conversão saiu de 34% para 71%."
+          </blockquote>
+          <p className="text-sm font-bold text-[#8A8A85]">
+            Marcos Souza — Gerente Comercial, BMW Premium SP
+          </p>
         </div>
       </section>
 
       {/* SEÇÃO COMO FUNCIONA */}
-      <section className="py-24 bg-white text-[#0B1B17]">
+      <section className="py-24 bg-white text-[#141414]">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
           <div className="max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#6B7C77] block">Nosso processo</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#8A8A85] block">Nosso processo</span>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
               Como o Reservacar funciona na prática
             </h2>
-            <p className="text-[#6B7C77] text-lg leading-relaxed">
+            <p className="text-[#8A8A85] text-lg leading-relaxed">
               Veja como ajudamos vendedores e concessionárias a transformar interesse em comprometimento financeiro real.
             </p>
           </div>
@@ -3314,65 +3349,65 @@ function EmpresaView({ navigateTo }) {
           {/* Passos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
             {/* Passo 1 */}
-            <div className="grid-bg-dark p-10 rounded-3xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 min-h-[280px] text-white">
+            <div className="grid-bg-dark p-10 rounded-3xl border border-[#141414] flex flex-col justify-between hover:border-[#2A2A26] transition-colors duration-200 min-h-[280px] text-white">
               <div className="flex justify-between items-start w-full">
                 <h4 className="text-2xl font-bold tracking-tight">Cadastro do veículo</h4>
                 <div className="relative text-white/90 shrink-0">
                   <Car className="w-10 h-10" />
-                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F651] text-[#0B1B17] rounded-full p-0.5 border border-[#0B1B17]">
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F11D] text-[#141414] rounded-full p-0.5 border border-[#141414]">
                     <Check className="w-3 h-3 stroke-[3.5]" />
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-slate-300 leading-relaxed pt-16">
+              <p className="text-sm text-[#D9D9D5] leading-relaxed pt-16">
                 O vendedor seleciona a marca, modelo e ano. O sistema busca o preço FIPE automaticamente e preenche os dados da proposta.
               </p>
             </div>
 
             {/* Passo 2 */}
-            <div className="bg-[#C1F651] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#0B1B17]">
+            <div className="bg-[#C1F11D] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#141414]">
               <div className="flex justify-between items-start w-full">
-                <h4 className="text-2xl font-bold tracking-tight text-[#0B1B17]">Geração do link</h4>
-                <div className="relative text-[#0B1B17] shrink-0">
+                <h4 className="text-2xl font-bold tracking-tight text-[#141414]">Geração do link</h4>
+                <div className="relative text-[#141414] shrink-0">
                   <LinkIcon className="w-10 h-10 rotate-45" />
-                  <div className="absolute -bottom-1 -right-1.5 text-[#0B1B17]">
-                    <Send className="w-4 h-4 rotate-45 fill-[#0B1B17]" />
+                  <div className="absolute -bottom-1 -right-1.5 text-[#141414]">
+                    <Send className="w-4 h-4 rotate-45 fill-[#141414]" />
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-[#0B1B17]/90 leading-relaxed pt-16">
+              <p className="text-sm text-[#141414]/90 leading-relaxed pt-16">
                 Um link exclusivo é criado com countdown de urgência, valor do sinal e botão de Pix. Tudo em menos de 60 segundos.
               </p>
             </div>
 
             {/* Passo 3 */}
-            <div className="grid-bg-dark p-10 rounded-3xl border border-[#0b1b17] flex flex-col justify-between hover:border-slate-800 transition-colors duration-200 min-h-[280px] text-white">
+            <div className="grid-bg-dark p-10 rounded-3xl border border-[#141414] flex flex-col justify-between hover:border-[#2A2A26] transition-colors duration-200 min-h-[280px] text-white">
               <div className="flex justify-between items-start w-full">
                 <h4 className="text-2xl font-bold tracking-tight">Compartilhamento</h4>
                 <div className="relative text-white/90 shrink-0">
                   <MessageCircle className="w-10 h-10" />
-                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F651] text-[#0B1B17] rounded-full p-0.5 border border-[#0B1B17]">
+                  <div className="absolute -top-1.5 -right-1.5 bg-[#C1F11D] text-[#141414] rounded-full p-0.5 border border-[#141414]">
                     <Send className="w-3 h-3 stroke-[2.5]" />
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-slate-300 leading-relaxed pt-16">
+              <p className="text-sm text-[#D9D9D5] leading-relaxed pt-16">
                 O vendedor envia o link pelo WhatsApp. O comprador acessa a proposta personalizada e vê o cronômetro contando.
               </p>
             </div>
 
             {/* Passo 4 */}
-            <div className="bg-[#C1F651] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#0B1B17]">
+            <div className="bg-[#C1F11D] p-10 rounded-3xl flex flex-col justify-between hover:brightness-[1.01] transition-all duration-200 min-h-[280px] text-[#141414]">
               <div className="flex justify-between items-start w-full">
-                <h4 className="text-2xl font-bold tracking-tight text-[#0B1B17]">Sinal confirmado</h4>
-                <div className="relative text-[#0B1B17] shrink-0">
+                <h4 className="text-2xl font-bold tracking-tight text-[#141414]">Sinal confirmado</h4>
+                <div className="relative text-[#141414] shrink-0">
                   <ShieldCheck className="w-10 h-10" />
-                  <div className="absolute -top-1.5 -right-1.5 text-[#0B1B17]">
+                  <div className="absolute -top-1.5 -right-1.5 text-[#141414]">
                     <Sparkles className="w-4 h-4 fill-current" />
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-[#0B1B17]/90 leading-relaxed pt-16">
+              <p className="text-sm text-[#141414]/90 leading-relaxed pt-16">
                 O comprador paga o sinal via Pix diretamente na página. O vendedor recebe a notificação em tempo real no painel.
               </p>
             </div>
@@ -3381,7 +3416,7 @@ function EmpresaView({ navigateTo }) {
           <div className="pt-8">
             <button 
               onClick={() => navigateTo('login')}
-              className="mx-auto bg-[#0B1B17] text-[#C1F651] hover:bg-[#C1F651] hover:text-[#0B1B17] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#0B1B17]/10 text-sm cursor-pointer"
+              className="mx-auto bg-[#141414] text-[#C1F11D] hover:bg-[#C1F11D] hover:text-[#141414] transition-all duration-300 font-bold px-8 py-4 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#141414]/10 text-sm cursor-pointer"
             >
               <PlusCircle size={16} />
               Criar minha conta grátis
@@ -3390,38 +3425,11 @@ function EmpresaView({ navigateTo }) {
         </div>
       </section>
 
-      {/* SEÇÃO NÚMEROS */}
-      <section className="py-24 bg-[#0B1B17] text-[#F9F9F6]">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">
-            Reservacar em números
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">18k+</span>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Propostas geradas por mês</p>
-            </div>
-            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">73%</span>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Taxa de conversão média</p>
-            </div>
-            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">1h48</span>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Velocidade de fechamento</p>
-            </div>
-            <div className="space-y-2 p-6 bg-white/5 rounded-2xl border border-white/5">
-              <span className="text-4xl md:text-5xl font-black text-[#C1F651] font-mono">R$2,1Bi</span>
-              <p className="text-xs uppercase tracking-wider font-extrabold text-slate-400">Em veículos reservados</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* SEÇÃO OUTRAS SOLUÇÕES */}
-      <section className="py-24 bg-[#F9F9F6] text-[#0B1B17] border-b border-[rgba(11,27,23,0.06)]">
+      <section className="py-24 bg-[#F4F4F2] text-[#141414] border-b border-[rgba(20,20,20,0.06)]">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-16">
           <div className="max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-[#6B7C77] block">Conheça outras soluções</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-[#8A8A85] block">Conheça outras soluções</span>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
               Tudo que você precisa para vender mais
             </h2>
@@ -3436,18 +3444,18 @@ function EmpresaView({ navigateTo }) {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#0B1B17] text-[#F9F9F6] py-16 text-left">
+      <footer className="bg-[#141414] text-[#F4F4F2] py-16 text-left">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             {/* Coluna 1 */}
             <div className="space-y-4">
               <div className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight">
-                <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
-                  <Car size={18} className="text-[#0B1B17]" />
+                <div className="w-8 h-8 bg-[#C1F11D] rounded-lg flex items-center justify-center">
+                  <Car size={18} className="text-[#141414]" />
                 </div>
                 <span className="font-black">Reservacar</span>
               </div>
-              <p className="text-xs text-[#6B7C77] leading-relaxed">
+              <p className="text-xs text-[#8A8A85] leading-relaxed">
                 Acelere o seu processo de vendas e elimine a hesitação. Propostas personalizadas com fechamento imediato via Pix direto.
               </p>
             </div>
@@ -3455,7 +3463,7 @@ function EmpresaView({ navigateTo }) {
             {/* Coluna 2 */}
             <div className="space-y-4">
               <h4 className="text-white font-bold text-sm">Empresa</h4>
-              <ul className="space-y-2 text-xs text-[#6B7C77]">
+              <ul className="space-y-2 text-xs text-[#8A8A85]">
                 <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="hover:text-white transition">Início</a></li>
                 <li><a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white transition">Sobre Nós</a></li>
                 <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('assinar'); }} className="hover:text-white transition">Planos</a></li>
@@ -3465,7 +3473,7 @@ function EmpresaView({ navigateTo }) {
             {/* Coluna 3 */}
             <div className="space-y-4">
               <h4 className="text-white font-bold text-sm">Links Úteis</h4>
-              <ul className="space-y-2 text-xs text-[#6B7C77]">
+              <ul className="space-y-2 text-xs text-[#8A8A85]">
                 <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('login'); }} className="hover:text-white transition">Acesso Lojista</a></li>
                 <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('cadastrar-reserva'); }} className="hover:text-white transition">Simulador Cliente</a></li>
               </ul>
@@ -3474,16 +3482,16 @@ function EmpresaView({ navigateTo }) {
             {/* Coluna 4 */}
             <div className="space-y-4">
               <h4 className="text-white font-bold text-sm">Suporte</h4>
-              <ul className="space-y-2 text-xs text-[#6B7C77]">
+              <ul className="space-y-2 text-xs text-[#8A8A85]">
                 <li><a href="mailto:suporte@reservacar.com.br" className="hover:text-white transition">suporte@reservacar.com.br</a></li>
-                <li><span className="text-[10px] bg-white/5 text-[#C1F651] px-2.5 py-1 rounded-full font-bold inline-block">Atendimento 24h</span></li>
+                <li><span className="text-[10px] bg-white/5 text-[#C1F11D] px-2.5 py-1 rounded-full font-bold inline-block">Atendimento 24h</span></li>
               </ul>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-8 border-t border-white/5 gap-4 mt-12">
-            <span className="text-[11px] font-semibold text-slate-600">© 2026 Reservacar Ltda. Todos os direitos reservados. CNPJ 12.345.678/0001-90.</span>
-            <div className="flex gap-4 text-xs font-semibold text-[#6B7C77]">
+            <span className="text-[11px] font-semibold text-[#6F6F6A]">© 2026 Reservacar Ltda. Todos os direitos reservados. CNPJ 12.345.678/0001-90.</span>
+            <div className="flex gap-4 text-xs font-semibold text-[#8A8A85]">
               <a href="#" className="hover:text-white transition">Privacidade</a>
               <a href="#" className="hover:text-white transition">Termos</a>
               <a href="#" className="hover:text-white transition">Cookies</a>
@@ -3507,27 +3515,27 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (currentUserRole === 'owner') {
-      navigateTo('hub');
+      navigateTo('sales-stats');
     } else {
       navigateTo('dashboard');
     }
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#F9F9F6]">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#F4F4F2]">
       
       {/* Coluna Esquerda: Banner Visual do Showroom */}
-      <div className="hidden lg:flex flex-col justify-between p-16 bg-[#0B1B17] relative overflow-hidden text-left min-h-screen">
+      <div className="hidden lg:flex flex-col justify-between p-16 bg-[#141414] relative overflow-hidden text-left min-h-screen">
         {/* Fundo puramente sólido sem linhas verticais decorativas ou glows/blur decorativos (removidos por solicitação do usuário) */}
 
         {/* Logo superior */}
         <div className="z-10">
           <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-2xl font-extrabold tracking-tight text-white">
-            <div className="w-8 h-8 bg-[#C1F651] rounded-lg flex items-center justify-center">
-              <Car size={18} className="text-[#0B1B17]" />
+            <div className="w-8 h-8 bg-[#C1F11D] rounded-lg flex items-center justify-center">
+              <Car size={18} className="text-[#141414]" />
             </div>
             <span className="font-black">Reservacar</span>
-            <span className="text-[10px] font-bold align-super text-[#C1F651]">®</span>
+            <span className="text-[10px] font-bold align-super text-[#C1F11D]">®</span>
           </a>
         </div>
 
@@ -3536,28 +3544,28 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
           <h1 className="text-4xl lg:text-5xl font-black text-white leading-[1.1] tracking-tight">
             Acelerador de escassez e reservas digitais para o seu showroom.
           </h1>
-          <p className="text-slate-400 text-sm mt-6 leading-relaxed max-w-md">
+          <p className="text-[#B9B9B4] text-sm mt-6 leading-relaxed max-w-md">
             A plataforma definitiva para concessionárias e lojistas gerenciarem propostas de reserva com agilidade, segurança e inteligência de vendas.
           </p>
         </div>
 
         {/* Direitos Autorais na base */}
-        <div className="z-10 flex items-center justify-between text-xs text-slate-500 font-medium">
+        <div className="z-10 flex items-center justify-between text-xs text-[#8A8A85] font-medium">
           <span>© {new Date().getFullYear()} Reservacar S.A.</span>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-slate-350 transition">Privacidade</a>
-            <a href="#" className="hover:text-slate-350 transition">Termos</a>
+            <a href="#" className="hover:text-[#D9D9D5] transition">Privacidade</a>
+            <a href="#" className="hover:text-[#D9D9D5] transition">Termos</a>
           </div>
         </div>
       </div>
 
       {/* Coluna Direita: Formulário de Login */}
-      <div className="flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-[#F9F9F6] relative min-h-screen text-left">
+      <div className="flex flex-col justify-center px-8 sm:px-16 lg:px-24 bg-[#F4F4F2] relative min-h-screen text-left">
         {/* Logo visível apenas no mobile */}
         <div className="lg:hidden absolute top-8 left-8">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight text-[#0B1B17]">
-            <div className="w-8 h-8 bg-[#0B1B17] rounded-lg flex items-center justify-center">
-              <Car size={16} className="text-[#C1F651]" />
+          <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight text-[#141414]">
+            <div className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center">
+              <Car size={16} className="text-[#C1F11D]" />
             </div>
             <span className="font-black">Reservacar</span>
           </a>
@@ -3571,22 +3579,22 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
               <Sun size={20} className="stroke-[2px]" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Lojista</h2>
-              <p className="text-slate-500 font-medium text-sm">
+              <h2 className="text-3xl font-black text-[#141414] tracking-tight">Acesso Lojista</h2>
+              <p className="text-[#8A8A85] font-medium text-sm">
                 Bem-vindo ao Reservacar. Faça login na sua conta corporativa.
               </p>
             </div>
           </div>
 
           {/* Seletor de Perfil Flat */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-[#EBEBE8] rounded-2xl border border-[#E5E5E2]">
             <button
               type="button"
               onClick={() => setCurrentUserRole('owner')}
               className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
                 currentUserRole === 'owner'
-                  ? 'bg-[#0B1B17] text-[#C1F651]'
-                  : 'text-slate-500 hover:text-slate-900 bg-transparent'
+                  ? 'bg-[#141414] text-[#C1F11D]'
+                  : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
               }`}
             >
               Dono da Loja
@@ -3596,8 +3604,8 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
               onClick={() => setCurrentUserRole('employee')}
               className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
                 currentUserRole === 'employee'
-                  ? 'bg-[#0B1B17] text-[#C1F651]'
-                  : 'text-slate-500 hover:text-slate-900 bg-transparent'
+                  ? 'bg-[#141414] text-[#C1F11D]'
+                  : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
               }`}
             >
               Funcionário / Vendedor
@@ -3607,24 +3615,24 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
           {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-550 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-[#8A8A85] uppercase tracking-wider">
                 E-mail Corporativo
               </label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
+                className="w-full bg-white border border-[#E5E5E2] rounded-2xl px-4 py-3.5 text-[#2A2A26] focus:border-[#141414] focus:ring-1 focus:ring-[#141414] focus:outline-none transition font-medium"
                 required
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-550 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-[#8A8A85] uppercase tracking-wider">
                   Senha
                 </label>
-                <a href="#" className="text-xs font-semibold text-[#0B1B17] hover:underline">
+                <a href="#" className="text-xs font-semibold text-[#141414] hover:underline">
                   Esqueceu a senha?
                 </a>
               </div>
@@ -3632,21 +3640,21 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3.5 text-slate-800 focus:border-[#0B1B17] focus:ring-1 focus:ring-[#0B1B17] focus:outline-none transition font-medium"
+                className="w-full bg-white border border-[#E5E5E2] rounded-2xl px-4 py-3.5 text-[#2A2A26] focus:border-[#141414] focus:ring-1 focus:ring-[#141414] focus:outline-none transition font-medium"
                 required
               />
             </div>
 
             <button 
               type="submit"
-              className="w-full bg-[#0B1B17] hover:bg-[#122621] text-white font-bold rounded-2xl py-4 mt-2 transition duration-200 shadow-sm"
+              className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white font-bold rounded-2xl py-4 mt-2 transition duration-200 shadow-sm"
             >
               Entrar no Sistema
             </button>
           </form>
 
           {/* Rodapé do mobile */}
-          <div className="lg:hidden text-center text-xs text-slate-400 font-medium pt-8">
+          <div className="lg:hidden text-center text-xs text-[#B9B9B4] font-medium pt-8">
             © {new Date().getFullYear()} Reservacar S.A.
           </div>
         </div>
@@ -3666,46 +3674,46 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
       <div className="w-full max-w-[1600px] mb-8 text-left">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Olá, Marcos</h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium">
+            <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Olá, Marcos</h1>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium">
               {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
             </p>
           </div>
-          <div className="bg-[#C1F651] border border-[#0B1B17]/25 rounded-full px-4 py-2 flex items-center gap-2 text-xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#0B1B17] animate-pulse"></span>
-            <span className="font-extrabold text-[#0B1B17] uppercase tracking-wider">Showroom conectado</span>
+          <div className="bg-[#C1F11D] border border-[#141414]/25 rounded-full px-4 py-2 flex items-center gap-2 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#141414] animate-pulse"></span>
+            <span className="font-extrabold text-[#141414] uppercase tracking-wider">Showroom conectado</span>
           </div>
         </div>
 
         {/* Credit System Visual Widget */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
+        <div className="mt-8 bg-white border border-[#E5E5E2] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
           {/* Left Column: Plano Info */}
           <div className="flex flex-col min-w-[200px]">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest mb-1.5">PLANO ATUAL</span>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl font-bold text-slate-900 tracking-tight">
+              <span className="text-2xl font-bold text-[#141414] tracking-tight">
                 {empresaLogada?.planoAtivo || 'Plus'}
               </span>
-              <span className="border border-[#C1F651]/30 bg-[#C1F651]/20 text-[#0B1B17] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+              <span className="border border-[#C1F11D]/30 bg-[#C1F11D]/20 text-[#141414] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                 ATIVO
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-medium">Renova-se em 10/06/2026</p>
+            <p className="text-xs text-[#B9B9B4] font-medium">Renova-se em 10/06/2026</p>
           </div>
 
           {/* Middle Column: Credits Progress */}
           <div className="w-full md:max-w-md flex-1 text-left">
-            <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+            <div className="flex justify-between items-center text-[10px] font-bold text-[#6F6F6A] mb-1.5 uppercase tracking-wider">
               <span>USO DO PLANO</span>
-              <span className="text-slate-900 text-xs font-bold font-mono">{reservasUsadas}/{totalReservasPlano}</span>
+              <span className="text-[#141414] text-xs font-bold font-mono">{reservasUsadas}/{totalReservasPlano}</span>
             </div>
-            <div className="w-full bg-slate-100/80 h-2.5 rounded-full overflow-hidden mb-2 border border-slate-200/60">
+            <div className="w-full bg-[#EBEBE8]/80 h-2.5 rounded-full overflow-hidden mb-2 border border-[#E5E5E2]/60">
               <div 
-                className="h-full rounded-full transition-all duration-1000 bg-[#0B1B17]" 
+                className="h-full rounded-full transition-all duration-1000 bg-[#141414]" 
                 style={{ width: `${percentagemUso}%` }}
               ></div>
             </div>
-            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+            <p className="text-[10px] font-bold text-[#5F5F5A] uppercase tracking-wider">
               {reservasDisponiveis} LINKS DISPONÍVEIS
             </p>
           </div>
@@ -3714,7 +3722,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:w-auto flex justify-end md:justify-start">
             <button 
               onClick={() => navigateTo('configuracoes')}
-              className="w-full md:w-auto bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="w-full md:w-auto bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-6 py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               <ArrowUp size={14} className="stroke-[2.5px]" /> Fazer upgrade
             </button>
@@ -3724,52 +3732,52 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 
       {/* Grid of Key Performance Indicators (SaaS Style) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full max-w-[1600px] text-left">
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">PROPOSTAS ATIVAS</span>
-            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">PROPOSTAS ATIVAS</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/20 text-[#141414] rounded-lg flex items-center justify-center shrink-0">
               <LinkIcon size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">7</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">7</span>
+          <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> 3 novas hoje
           </span>
         </div>
         
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">TAXA DE CONVERSÃO</span>
-            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">TAXA DE CONVERSÃO</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/15 text-[#141414] rounded-lg flex items-center justify-center shrink-0 border border-[#C1F11D]/30">
               <TrendingUp size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">71%</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">71%</span>
+          <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> +8% vs mês anterior
           </span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">SINAL EM CAIXA</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/20 text-[#141414] rounded-lg flex items-center justify-center shrink-0">
               <DollarSign size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">R$ 42k</span>
-          <span className="text-xs text-slate-400 font-medium">Este mês</span>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">R$ 42k</span>
+          <span className="text-xs text-[#B9B9B4] font-medium">Este mês</span>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">VELOCIDADE MÉDIA</span>
-            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">VELOCIDADE MÉDIA</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/20 text-[#141414] rounded-lg flex items-center justify-center shrink-0">
               <Clock size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">1h 48m</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">1h 48m</span>
+          <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> Fechamento rápido
           </span>
         </div>
@@ -3781,72 +3789,72 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
           <button 
             onClick={() => navigateTo('sales-stats')}
-            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-slate-400 transition duration-200 group text-left"
+            className="bg-white border border-[#E5E5E2] rounded-[32px] p-8 flex flex-col items-start hover:border-[#B9B9B4] transition duration-200 group text-left"
           >
-            <div className="flex items-center gap-1.5 text-[#0B1B17] bg-[#C1F651] border border-[#0B1B17]/10 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0B1B17] animate-ping"></span>
+            <div className="flex items-center gap-1.5 text-[#141414] bg-[#C1F11D] border border-[#141414]/10 px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-wider mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#141414] animate-ping"></span>
               Atividade ao vivo
             </div>
-            <div className="w-14 h-14 bg-[#C1F651]/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#0B1B17] transition duration-200">
-              <BarChart2 size={24} className="text-[#0B1B17] group-hover:text-white transition duration-200" />
+            <div className="w-14 h-14 bg-[#C1F11D]/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#141414] transition duration-200">
+              <BarChart2 size={24} className="text-[#141414] group-hover:text-white transition duration-200" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#0B1B17] transition duration-200">Painel de vendas</h2>
-            <p className="text-slate-500 font-medium text-xs leading-relaxed mb-8">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.</p>
-            <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
+            <h2 className="text-xl font-bold text-[#141414] mb-2 group-hover:text-[#141414] transition duration-200">Painel de vendas</h2>
+            <p className="text-[#8A8A85] font-medium text-xs leading-relaxed mb-8">Acompanhe propostas ativas, visualize o fluxo do cliente e registre pagamentos em tempo real.</p>
+            <div className="mt-auto w-10 h-10 border border-[#E5E5E2] rounded-full flex items-center justify-center group-hover:bg-[#141414] group-hover:text-white transition duration-200">
               <ArrowRight size={16} />
             </div>
           </button>
 
           <button 
             onClick={() => navigateTo('dashboard')}
-            className="bg-white border border-slate-200 rounded-[32px] p-8 flex flex-col items-start hover:border-slate-400 transition duration-200 group text-left"
+            className="bg-white border border-[#E5E5E2] rounded-[32px] p-8 flex flex-col items-start hover:border-[#B9B9B4] transition duration-200 group text-left"
           >
-            <div className="w-14 h-14 bg-[#C1F651]/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#0B1B17] transition duration-200 mt-[46px]">
-              <LinkIcon size={24} className="text-[#0B1B17] group-hover:text-white transition duration-200" />
+            <div className="w-14 h-14 bg-[#C1F11D]/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#141414] transition duration-200 mt-[46px]">
+              <LinkIcon size={24} className="text-[#141414] group-hover:text-white transition duration-200" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#0B1B17] transition duration-200">Nova proposta</h2>
-            <p className="text-slate-500 font-medium text-xs leading-relaxed mb-8">Crie páginas de reserva instantâneas, consulte tabela FIPE e monte checklists por lead.</p>
-            <div className="mt-auto w-10 h-10 border border-slate-200 rounded-full flex items-center justify-center group-hover:bg-slate-900 group-hover:text-white transition duration-200">
+            <h2 className="text-xl font-bold text-[#141414] mb-2 group-hover:text-[#141414] transition duration-200">Nova proposta</h2>
+            <p className="text-[#8A8A85] font-medium text-xs leading-relaxed mb-8">Crie páginas de reserva instantâneas, consulte tabela FIPE e monte checklists por lead.</p>
+            <div className="mt-auto w-10 h-10 border border-[#E5E5E2] rounded-full flex items-center justify-center group-hover:bg-[#141414] group-hover:text-white transition duration-200">
               <ArrowRight size={16} />
             </div>
           </button>
         </div>
 
         {/* Live Notification Activity Ticker */}
-        <div className="bg-white border border-slate-200 rounded-[32px] p-6 flex flex-col h-full min-h-[350px]">
-          <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-              <Bell size={14} className="text-[#0B1B17]" />
+        <div className="bg-white border border-[#E5E5E2] rounded-[32px] p-6 flex flex-col h-full min-h-[350px]">
+          <div className="flex justify-between items-center mb-6 border-b border-[#EBEBE8] pb-4">
+            <h3 className="text-[10px] font-bold text-[#B9B9B4] uppercase tracking-widest flex items-center gap-1.5">
+              <Bell size={14} className="text-[#141414]" />
               Notificações
             </h3>
-            <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-250">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="flex items-center gap-1 text-[9px] font-bold text-[#141414] uppercase tracking-wider bg-[#C1F11D]/15 px-2 py-1 rounded-md border border-[#C1F11D]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C1F11D] animate-pulse"></span>
               Ao vivo
             </span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-4 max-h-[360px] pr-1">
             {liveNotifications.map(notif => {
-              let labelColor = 'text-[#0B1B17]';
-              let bgColor = 'bg-[#C1F651]/10';
+              let labelColor = 'text-[#141414]';
+              let bgColor = 'bg-[#C1F11D]/10';
               if (notif.type === 'pix') {
-                labelColor = 'text-emerald-600';
-                bgColor = 'bg-emerald-50/30';
+                labelColor = 'text-[#141414]';
+                bgColor = 'bg-[#C1F11D]/10';
               } else if (notif.type === 'urgente') {
                 labelColor = 'text-amber-700';
                 bgColor = 'bg-amber-50/30';
               } else if (notif.type === 'create') {
-                labelColor = 'text-purple-600';
-                bgColor = 'bg-purple-50/30';
+                labelColor = 'text-[#141414]';
+                bgColor = 'bg-[#C1F11D]/10';
               }
               
               return (
-                <div key={notif.id} className="text-xs bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col gap-1 relative hover:border-slate-300 transition-colors duration-200 animate-fade-in-down">
+                <div key={notif.id} className="text-xs bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl flex flex-col gap-1 relative hover:border-[#D9D9D5] transition-colors duration-200 animate-fade-in-down">
                   <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider">
                     <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
                   </div>
-                  <p className="font-semibold text-slate-800 text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
-                  <span className="text-[9px] text-slate-400 font-medium font-mono absolute bottom-3 right-4">{notif.time}</span>
+                  <p className="font-semibold text-[#2A2A26] text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
+                  <span className="text-[9px] text-[#B9B9B4] font-medium font-mono absolute bottom-3 right-4">{notif.time}</span>
                 </div>
               );
             })}
@@ -4050,91 +4058,91 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   };
 
   return (
-    <div className="pt-32 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto">
-      {/* Header (Print 2) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200 pb-6 text-left">
+    <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto">
+      {/* Header estilo Meridian Overview */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 text-left">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Painel da loja</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
+          <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real · {reservasDisponiveis} créditos livres</p>
         </div>
         <div className="flex items-center gap-3">
-          {urgenteReserva && tempoRestanteSegundos > 0 ? (
+          {urgenteReserva && tempoRestanteSegundos > 0 && (
             <div className={`px-4 py-2 rounded-full flex items-center gap-2 text-xs transition-all duration-300 border ${
-              tempoRestanteSegundos < 300 
-                ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold' 
-                : 'bg-white border-slate-200 text-slate-700'
+              tempoRestanteSegundos < 300
+                ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold'
+                : 'bg-white border-[#E5E5E2] text-[#5F5F5A]'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#0B1B17]'}`}></span>
-              <span className="font-bold">
-                Link do {obterNomeSimplificado(urgenteReserva.title)} expira em {Math.floor(tempoRestanteSegundos / 60)} min e {tempoRestanteSegundos % 60} seg
-              </span>
-            </div>
-          ) : (
-            <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-2 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="font-bold">Todos os links de sinal seguros</span>
+              <span className={`w-2 h-2 rounded-full ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
+              <span className="font-bold">{obterNomeSimplificado(urgenteReserva.title)} expira em {Math.floor(tempoRestanteSegundos / 60)}m {tempoRestanteSegundos % 60}s</span>
             </div>
           )}
-          <div className="bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider">
-            {reservasDisponiveis} créditos livres
-          </div>
+          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex items-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
+            <UploadCloud size={15} /> Exportar
+          </button>
+          <button onClick={() => navigateTo('dashboard')} className="flex items-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
+            <Plus size={15} className="text-[#C1F11D]" /> Nova proposta
+          </button>
         </div>
       </div>
 
       {/* Grid Bento de KPIs (Estilo Dashboard-4 Commerce) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
         {/* Card 1: Receita Real */}
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SINAL EM CAIXA</span>
-            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">SINAL EM CAIXA</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/20 text-[#141414] rounded-lg flex items-center justify-center shrink-0">
               <DollarSign size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{formatSinalCaixa}</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{formatSinalCaixa}</span>
+          <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]"/> Este mês corrente
           </span>
+          <MiniSpark trend="up" />
         </div>
 
         {/* Card 2: Clientes Ativos */}
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">RESGATES ATIVOS</span>
-            <div className="w-8 h-8 bg-[#C1F651]/20 text-[#0B1B17] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">RESGATES ATIVOS</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/20 text-[#141414] rounded-lg flex items-center justify-center shrink-0">
               <Users size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalResgatesAtivos}</span>
-          <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{totalResgatesAtivos}</span>
+          <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novas hoje
           </span>
+          <MiniSpark trend="up" />
         </div>
 
         {/* Card 3: Links Expirados */}
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">LINKS EXPIRADOS</span>
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">LINKS EXPIRADOS</span>
             <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0 border border-rose-100">
               <ShieldAlert size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{totalExpiradas}</span>
-          <span className="text-xs text-slate-400 font-medium">Por inatividade de leads</span>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{totalExpiradas}</span>
+          <span className="text-xs text-[#B9B9B4] font-medium">Por inatividade de leads</span>
+          <MiniSpark trend="down" />
         </div>
 
         {/* Card 4: Taxa de Conversão */}
-        <div className="bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
-            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0 border border-emerald-100">
+            <span className="text-[10px] font-semibold text-[#B9B9B4] uppercase tracking-widest">CONVERSÃO LÍQUIDA</span>
+            <div className="w-8 h-8 bg-[#C1F11D]/15 text-[#141414] rounded-lg flex items-center justify-center shrink-0 border border-[#C1F11D]/30">
               <TrendingUp size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{conversaoLiquida}%</span>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{conversaoLiquida}%</span>
+          <span className="text-xs text-[#B9B9B4] font-medium">
             Baseado em {totalCriadasAcumulado} propostas
           </span>
+          <MiniSpark trend="up" />
         </div>
       </div>
 
@@ -4143,10 +4151,10 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         {/* Coluna da Esquerda ( lg:col-span-3 ) */}
         <div className="lg:col-span-3 space-y-6">
           {/* Card do Gráfico de Tendências (CSS Puro) */}
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col justify-between min-h-[320px]">
+          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl flex flex-col justify-between min-h-[320px]">
             <div>
-              <h3 className="font-bold text-slate-800 text-sm">Tendência de Receita Semanal</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Sinais pagos distribuídos proporcionalmente nos dias da semana</p>
+              <h3 className="font-bold text-[#2A2A26] text-sm">Tendência de Receita Semanal</h3>
+              <p className="text-[10px] text-[#B9B9B4] font-medium">Sinais pagos distribuídos proporcionalmente nos dias da semana</p>
             </div>
             
             {/* Gráfico de Linha e Área Animado Interativo */}
@@ -4158,8 +4166,8 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 <defs>
                   {/* Gradiente da área preenchida */}
                   <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0B1B17" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#0B1B17" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#141414" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#141414" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
@@ -4201,7 +4209,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 <path 
                   d={linePath} 
                   fill="none" 
-                  stroke="#0B1B17" 
+                  stroke="#141414" 
                   strokeWidth="3.5" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
@@ -4215,7 +4223,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     x={p.x} 
                     y={chartHeight - 5} 
                     textAnchor="middle" 
-                    className="text-[10px] font-bold fill-slate-400 uppercase select-none"
+                    className="text-[10px] font-bold fill-[#B9B9B4] uppercase select-none"
                   >
                     {p.label}
                   </text>
@@ -4232,7 +4240,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                           cx={p.x} 
                           cy={p.y} 
                           r={12} 
-                          fill="#C1F651" 
+                          fill="#C1F11D" 
                           className="animate-pulse-ring origin-center pointer-events-none" 
                         />
                       )}
@@ -4242,7 +4250,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                         cx={p.x} 
                         cy={p.y} 
                         r={isHovered ? 6 : 4} 
-                        fill={isHovered ? '#C1F651' : '#0B1B17'} 
+                        fill={isHovered ? '#C1F11D' : '#141414'} 
                         stroke="#FFFFFF" 
                         strokeWidth={isHovered ? 2 : 1.5} 
                         className="transition-all duration-200 ease-out pointer-events-none"
@@ -4270,7 +4278,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               {/* Tooltip HTML Posicionado Absolutamente */}
               {hoveredPoint !== null && (
                 <div 
-                  className="absolute bg-slate-950 text-white p-3 rounded-2xl shadow-xl border border-slate-800 text-xs pointer-events-none transition-all duration-200 z-30 flex flex-col gap-0.5 whitespace-nowrap"
+                  className="absolute bg-[#141414] text-white p-3 rounded-2xl shadow-xl border border-[#2A2A26] text-xs pointer-events-none transition-all duration-200 z-30 flex flex-col gap-0.5 whitespace-nowrap"
                   style={{
                     left: `${(chartPoints[hoveredPoint].x / chartWidth) * 100}%`,
                     top: `${(chartPoints[hoveredPoint].y / chartHeight) * 100}%`,
@@ -4278,13 +4286,13 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                   }}
                 >
                   {/* Seta do tooltip */}
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-slate-950 border-r border-b border-slate-800" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-[#141414] border-r border-b border-[#2A2A26]" />
                   
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{chartPoints[hoveredPoint].label}</span>
-                  <span className="font-mono font-bold text-sm text-[#C1F651]">
+                  <span className="text-[9px] font-bold text-[#B9B9B4] uppercase tracking-wider">{chartPoints[hoveredPoint].label}</span>
+                  <span className="font-mono font-bold text-sm text-[#C1F11D]">
                     {formatCurrency(chartPoints[hoveredPoint].valor)}
                   </span>
-                  <span className="text-[9px] text-slate-400">
+                  <span className="text-[9px] text-[#B9B9B4]">
                     {chartPoints[hoveredPoint].porcentagem}% da receita
                   </span>
                 </div>
@@ -4293,51 +4301,51 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </div>
 
           {/* Abas e Filtros */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-slate-200 pt-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-[#E5E5E2] pt-6">
             <div className="flex flex-wrap gap-2">
               <button 
                 onClick={() => setFiltroStatus('todos')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
                   filtroStatus === 'todos' 
-                    ? 'bg-slate-900 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                    ? 'bg-[#141414] text-white' 
+                    : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countTodos}</span>
+                Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countTodos}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('aguardando')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
                   filtroStatus === 'aguardando' 
-                    ? 'bg-slate-900 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                    ? 'bg-[#141414] text-white' 
+                    : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countAguardando}</span>
+                Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countAguardando}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('urgentes')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
                   filtroStatus === 'urgentes' 
-                    ? 'bg-slate-900 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                    ? 'bg-[#141414] text-white' 
+                    : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countUrgentes}</span>
+                Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countUrgentes}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('confirmados')}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 uppercase tracking-wider ${
                   filtroStatus === 'confirmados' 
-                    ? 'bg-slate-900 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-650 hover:border-slate-350'
+                    ? 'bg-[#141414] text-white' 
+                    : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{countConfirmados}</span>
+                Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countConfirmados}</span>
               </button>
             </div>
             
-            <button className="bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer">
+            <button className="bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] hover:bg-[#F4F4F2] text-[#5F5F5A] font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer">
               <TrendingDown size={14} /> Ordenar por expiração
             </button>
           </div>
@@ -4359,15 +4367,15 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300;
 
                 return (
-                  <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-5 hover:border-slate-300 transition duration-200 flex flex-col gap-4 text-left">
+                  <div key={res.id} className="bg-white border border-[#E5E5E2] rounded-3xl p-5 hover:border-[#D9D9D5] transition duration-200 flex flex-col gap-4 text-left">
                     {/* Info Vendedor e Status */}
                     <div className="flex flex-wrap justify-between items-center gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-wider bg-slate-150 text-slate-600 px-2.5 py-1 rounded-md">
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-[#EBEBE8] text-[#6F6F6A] px-2.5 py-1 rounded-md">
                           Vendedor: {res.vendedores ? res.vendedores.split(' ')[0] : 'Consultor'}
                         </span>
                         {res.clienteNome && res.clienteNome !== 'Não informado' && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider bg-[#C1F651]/20 text-[#0B1B17] px-2.5 py-1 rounded-md">
+                          <span className="text-[9px] font-bold uppercase tracking-wider bg-[#C1F11D]/20 text-[#141414] px-2.5 py-1 rounded-md">
                             Cliente: {res.clienteNome}
                           </span>
                         )}
@@ -4375,12 +4383,12 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       
                       {/* Status Badge */}
                       {isCompleted ? (
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PIX Recebido
+                        <span className="text-[10px] font-bold text-[#141414] uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#C1F11D]"></span> PIX Recebido
                         </span>
                       ) : isExpired ? (
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Link Expirado
+                        <span className="text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wide flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#B9B9B4]"></span> Link Expirado
                         </span>
                       ) : isUrgente ? (
                         <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wide flex items-center gap-1.5">
@@ -4394,27 +4402,27 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     </div>
 
                     {/* Bloco do Carro e Preço */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-t border-slate-100 pt-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-t border-[#EBEBE8] pt-4">
                       <div className="flex items-center gap-4">
                         {res.fotos && (
                           <img 
                             src={res.fotos} 
                             alt={res.title} 
-                            className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0 animate-fade-in-down" 
+                            className="w-14 h-14 rounded-2xl object-cover border border-[#E5E5E2] shrink-0 animate-fade-in-down" 
                           />
                         )}
                         <div>
-                          <h4 className="font-bold text-base text-slate-900 tracking-tight leading-snug">{res.title}</h4>
-                          <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                            FIPE: {formatCurrency(res.fipeValue)} • Venda: <span className="font-bold text-slate-700">{formatCurrency(res.valorVenda)}</span>
+                          <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug">{res.title}</h4>
+                          <p className="text-[11px] text-[#B9B9B4] font-medium mt-0.5">
+                            FIPE: {formatCurrency(res.fipeValue)} • Venda: <span className="font-bold text-[#5F5F5A]">{formatCurrency(res.valorVenda)}</span>
                           </p>
                         </div>
                       </div>
 
                       {/* Valor do Sinal Exigido */}
                       <div className="text-left md:text-right shrink-0">
-                        <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Sinal Exigido</span>
-                        <span className="font-black text-xl text-[#0B1B17] tracking-tight">
+                        <span className="block text-[9px] font-black text-[#B9B9B4] uppercase tracking-widest">Sinal Exigido</span>
+                        <span className="font-black text-xl text-[#141414] tracking-tight">
                           {formatCurrency(res.signal || res.sinal)}
                         </span>
                       </div>
@@ -4422,22 +4430,22 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
                     {/* Banner de Visualização Ativa */}
                     {res.visualizandoAgora && !isCompleted && !isExpired && (
-                      <div className="bg-[#C1F651]/10 border border-[#C1F651]/25 rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#0B1B17] animate-ping"></span>
-                        <span className="font-bold text-[#0B1B17] text-[10px] uppercase tracking-wider">Lead visualizando a proposta neste momento</span>
+                      <div className="bg-[#C1F11D]/10 border border-[#C1F11D]/25 rounded-xl px-4 py-2.5 flex items-center gap-2 text-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#141414] animate-ping"></span>
+                        <span className="font-bold text-[#141414] text-[10px] uppercase tracking-wider">Lead visualizando a proposta neste momento</span>
                       </div>
                     )}
 
                     {/* Timer do Link se Ativo */}
                     {!isCompleted && !isExpired && (
-                      <div className="space-y-1.5 border-t border-slate-100 pt-4">
-                        <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                      <div className="space-y-1.5 border-t border-[#EBEBE8] pt-4">
+                        <div className="flex justify-between items-center text-[9px] font-bold text-[#B9B9B4] uppercase tracking-wider">
                           <span>Expiração do Link</span>
-                          <span className={`font-mono text-[11px] font-bold ${isUrgente ? 'text-rose-600' : 'text-slate-650'}`}>{timerText}</span>
+                          <span className={`font-mono text-[11px] font-bold ${isUrgente ? 'text-rose-600' : 'text-[#6F6F6A]'}`}>{timerText}</span>
                         </div>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200/50">
+                        <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
                           <div 
-                            className={`h-full rounded-full transition-all duration-1000 origin-left transform ${isUrgente ? 'bg-rose-600' : 'bg-[#0B1B17]'}`} 
+                            className={`h-full rounded-full transition-all duration-1000 origin-left transform ${isUrgente ? 'bg-rose-600' : 'bg-[#141414]'}`} 
                             style={{ width: `${progressPercent}%` }}
                           ></div>
                         </div>
@@ -4445,18 +4453,18 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     )}
 
                     {/* Botões de Ação */}
-                    <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-[#EBEBE8] pt-4">
                       {!isCompleted && !isExpired && (
                         <>
                           <button 
                             onClick={() => handleSimulatePayment(res.id, res.clienteNome || 'Cliente')}
-                            className="bg-[#C1F651] text-[#0B1B17] hover:bg-[#b0e040] font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                            className="bg-[#C1F11D] text-[#141414] hover:bg-[#b0e040] font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
                           >
                             Confirmar PIX
                           </button>
                           <button 
                             onClick={() => handleSimulateTimeExpiration(res.id)}
-                            className="bg-white border border-slate-200 text-slate-650 hover:bg-slate-50 font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                            className="bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:bg-[#F4F4F2] font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
                           >
                             Expirar
                           </button>
@@ -4472,7 +4480,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       </button>
                       <button 
                         onClick={() => setReservaParaGerenciar(res)}
-                        className="bg-slate-900 hover:bg-black text-white font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
+                        className="bg-[#141414] hover:bg-black text-white font-bold text-[10px] px-4 py-2.5 rounded-xl transition uppercase tracking-wider cursor-pointer"
                       >
                         Gerenciar
                       </button>
@@ -4481,10 +4489,10 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 );
               })
             ) : (
-              <div className="bg-white border border-slate-200 rounded-[32px] p-12 text-center">
-                <Clock size={48} className="mx-auto text-slate-300 mb-4" />
-                <h4 className="text-lg font-bold text-slate-800">Nenhuma proposta encontrada</h4>
-                <p className="text-slate-500 text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
+              <div className="bg-white border border-[#E5E5E2] rounded-[32px] p-12 text-center">
+                <Clock size={48} className="mx-auto text-[#D9D9D5] mb-4" />
+                <h4 className="text-lg font-bold text-[#2A2A26]">Nenhuma proposta encontrada</h4>
+                <p className="text-[#8A8A85] text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
               </div>
             )}
           </div>
@@ -4493,21 +4501,21 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         {/* Coluna da Direita ( lg:col-span-1 - Ranking e Plano) */}
         <div className="lg:col-span-1 space-y-6">
           {/* Card de Ranking de Vendedores (Category Performance do Dashboard-4) */}
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl text-left">
-            <h3 className="font-bold text-slate-800 text-sm mb-1">Ranking de Vendedores</h3>
-            <p className="text-[10px] text-slate-400 font-medium mb-4">Conversão real baseada em propostas</p>
+          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
+            <h3 className="font-bold text-[#2A2A26] text-sm mb-1">Ranking de Vendedores</h3>
+            <p className="text-[10px] text-[#B9B9B4] font-medium mb-4">Conversão real baseada em propostas</p>
             
             <div className="space-y-4">
               {rankingVendedores.map((vend) => (
                 <div key={vend.nome} className="space-y-1.5">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-slate-700">{vend.nome.split(' ')[0]}</span>
-                    <span className="font-mono text-slate-500 font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+                    <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
+                    <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
                   </div>
                   {/* Barra de Progresso Horizontal do Vendedor */}
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200/50">
+                  <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
                     <div 
-                      className="bg-[#0B1B17] h-full rounded-full transition-all duration-500"
+                      className="bg-[#141414] h-full rounded-full transition-all duration-500"
                       style={{ width: `${vend.conversao}%` }}
                     ></div>
                   </div>
@@ -4517,13 +4525,13 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </div>
 
           {/* Card Auxiliar: Velocidade Média de Vendas */}
-          <div className="bg-white border border-slate-200 p-6 rounded-3xl text-left">
+          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800 text-sm">Velocidade Média</h3>
-              <Clock size={16} className="text-[#0B1B17] shrink-0" />
+              <h3 className="font-bold text-[#2A2A26] text-sm">Velocidade Média</h3>
+              <Clock size={16} className="text-[#141414] shrink-0" />
             </div>
-            <span className="block text-3xl font-bold font-mono tracking-tight text-slate-900 mb-1">{velocidadeMediaText}</span>
-            <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+            <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{velocidadeMediaText}</span>
+            <p className="text-[10px] text-[#B9B9B4] font-medium leading-relaxed">
               Tempo médio de fechamento medido entre a ativação do link e a confirmação do sinal.
             </p>
           </div>
@@ -4538,15 +4546,15 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
   const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
   return (
     <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Gerador de Reservas</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Gere páginas exclusivas personalizadas para cada lead.</p>
+          <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Gerador de Reservas</h1>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Gere páginas exclusivas personalizadas para cada lead.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowConfirmClearModal(true)}
-            className="text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 transition"
+            className="text-xs font-bold bg-white hover:bg-[#F4F4F2] text-[#5F5F5A] px-4 py-2.5 rounded-xl border border-[#E5E5E2] transition"
           >
             Limpar Tudo
           </button>
@@ -4560,8 +4568,8 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
             }}
             className={`text-xs font-bold px-4 py-2.5 rounded-xl transition ${
               reservasUsadas >= totalReservasPlano
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                : 'bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6]'
+                ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]'
+                : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'
             }`}
           >
             Criar Reserva +
@@ -4571,49 +4579,49 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
 
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-            <Sparkles className="text-[#0B1B17]" size={16} /> Links Criados Recentemente
+          <h3 className="text-sm font-bold text-[#8A8A85] uppercase tracking-widest flex items-center gap-2">
+            <Sparkles className="text-[#141414]" size={16} /> Links Criados Recentemente
           </h3>
-          <span className="text-xs text-slate-500 font-semibold">{recentReservations.length} links ativos</span>
+          <span className="text-xs text-[#8A8A85] font-semibold">{recentReservations.length} links ativos</span>
         </div>
 
         {recentReservations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentReservations.map((res: any) => (
-              <div key={res.id} className="bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-slate-400 transition-colors duration-200">
+              <div key={res.id} className="bg-white border border-[#E5E5E2] rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-[#B9B9B4] transition-colors duration-200">
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="bg-slate-50 border border-slate-200 text-[9px] font-bold text-slate-500 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                    <span className="bg-[#F4F4F2] border border-[#E5E5E2] text-[9px] font-bold text-[#8A8A85] px-2.5 py-1 rounded-md uppercase tracking-wider">
                       {res.marcaText || 'Veículo'}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
+                    <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
                   </div>
                   
-                  <h4 className="font-bold text-base text-slate-900 tracking-tight leading-snug mb-4 group-hover:text-[#0B1B17] transition-colors">
+                  <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-4 group-hover:text-[#141414] transition-colors">
                     {res.title || `${res.marcaText} ${res.modeloText}`}
                   </h4>
 
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-slate-700 mb-6">
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-[#5F5F5A] mb-6">
                     <div className="flex flex-col">
-                      <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Sinal Requerido</span>
-                      <span className="text-sm font-bold font-mono text-slate-900">{formatCurrency(res.signal || 1500)}</span>
+                      <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Sinal Requerido</span>
+                      <span className="text-sm font-bold font-mono text-[#141414]">{formatCurrency(res.signal || 1500)}</span>
                     </div>
-                    <div className="w-px h-8 bg-slate-200"></div>
+                    <div className="w-px h-8 bg-[#E5E5E2]"></div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Tempo Limiar</span>
-                      <span className="text-sm font-bold font-mono text-slate-800">{res.duration || 60}m</span>
+                      <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Tempo Limiar</span>
+                      <span className="text-sm font-bold font-mono text-[#2A2A26]">{res.duration || 60}m</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-slate-100">
+                <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-[#EBEBE8]">
                   <div className="flex gap-2">
                     <button 
                       onClick={() => {
                         setActiveReservation(res);
                         navigateTo('preview', 'dashboard');
                       }}
-                      className="flex-1 bg-white border border-slate-200 text-slate-700 text-[11px] font-bold py-2.5 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition flex items-center justify-center gap-1"
+                      className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1"
                     >
                       <Laptop size={12} /> Desktop
                     </button>
@@ -4622,14 +4630,14 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
                         setActiveReservation(res);
                         navigateTo('mobile-preview', 'dashboard');
                       }}
-                      className="flex-1 bg-white border border-slate-200 text-slate-700 text-[11px] font-bold py-2.5 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition flex items-center justify-center gap-1"
+                      className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1"
                     >
                       <Smartphone size={12} /> Mobile Sim
                     </button>
                   </div>
                   <button 
                     onClick={() => setReservaParaGerenciar(res)}
-                    className="w-full bg-slate-900 hover:bg-slate-950 text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
+                    className="w-full bg-[#141414] hover:bg-[#141414] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
                   >
                     <Settings size={12} /> Gerenciar Reserva
                   </button>
@@ -4638,10 +4646,10 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
             ))}
           </div>
         ) : (
-          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center max-w-xl mx-auto">
-            <Car className="text-slate-300 mx-auto mb-4 animate-bounce" size={42} />
-            <h4 className="font-bold text-slate-900 text-lg mb-2">Nenhum link ativo gerado</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium mb-6">
+          <div className="bg-white border border-[#E5E5E2] rounded-3xl p-12 text-center max-w-xl mx-auto">
+            <Car className="text-[#D9D9D5] mx-auto mb-4 animate-bounce" size={42} />
+            <h4 className="font-bold text-[#141414] text-lg mb-2">Nenhum link ativo gerado</h4>
+            <p className="text-xs text-[#8A8A85] leading-relaxed font-medium mb-6">
               Os links criados pelos clientes finais a partir da página inicial aparecerão aqui automaticamente.
             </p>
             <button 
@@ -4654,8 +4662,8 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
               }}
               className={`font-bold text-xs px-5 py-3 rounded-xl transition ${
                 reservasUsadas >= totalReservasPlano
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                  : 'bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6]'
+                  ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]'
+                  : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'
               }`}
             >
               Simular Fluxo do Cliente
@@ -4666,16 +4674,16 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
 
       {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA (F4) */}
       {showConfirmClearModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-8 max-w-sm w-full text-center relative">
-            <h3 className="text-lg font-black text-slate-900 mb-2">Confirmar Limpeza</h3>
-            <p className="text-slate-550 text-xs mb-6 font-medium leading-relaxed">
+        <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E5E5E2] rounded-3xl p-8 max-w-sm w-full text-center relative">
+            <h3 className="text-lg font-black text-[#141414] mb-2">Confirmar Limpeza</h3>
+            <p className="text-[#8A8A85] text-xs mb-6 font-medium leading-relaxed">
               Tem certeza de que deseja apagar permanentemente todas as propostas de reserva? Esta ação não pode ser desfeita.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmClearModal(false)}
-                className="flex-1 bg-white border border-slate-200 text-slate-700 font-bold py-3.5 px-5 rounded-xl text-xs hover:bg-slate-50 transition"
+                className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-3.5 px-5 rounded-xl text-xs hover:bg-[#F4F4F2] transition"
               >
                 Cancelar
               </button>
@@ -4747,7 +4755,28 @@ function PreviewView({
   
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
-  
+
+  // Agendamento de visita (slot picker + sheet — mesmo fluxo da visão mobile)
+  const [slotInfo, setSlotInfo] = useState<any>(null);
+  const [showAgendarSheet, setShowAgendarSheet] = useState(false);
+
+  const handleVisitaConfirmada = (nomeCliente, slot) => {
+    showToast(`Visita de ${nomeCliente} confirmada para ${slot.diaLabel} às ${slot.hora}!`, 'success');
+    if (reservation && setRecentReservations) {
+      setRecentReservations((prev: any) => prev.map((res: any) => {
+        if (res.id === reservation.id) {
+          const novosLogs = [...(res.logs || [])];
+          novosLogs.push({
+            time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+            text: `Visita agendada por ${nomeCliente} para ${slot.diaLabel} às ${slot.hora}.`
+          });
+          return { ...res, logs: novosLogs, clienteNome: nomeCliente };
+        }
+        return res;
+      }));
+    }
+  };
+
   const economia = data.fipeValue - data.valorVenda;
   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
 
@@ -4796,32 +4825,32 @@ function PreviewView({
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-slate-900 flex flex-col items-center pt-12 pb-24 px-6 relative">
+    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] flex flex-col items-center pt-12 pb-24 px-6 relative">
       <button 
         onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} 
-        className="absolute top-6 left-6 text-slate-600 hover:text-slate-900 font-semibold flex items-center text-sm transition z-20 bg-white border border-slate-200 px-4 py-2 rounded-xl"
+        className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
       >
         <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Sistema'}
       </button>
 
       {isPrePublish && (
-        <div className="w-full max-w-5xl bg-white border border-slate-200 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4 mt-12 relative overflow-hidden">
+        <div className="w-full max-w-5xl bg-white border border-[#E5E5E2] p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4 mt-12 relative overflow-hidden">
           <div className="text-left">
-            <h4 className="font-extrabold text-sm text-[#0B1B17] flex items-center gap-1.5">
-              <Sparkles className="text-[#0B1B17]" size={16} /> Modo Pré-visualização da Reserva
+            <h4 className="font-extrabold text-sm text-[#141414] flex items-center gap-1.5">
+              <Sparkles className="text-[#141414]" size={16} /> Modo Pré-visualização da Reserva
             </h4>
-            <p className="text-xs text-slate-500 mt-1 font-medium">Você está visualizando a proposta antes de ativá-la. Confirme abaixo para gerar o link.</p>
+            <p className="text-xs text-[#8A8A85] mt-1 font-medium">Você está visualizando a proposta antes de ativá-la. Confirme abaixo para gerar o link.</p>
           </div>
           <div className="flex gap-3 shrink-0">
             <button 
               onClick={() => navigateTo('cadastrar-reserva')}
-              className="bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-5 py-3 rounded-xl transition border border-slate-200"
+              className="bg-white hover:bg-[#F4F4F2] text-[#5F5F5A] font-bold text-xs px-5 py-3 rounded-xl transition border border-[#E5E5E2]"
             >
               Editar Cadastro
             </button>
             <button 
               onClick={handlePublish}
-              className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-5 py-3 rounded-xl transition"
+              className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-5 py-3 rounded-xl transition"
             >
               Confirmar e Publicar Proposta
             </button>
@@ -4834,30 +4863,30 @@ function PreviewView({
         {/* Header proposal segment */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="bg-[#0B1B17] text-[#F9F9F6] px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4 inline-block">
+            <span className="bg-[#141414] text-[#F4F4F2] px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4 inline-block">
               PROPOSTA DE RESERVA
             </span>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">{data.title}</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight text-[#141414] leading-tight">{data.title}</h1>
           </div>
           {data.laudoAprovado && (
-            <div className="bg-emerald-50 border border-emerald-250 text-emerald-700 px-4 py-2 rounded-full flex items-center shrink-0 self-start md:self-auto">
-              <Shield size={18} className="mr-2 text-emerald-600 animate-pulse" />
+            <div className="bg-[#C1F11D]/15 border border-[#C1F11D]/30 text-[#141414] px-4 py-2 rounded-full flex items-center shrink-0 self-start md:self-auto">
+              <Shield size={18} className="mr-2 text-[#141414] animate-pulse" />
               <span className="font-bold text-xs uppercase tracking-wider">Veículo com Laudo Cautelar Verificado</span>
             </div>
           )}
         </div>
 
         {/* Countdown Urgency Block */}
-        <div className="mb-10 bg-white border border-slate-200 p-6 rounded-3xl">
+        <div className="mb-10 bg-[#141414] p-6 rounded-3xl shadow-xl">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-xs font-bold text-slate-550 uppercase tracking-widest flex items-center gap-2">
-              <Clock size={14} className="text-[#0B1B17] animate-spin" style={{ animationDuration: '4s' }} />
+            <span className="text-xs font-bold text-[#B9B9B4] uppercase tracking-widest flex items-center gap-2">
+              <Clock size={14} className="text-[#C1F11D] animate-spin" style={{ animationDuration: '4s' }} />
               Tempo limite para garantir esta oferta exclusiva de showroom
             </span>
-            <span className="font-mono text-3xl font-black text-slate-950">{formatTime(timeLeft)}</span>
+            <span className="font-mono text-3xl font-black text-[#C1F11D]">{formatTime(timeLeft)}</span>
           </div>
-          <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
-            <div className="bg-[#0B1B17] h-full transition-all duration-1000 ease-linear" style={{ width: `${progressPercent}%` }}></div>
+          <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
+            <div className="bg-[#C1F11D] h-full transition-all duration-1000 ease-linear" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
 
@@ -4865,9 +4894,9 @@ function PreviewView({
           
           {/* Gallery and Car specs */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-3xl p-4 flex flex-col items-center relative overflow-hidden border border-slate-200">
+            <div className="bg-white rounded-3xl p-4 flex flex-col items-center relative overflow-hidden border border-[#E5E5E2]">
               
-              <div className="w-full h-64 md:h-[400px] relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-200">
+              <div className="w-full h-64 md:h-[400px] relative rounded-2xl overflow-hidden bg-[#F4F4F2] border border-[#E5E5E2]">
                 <div 
                   className="flex w-full h-full transition-transform duration-500 ease-in-out"
                   style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
@@ -4887,13 +4916,13 @@ function PreviewView({
                 <>
                   <button 
                     onClick={() => setCurrentPhotoIndex(prev => (prev - 1 + photosArray.length) % photosArray.length)} 
-                    className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/90 text-slate-800 p-3 rounded-full border border-slate-200 cursor-pointer hover:bg-white transition"
+                    className="absolute left-8 top-1/2 -translate-y-1/2 bg-white/90 text-[#2A2A26] p-3 rounded-full border border-[#E5E5E2] cursor-pointer hover:bg-white transition"
                   >
                     <ChevronLeft size={20} />
                   </button>
                   <button 
                     onClick={() => setCurrentPhotoIndex(prev => (prev + 1) % photosArray.length)} 
-                    className="absolute right-8 top-1/2 -translate-y-1/2 bg-white/90 text-slate-800 p-3 rounded-full border border-slate-200 cursor-pointer hover:bg-white transition"
+                    className="absolute right-8 top-1/2 -translate-y-1/2 bg-white/90 text-[#2A2A26] p-3 rounded-full border border-[#E5E5E2] cursor-pointer hover:bg-white transition"
                   >
                     <ChevronRight size={20} />
                   </button>
@@ -4902,7 +4931,7 @@ function PreviewView({
                       <button 
                         key={index}
                         onClick={() => setCurrentPhotoIndex(index)}
-                        className={`w-2.5 h-2.5 rounded-full transition-all ${currentPhotoIndex === index ? 'bg-[#0B1B17] w-6' : 'bg-slate-200 hover:bg-slate-300'}`}
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${currentPhotoIndex === index ? 'bg-[#141414] w-6' : 'bg-[#E5E5E2] hover:bg-[#D9D9D5]'}`}
                       />
                     ))}
                   </div>
@@ -4910,79 +4939,79 @@ function PreviewView({
               )}
             </div>
 
-            <div className="bg-white rounded-3xl p-8 border border-slate-200">
-              <h3 className="text-xl font-bold mb-6 text-slate-900 tracking-tight">Ficha Técnica e Destaques</h3>
+            <div className="bg-white rounded-3xl p-8 border border-[#E5E5E2]">
+              <h3 className="text-xl font-bold mb-6 text-[#141414] tracking-tight">Ficha Técnica e Destaques</h3>
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Ano</span>
-                  <span className="font-extrabold text-base text-slate-900">{data.anoText || 'N/D'}</span>
+                <div className="bg-[#F4F4F2] p-4 rounded-2xl border border-[#E5E5E2]">
+                  <span className="block text-[11px] font-bold text-[#8A8A85] uppercase tracking-widest mb-1">Ano</span>
+                  <span className="font-extrabold text-base text-[#141414]">{data.anoText || 'N/D'}</span>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Cor</span>
-                  <span className="font-extrabold text-base text-slate-900">{data.corText || 'N/D'}</span>
+                <div className="bg-[#F4F4F2] p-4 rounded-2xl border border-[#E5E5E2]">
+                  <span className="block text-[11px] font-bold text-[#8A8A85] uppercase tracking-widest mb-1">Cor</span>
+                  <span className="font-extrabold text-base text-[#141414]">{data.corText || 'N/D'}</span>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Câmbio</span>
-                  <span className="font-extrabold text-base text-slate-900">{data.cambio || 'Automático'}</span>
+                <div className="bg-[#F4F4F2] p-4 rounded-2xl border border-[#E5E5E2]">
+                  <span className="block text-[11px] font-bold text-[#8A8A85] uppercase tracking-widest mb-1">Câmbio</span>
+                  <span className="font-extrabold text-base text-[#141414]">{data.cambio || 'Automático'}</span>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Motor</span>
-                  <span className="font-extrabold text-base text-slate-900">{data.motorText || 'N/D'}</span>
+                <div className="bg-[#F4F4F2] p-4 rounded-2xl border border-[#E5E5E2]">
+                  <span className="block text-[11px] font-bold text-[#8A8A85] uppercase tracking-widest mb-1">Motor</span>
+                  <span className="font-extrabold text-base text-[#141414]">{data.motorText || 'N/D'}</span>
                 </div>
               </div>
 
               <div className="flex flex-col md:flex-row gap-4 mb-8">
-                <div className="w-full md:w-1/3 bg-slate-50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-center">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Média FIPE Oficial</span>
-                  <span className="font-black text-xl text-slate-800">{formatCurrency(data.fipeValue)}</span>
+                <div className="w-full md:w-1/3 bg-[#F4F4F2] border border-[#E5E5E2] p-5 rounded-2xl flex flex-col justify-center">
+                  <span className="text-[11px] font-bold text-[#8A8A85] uppercase tracking-widest mb-1">Média FIPE Oficial</span>
+                  <span className="font-black text-xl text-[#2A2A26]">{formatCurrency(data.fipeValue)}</span>
                 </div>
                 {economia > 0 && (
-                  <div className="w-full md:w-2/3 bg-[#C1F651]/10 border border-[#C1F651]/20 rounded-2xl p-5 flex items-center justify-between">
+                  <div className="w-full md:w-2/3 bg-[#C1F11D]/10 border border-[#C1F11D]/20 rounded-2xl p-5 flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] font-bold text-[#0B1B17] uppercase tracking-widest block mb-0.5">Oportunidade de Mercado</span>
-                      <span className="font-black text-lg text-slate-900">Abaixo da tabela oficial</span>
+                      <span className="text-[11px] font-bold text-[#141414] uppercase tracking-widest block mb-0.5">Oportunidade de Mercado</span>
+                      <span className="font-black text-lg text-[#141414]">Abaixo da tabela oficial</span>
                     </div>
-                    <span className="bg-[#0B1B17] text-[#F9F9F6] font-extrabold text-xs px-3.5 py-2 rounded-full">
+                    <span className="bg-[#141414] text-[#F4F4F2] font-extrabold text-xs px-3.5 py-2 rounded-full">
                       Você economiza {formatCurrency(economia)}
                     </span>
                   </div>
                 )}
               </div>
 
-              <h4 className="text-xs font-bold text-slate-550 uppercase tracking-widest mb-4">Opcionais inclusos</h4>
+              <h4 className="text-xs font-bold text-[#8A8A85] uppercase tracking-widest mb-4">Opcionais inclusos</h4>
               <div className="flex flex-wrap gap-2">
                 {data.opcionais.split(',').map((opt, i) => (
-                  <span key={i} className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-2 rounded-full text-xs font-semibold">
+                  <span key={i} className="bg-[#F4F4F2] border border-[#E5E5E2] text-[#5F5F5A] px-4 py-2 rounded-full text-xs font-semibold">
                     {opt.trim()}
                   </span>
                 ))}
               </div>
 
               {/* Concessionária info */}
-              <div className="border-t border-slate-200 pt-6 mt-6">
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-4">Sobre a Loja</h4>
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-t border-[#E5E5E2] pt-6 mt-6">
+                <h4 className="text-xs font-black text-[#141414] uppercase tracking-widest mb-4">Sobre a Loja</h4>
+                <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Razão Social</span>
-                    <span className="text-sm font-semibold text-slate-800">{empresaLogada?.nome || 'BMW Premium SP'}</span>
+                    <span className="block text-[10px] text-[#8A8A85] font-bold uppercase tracking-wider mb-0.5">Razão Social</span>
+                    <span className="text-sm font-semibold text-[#2A2A26]">{empresaLogada?.nome || 'BMW Premium SP'}</span>
                   </div>
                   {empresaLogada?.cnpj && (
                     <div>
-                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">CNPJ</span>
-                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.cnpj}</span>
+                      <span className="block text-[10px] text-[#8A8A85] font-bold uppercase tracking-wider mb-0.5">CNPJ</span>
+                      <span className="text-sm font-semibold text-[#2A2A26]">{empresaLogada.cnpj}</span>
                     </div>
                   )}
                   {empresaLogada?.email && (
                     <div>
-                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">E-mail de Contato</span>
-                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.email}</span>
+                      <span className="block text-[10px] text-[#8A8A85] font-bold uppercase tracking-wider mb-0.5">E-mail de Contato</span>
+                      <span className="text-sm font-semibold text-[#2A2A26]">{empresaLogada.email}</span>
                     </div>
                   )}
                   {empresaLogada?.telefone && (
                     <div>
-                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Telefone Comercial</span>
-                      <span className="text-sm font-semibold text-slate-800">{empresaLogada.telefone}</span>
+                      <span className="block text-[10px] text-[#8A8A85] font-bold uppercase tracking-wider mb-0.5">Telefone Comercial</span>
+                      <span className="text-sm font-semibold text-[#2A2A26]">{empresaLogada.telefone}</span>
                     </div>
                   )}
                 </div>
@@ -4992,33 +5021,47 @@ function PreviewView({
 
           {/* Pricing Signal Booking card */}
           <div>
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 sticky top-24">
-              <h3 className="text-2xl font-bold mb-4 text-slate-900 tracking-tight">Garantir Reserva</h3>
-              <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
+            <div className="sticky top-24 space-y-6">
+            {/* AGENDAMENTO DE VISITA (mesmo fluxo da visão mobile) */}
+            <div>
+              <SlotPickerCard titulo={data.title} onSelect={setSlotInfo} horarios={empresaLogada?.agendaHorarios} />
+              {slotInfo && (
+                <button
+                  onClick={() => setShowAgendarSheet(true)}
+                  className="w-full -mt-2 bg-[#C1F11D] text-[#141414] font-extrabold text-sm py-4 rounded-full flex items-center justify-center gap-2 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Confirmar visita {slotInfo.diaLabel} às {slotInfo.hora} <ArrowRight size={15} />
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white rounded-3xl p-8 border border-[#E5E5E2]">
+              <h3 className="text-2xl font-bold mb-4 text-[#141414] tracking-tight">Garantir Reserva</h3>
+              <p className="text-sm font-medium text-[#8A8A85] mb-8 leading-relaxed">
                 Ao efetuar o sinal de garantia, este veículo é bloqueado imediatamente de visitas, testes e outros vendedores até você assinar o contrato final.
               </p>
 
               <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-                  <span className="text-slate-500 font-semibold text-xs uppercase tracking-wider">Valor do Carro</span>
-                  <span className="font-extrabold text-base text-slate-900">{formatCurrency(data.valorVenda)}</span>
+                <div className="flex justify-between items-center bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl">
+                  <span className="text-[#8A8A85] font-semibold text-xs uppercase tracking-wider">Valor do Carro</span>
+                  <span className="font-extrabold text-base text-[#141414]">{formatCurrency(data.valorVenda)}</span>
                 </div>
-                <div className="flex justify-between items-center bg-[#C1F651]/15 border border-[#C1F651]/30 p-4 rounded-2xl">
-                  <span className="text-[#0B1B17] font-bold text-xs uppercase tracking-wider">Sinal do PIX Requerido</span>
-                  <span className="font-black text-2xl text-[#0B1B17]">{formatCurrency(data.sinal)}</span>
+                <div className="flex justify-between items-center bg-[#C1F11D]/15 border border-[#C1F11D]/30 p-4 rounded-2xl">
+                  <span className="text-[#141414] font-bold text-xs uppercase tracking-wider">Sinal do PIX Requerido</span>
+                  <span className="font-black text-2xl text-[#141414]">{formatCurrency(data.sinal)}</span>
                 </div>
               </div>
 
               <div className="mb-8">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Atendente Dedicado</label>
+                <label className="block text-xs font-bold text-[#8A8A85] uppercase tracking-widest mb-3">Atendente Dedicado</label>
                 <select 
-                  className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-4 text-[15px] font-semibold text-slate-800 focus:border-slate-900 outline-none appearance-none cursor-pointer"
+                  className="w-full bg-[#F4F4F2] border-2 border-[#E5E5E2] rounded-2xl px-4 py-4 text-[15px] font-semibold text-[#2A2A26] focus:border-[#141414] outline-none appearance-none cursor-pointer"
                   value={selectedVendedor}
                   onChange={(e) => setSelectedVendedor(e.target.value)}
                 >
-                  <option value="" className="bg-white text-slate-500">Selecione seu vendedor...</option>
+                  <option value="" className="bg-white text-[#8A8A85]">Selecione seu vendedor...</option>
                   {(data.vendedores ? data.vendedores.split(',') : []).map((v, i) => (
-                    <option key={i} value={v.trim()} className="bg-white text-slate-800">{v.trim()}</option>
+                    <option key={i} value={v.trim()} className="bg-white text-[#2A2A26]">{v.trim()}</option>
                   ))}
                 </select>
               </div>
@@ -5028,23 +5071,34 @@ function PreviewView({
                 onClick={() => setShowPixModal(true)}
                 className={`w-full font-bold text-base py-4 rounded-full transition-all duration-300 flex justify-center items-center ${
                   (timeLeft === 0 || !selectedVendedor)
-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed' 
-                  : 'bg-[#C1F651] text-[#0B1B17] hover:bg-[#b0e040] font-bold shadow-sm'
+                  ? 'bg-[#EBEBE8] text-[#B9B9B4] border border-[#E5E5E2] cursor-not-allowed' 
+                  : 'bg-[#C1F11D] text-[#141414] hover:bg-[#b0e040] font-bold shadow-sm'
                 }`}
               >
                 {timeLeft === 0 ? 'Proposta Expirada' : 'Reservar com o PIX'}
               </button>
             </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <AgendarVisitaSheet
+        open={showAgendarSheet}
+        onClose={() => setShowAgendarSheet(false)}
+        tituloVeiculo={data.title}
+        slotInfo={slotInfo}
+        telefone={empresaLogada?.telefone}
+        onConfirmado={handleVisitaConfirmada}
+        onPix={() => setShowPixModal(true)}
+      />
+
       {showPixModal && (
-        <PixModal 
-          onClose={() => setShowPixModal(false)} 
-          sinal={data.sinal} 
-          vendedor={selectedVendedor} 
-          showToast={showToast} 
+        <PixModal
+          onClose={() => setShowPixModal(false)}
+          sinal={data.sinal}
+          vendedor={selectedVendedor}
+          showToast={showToast}
           onConfirm={() => {
             // 1. Atualizar proposta em recentReservations
             setRecentReservations((prev: any) => prev.map((res: any) => {
@@ -5089,8 +5143,267 @@ function PreviewView({
   );
 }
 
+// --- AGENDAMENTO DE VISITA (port do ReservaFast: day chips + slots + hold 10min) ---
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const HORARIOS_VISITA = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+function SlotPickerCard({ titulo, onSelect, horarios }) {
+  // Agenda definida pelo lojista nas Configurações; fallback para a grade padrão
+  const grade = (horarios && horarios.length > 0) ? horarios : HORARIOS_VISITA;
+
+  const dias = useMemo(() => {
+    const hoje = new Date();
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(hoje);
+      d.setDate(hoje.getDate() + i);
+      return d;
+    });
+  }, []);
+
+  const [diaAtivo, setDiaAtivo] = useState(0);
+  const [slotSel, setSlotSel] = useState<string | null>(null);
+  const [holdLeft, setHoldLeft] = useState(0);
+  // Inicia colapsado para reduzir a altura do card; expande sob demanda
+  const [expanded, setExpanded] = useState(false);
+
+  // Slots ocupados determinísticos por dia (demo; em produção vêm da agenda real)
+  const ocupados = useMemo(() => {
+    const seed = dias[diaAtivo].getDate();
+    return grade.filter((_, i) => (seed * 7 + i * 3) % 11 < 2);
+  }, [dias, diaAtivo, grade]);
+
+  const agora = new Date();
+  const indisponivel = (h: string) => {
+    const passou = diaAtivo === 0 && parseInt(h) <= agora.getHours();
+    return ocupados.includes(h) || passou;
+  };
+  const qtdOcupados = grade.filter(indisponivel).length;
+
+  const diaLabel = (i: number) => i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS_SEMANA[dias[i].getDay()];
+
+  const escolher = (h: string) => {
+    setSlotSel(h);
+    onSelect({ dia: dias[diaAtivo], diaLabel: diaLabel(diaAtivo).toLowerCase(), hora: h });
+  };
+
+  const trocarDia = (i: number) => {
+    setDiaAtivo(i);
+    setSlotSel(null);
+    onSelect(null);
+  };
+
+  // Hold de 10min persistente em localStorage (refresh não reseta)
+  useEffect(() => {
+    if (!slotSel) { setHoldLeft(0); return; }
+    const key = `rf_hold_${titulo}_${dias[diaAtivo].getDate()}_${slotSel}`;
+    let inicio = Number(localStorage.getItem(key));
+    if (!inicio) { inicio = Date.now(); localStorage.setItem(key, String(inicio)); }
+    const tick = () => {
+      const rest = 600 - Math.floor((Date.now() - inicio) / 1000);
+      if (rest <= 0) {
+        localStorage.removeItem(key);
+        setSlotSel(null);
+        onSelect(null);
+        return;
+      }
+      setHoldLeft(rest);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [slotSel, diaAtivo, titulo]);
+
+  return (
+    <div className="bg-[#141414] rounded-[28px] p-5 mb-6 text-white">
+      {/* Header colapsável */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        className="w-full flex items-center justify-between gap-3 text-left cursor-pointer group/header"
+      >
+        <div>
+          <h3 className="text-lg font-extrabold tracking-tight">Escolha seu horário</h3>
+          <p className="text-xs text-white/50 font-medium">
+            {slotSel
+              ? <>Visita marcada: <strong className="text-[#C1F11D] font-bold">{diaLabel(diaAtivo)} às {slotSel}</strong></>
+              : <>Visita exclusiva de 30min — <strong className="text-[#C1F11D] font-bold">o carro fica separado para você</strong></>}
+          </p>
+        </div>
+        <span className={`w-9 h-9 shrink-0 bg-white/10 group-hover/header:bg-white/15 rounded-full flex items-center justify-center transition-all duration-300 ${expanded ? 'rotate-180 bg-[#C1F11D] text-[#141414]' : 'text-[#C1F11D]'}`}>
+          <ChevronDown size={18} strokeWidth={2.5} />
+        </span>
+      </button>
+
+      {/* Conteúdo expansível (day chips + grade de horários + fila) */}
+      <div className={`grid transition-all duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="pt-4">
+            {/* Day chips */}
+            <div className="flex gap-2 mb-3.5 overflow-x-auto pb-1 [scrollbar-width:none]">
+              {dias.map((d, i) => (
+                <button
+                  key={i}
+                  onClick={() => trocarDia(i)}
+                  className={`shrink-0 rounded-[14px] px-4 py-2 text-center transition-all cursor-pointer border-[1.5px] ${
+                    diaAtivo === i ? 'bg-[#C1F11D] border-[#C1F11D]' : 'bg-white/10 border-transparent hover:bg-white/15'
+                  }`}
+                >
+                  <span className={`block text-[10px] font-semibold ${diaAtivo === i ? 'text-[#141414]/60' : 'text-white/50'}`}>{diaLabel(i)}</span>
+                  <span className={`block text-sm font-extrabold ${diaAtivo === i ? 'text-[#141414]' : 'text-white'}`}>{String(d.getDate()).padStart(2, '0')}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Slot grid */}
+            <div className="grid grid-cols-3 gap-2">
+              {grade.map((h) => {
+                const taken = indisponivel(h);
+                const sel = slotSel === h;
+                return (
+                  <button
+                    key={h}
+                    disabled={taken}
+                    onClick={() => escolher(h)}
+                    className={`rounded-[14px] px-2 py-2.5 text-center transition-all border-[1.5px] ${
+                      taken
+                        ? 'bg-white/5 border-transparent opacity-35 cursor-not-allowed'
+                        : sel
+                          ? 'bg-[#C1F11D] border-[#C1F11D] cursor-pointer'
+                          : 'bg-white/10 border-transparent hover:bg-white/15 cursor-pointer'
+                    }`}
+                  >
+                    <span className={`block text-sm font-extrabold ${sel ? 'text-[#141414]' : 'text-white'} ${taken ? 'line-through' : ''}`}>{h}</span>
+                    <span className={`block text-[9px] font-semibold ${sel ? 'text-[#141414]/60' : 'text-white/40'}`}>{taken ? 'ocupado' : '30min'}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Fila — escassez real, não inventada */}
+            {qtdOcupados > 0 && (
+              <div className="mt-3 bg-white/5 rounded-[14px] px-3.5 py-3 text-xs font-medium text-white/60 leading-relaxed">
+                <strong className="text-white font-bold">{qtdOcupados} {qtdOcupados === 1 ? 'pessoa agendou' : 'pessoas agendaram'}</strong> visita para este veículo. Se algum horário liberar, quem estiver na fila é avisado no WhatsApp.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA compacto quando colapsado e sem horário escolhido */}
+      {!expanded && !slotSel && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mt-3.5 w-full bg-white/10 hover:bg-white/15 rounded-[14px] px-3.5 py-3 flex items-center justify-center gap-2 text-xs font-bold text-white transition-colors cursor-pointer"
+        >
+          Ver horários disponíveis <ChevronDown size={14} className="text-[#C1F11D]" />
+        </button>
+      )}
+
+      {/* Hold timer — sempre visível enquanto ativo, mesmo colapsado */}
+      {slotSel && holdLeft > 0 && (
+        <div className="mt-3.5 bg-[#C1F11D]/10 rounded-[14px] px-3.5 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#C1F11D]">
+          <Clock size={14} />
+          <span>Horário segurado para você</span>
+          <span className="ml-auto font-extrabold text-sm font-mono">
+            {String(Math.floor(holdLeft / 60)).padStart(2, '0')}:{String(holdLeft % 60).padStart(2, '0')}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AgendarVisitaSheet({ open, onClose, tituloVeiculo, slotInfo, telefone, onConfirmado, onPix }) {
+  const [nome, setNome] = useState('');
+  const [zap, setZap] = useState('');
+  const [sucesso, setSucesso] = useState(false);
+
+  useEffect(() => { if (open) setSucesso(false); }, [open]);
+
+  if (!open || !slotInfo) return null;
+
+  const confirmar = () => {
+    if (!nome.trim() || zap.replace(/\D/g, '').length < 10) return;
+    setSucesso(true);
+    onConfirmado(nome.trim(), slotInfo);
+  };
+
+  const falarVendedor = () => {
+    let phone = (telefone || '5511999998822').replace(/\D/g, '');
+    if (phone.length === 10 || phone.length === 11) phone = '55' + phone;
+    const msg = encodeURIComponent(`Olá! Sou ${nome}, acabei de confirmar minha visita para ver o ${tituloVeiculo} ${slotInfo.diaLabel} às ${slotInfo.hora}. Até lá!`);
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-[#141414]/55 flex items-end justify-center animate-fadeIn" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-t-[28px] w-full max-w-md px-5 pt-6 pb-8">
+        <div className="w-10 h-1 bg-[#EBEBE8] rounded-full mx-auto mb-5"></div>
+
+        {!sucesso ? (
+          <>
+            <h3 className="text-xl font-extrabold tracking-tight text-[#141414]">Confirmar visita</h3>
+            <p className="text-sm font-medium text-[#8A8A85] mb-4">Só precisamos do seu nome — leva 10 segundos</p>
+
+            <div className="bg-[#F4F4F2] rounded-[20px] p-4 mb-3.5">
+              {[
+                ['Veículo', tituloVeiculo],
+                ['Horário', `${slotInfo.diaLabel.charAt(0).toUpperCase() + slotInfo.diaLabel.slice(1)} · ${slotInfo.hora}`],
+                ['Duração', '30min exclusivos'],
+                ['Custo', 'Grátis'],
+              ].map(([k, v], i) => (
+                <div key={i} className="flex justify-between items-center py-1.5 text-sm">
+                  <span className="font-medium text-[#8A8A85]">{k}</span>
+                  <span className={`font-extrabold ${k === 'Custo' ? 'text-[#1E9E5A]' : 'text-[#141414]'}`}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            <input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Seu nome completo"
+              className="w-full bg-[#F4F4F2] border-2 border-transparent focus:border-[#C1F11D] rounded-[20px] px-4 py-3.5 text-[15px] font-semibold text-[#141414] outline-none mb-2.5 transition-colors placeholder:text-[#B9B9B4]"
+            />
+            <input
+              value={zap}
+              onChange={(e) => setZap(e.target.value)}
+              placeholder="Seu WhatsApp (DDD + número)"
+              type="tel"
+              className="w-full bg-[#F4F4F2] border-2 border-transparent focus:border-[#C1F11D] rounded-[20px] px-4 py-3.5 text-[15px] font-semibold text-[#141414] outline-none mb-2.5 transition-colors placeholder:text-[#B9B9B4]"
+            />
+
+            <button onClick={confirmar} className="w-full bg-[#C1F11D] text-[#141414] rounded-full py-4 text-base font-extrabold mt-1 active:scale-[0.98] transition-transform cursor-pointer">
+              Confirmar minha visita
+            </button>
+          </>
+        ) : (
+          <div className="text-center py-2">
+            <div className="w-[72px] h-[72px] bg-[#C1F11D] rounded-[24px] flex items-center justify-center mx-auto mb-4">
+              <Check size={36} className="text-[#141414]" strokeWidth={3} />
+            </div>
+            <h3 className="text-xl font-extrabold tracking-tight text-[#141414] mb-1.5">Visita confirmada!</h3>
+            <p className="text-sm font-medium text-[#8A8A85] leading-relaxed mb-5">
+              <strong className="text-[#141414] font-bold">{tituloVeiculo} — {slotInfo.diaLabel} às {slotInfo.hora}</strong><br />
+              O vendedor já foi avisado. Você vai receber a confirmação e o lembrete no WhatsApp.
+            </p>
+            <button onClick={falarVendedor} className="w-full bg-[#C1F11D] text-[#141414] rounded-full py-4 text-base font-extrabold active:scale-[0.98] transition-transform cursor-pointer">
+              Falar com o vendedor agora
+            </button>
+            <button onClick={() => { onClose(); onPix(); }} className="w-full bg-[#141414] text-white rounded-full py-4 text-base font-extrabold mt-2.5 active:scale-[0.98] transition-transform cursor-pointer">
+              Garantir com sinal Pix
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- NEW: MOBILE CLIENT VIEW (PREMIUM SMARTPHONE SIMULATOR) ---
-function MobileClientView({ 
+function MobileClientView({
   reservation, 
   navigateTo, 
   showToast, 
@@ -5138,6 +5451,28 @@ function MobileClientView({
   }, [reservation?.id, setRecentReservations]);
   const [selectedAtendente, setSelectedAtendente] = useState(data.vendedores ? data.vendedores.split(',')[0] : '');
   const [animateTimeline, setAnimateTimeline] = useState(false);
+
+  // Agendamento de visita (slot picker + sheet de confirmação)
+  const [slotInfo, setSlotInfo] = useState<any>(null);
+  const [showAgendarSheet, setShowAgendarSheet] = useState(false);
+  const touchStartX = useRef(0);
+
+  const handleVisitaConfirmada = (nomeCliente, slot) => {
+    showToast(`Visita de ${nomeCliente} confirmada para ${slot.diaLabel} às ${slot.hora}!`, 'success');
+    if (reservation && setRecentReservations) {
+      setRecentReservations((prev: any) => prev.map((res: any) => {
+        if (res.id === reservation.id) {
+          const novosLogs = [...(res.logs || [])];
+          novosLogs.push({
+            time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+            text: `Visita agendada por ${nomeCliente} para ${slot.diaLabel} às ${slot.hora}.`
+          });
+          return { ...res, logs: novosLogs, clienteNome: nomeCliente };
+        }
+        return res;
+      }));
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'atividade') {
@@ -5198,23 +5533,23 @@ function MobileClientView({
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] py-12 flex justify-center relative items-center px-4">
+    <div className="min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4">
       <button 
         onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} 
-        className="absolute top-6 left-6 text-slate-600 hover:text-slate-900 font-semibold flex items-center text-sm transition z-20 bg-white border border-slate-200 px-4 py-2 rounded-xl"
+        className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
       >
         <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Painel'}
       </button>
 
       {isPrePublish && (
-        <div className="absolute top-6 right-6 bg-white border border-slate-200 p-5 rounded-2xl flex flex-col justify-between items-center gap-3 z-20 w-64">
+        <div className="absolute top-6 right-6 bg-white border border-[#E5E5E2] p-5 rounded-2xl flex flex-col justify-between items-center gap-3 z-20 w-64">
           <div className="text-center">
-            <h4 className="font-extrabold text-xs text-slate-900">Visualização Mobile</h4>
-            <p className="text-[10px] text-slate-550 mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salvá-la no painel.</p>
+            <h4 className="font-extrabold text-xs text-[#141414]">Visualização Mobile</h4>
+            <p className="text-[10px] text-[#8A8A85] mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salvá-la no painel.</p>
           </div>
           <button 
             onClick={handlePublish}
-            className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-[11px] py-3 rounded-xl transition text-center"
+            className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-[11px] py-3 rounded-xl transition text-center"
           >
             Confirmar e Publicar
           </button>
@@ -5222,102 +5557,144 @@ function MobileClientView({
       )}
 
       {/* Realistic Mobile Device Container Frame */}
-      <div className="w-[390px] h-[820px] bg-slate-950 rounded-[48px] shadow-2xl overflow-hidden relative border-[8px] border-slate-800 flex flex-col scale-95 md:scale-100">
+      <div className="w-[390px] h-[820px] bg-[#141414] rounded-[48px] shadow-2xl overflow-hidden relative border-[8px] border-[#2A2A26] flex flex-col scale-95 md:scale-100">
         
         {/* Notch dynamic simulated island */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-5 bg-black rounded-full z-[60] flex items-center justify-center">
-          <div className="w-2.5 h-2.5 bg-slate-900 rounded-full ml-auto mr-3 border border-slate-800"></div>
+          <div className="w-2.5 h-2.5 bg-[#141414] rounded-full ml-auto mr-3 border border-[#2A2A26]"></div>
         </div>
 
         {/* Mobile App View Header */}
-        <div className="bg-white text-slate-900 px-5 pt-10 pb-4 flex justify-between items-center shrink-0 border-b border-slate-200">
+        <div className="bg-white text-[#141414] px-5 pt-10 pb-4 flex justify-between items-center shrink-0 border-b border-[#E5E5E2]">
           <div className="flex items-center">
-            <ArrowLeft size={20} className="mr-3 cursor-pointer text-slate-850" onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} />
+            <ArrowLeft size={20} className="mr-3 cursor-pointer text-[#2A2A26]" onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} />
             <h2 className="text-base font-bold">Proposta de Showroom</h2>
           </div>
-          <Share size={18} className="cursor-pointer text-slate-850" />
+          <Share size={18} className="cursor-pointer text-[#2A2A26]" />
         </div>
 
         {/* Scrollable container on phone view */}
         <div className="flex-1 overflow-y-auto pb-24 bg-white">
           
-          {/* Photos and Indicators */}
-          <div className="relative w-full h-56 bg-slate-50 overflow-hidden shrink-0">
-            <div 
+          {/* Photos and Indicators (slider funcional: dots clicáveis + setas + swipe) */}
+          <div
+            className="relative w-full h-56 bg-[#F4F4F2] overflow-hidden shrink-0 group/slider"
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              const delta = e.changedTouches[0].clientX - touchStartX.current;
+              if (Math.abs(delta) < 40 || photosArray.length < 2) return;
+              setCurrentPhotoIndex(prev => delta < 0
+                ? (prev + 1) % photosArray.length
+                : (prev - 1 + photosArray.length) % photosArray.length);
+            }}
+          >
+            <div
               className="flex w-full h-full transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
             >
               {photosArray.map((url, index) => (
-                <img 
+                <img
                   key={index}
-                  src={url} 
-                  alt={`Car ${index}`} 
-                  className="w-full h-full object-cover shrink-0" 
+                  src={url}
+                  alt={`Car ${index}`}
+                  className="w-full h-full object-cover shrink-0"
                 />
               ))}
             </div>
-            
-            <div className="absolute top-4 right-4 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1.5 rounded-full flex items-center z-20">
+
+            <div className="absolute top-4 right-4 bg-[#141414] text-white text-[10px] font-black px-2.5 py-1.5 rounded-full flex items-center z-20">
               <span className="w-1.5 h-1.5 bg-white rounded-full mr-1 animate-pulse"></span>
               VERIFICADO
             </div>
-            
+
             {photosArray.length > 1 && (
-              <div className="absolute bottom-4 left-0 w-full flex justify-center space-x-1.5 z-20">
-                {photosArray.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    className={`h-1 rounded-full cursor-pointer transition-all ${currentPhotoIndex === idx ? 'w-4 bg-[#0B1B17]' : 'w-1 bg-slate-300'}`}
-                  ></div>
-                ))}
-              </div>
+              <>
+                {/* Setas de navegação */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPhotoIndex(prev => (prev - 1 + photosArray.length) % photosArray.length)}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-[#141414] shadow-md z-20 active:scale-90 transition-transform cursor-pointer"
+                  aria-label="Foto anterior"
+                >
+                  <ChevronLeft size={16} strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPhotoIndex(prev => (prev + 1) % photosArray.length)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-[#141414] shadow-md z-20 active:scale-90 transition-transform cursor-pointer"
+                  aria-label="Próxima foto"
+                >
+                  <ChevronRight size={16} strokeWidth={2.5} />
+                </button>
+
+                {/* Dots clicáveis */}
+                <div className="absolute bottom-4 left-0 w-full flex justify-center space-x-1.5 z-20">
+                  {photosArray.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCurrentPhotoIndex(idx)}
+                      aria-label={`Ver foto ${idx + 1}`}
+                      className={`h-1.5 rounded-full cursor-pointer transition-all ${currentPhotoIndex === idx ? 'w-5 bg-[#C1F11D]' : 'w-1.5 bg-white/80 hover:bg-white'}`}
+                    ></button>
+                  ))}
+                </div>
+
+                {/* Contador de fotos */}
+                <span className="absolute bottom-3.5 right-3 bg-[#141414]/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-20">
+                  {currentPhotoIndex + 1}/{photosArray.length}
+                </span>
+              </>
             )}
           </div>
 
           <div className="px-5 pt-6 pb-4">
             {data.laudoAprovado && (
-              <div className="mb-3 flex items-center text-emerald-700 bg-emerald-50 w-max px-3 py-1 rounded-full border border-emerald-200 text-[10px] font-black">
-                <Shield size={12} className="mr-1.5 text-emerald-600" />
+              <div className="mb-3 flex items-center text-[#141414] bg-[#C1F11D]/15 w-max px-3 py-1 rounded-full border border-[#C1F11D]/30 text-[10px] font-black">
+                <Shield size={12} className="mr-1.5 text-[#141414]" />
                 LAUDO CAUTELAR TOTALMENTE APROVADO
               </div>
             )}
             
-            <h1 className="text-2xl font-extrabold text-slate-900 mb-1 tracking-tight leading-tight">{data.title}</h1>
-            <p className="text-xs text-slate-550 mb-4 font-semibold">
+            <h1 className="text-2xl font-extrabold text-[#141414] mb-1 tracking-tight leading-tight">{data.title}</h1>
+            <p className="text-xs text-[#8A8A85] mb-4 font-semibold">
               {data.anoText || '2024'} • {data.km || '0 km'} • {data.corText || 'Preto'} • {data.cambio || 'Automático'}
             </p>
             
             <div className="flex items-center mb-6 gap-3">
-              <span className="text-2xl font-black text-slate-900">{formatCurrency(data.valorVenda)}</span>
+              <span className="text-2xl font-black text-[#141414]">{formatCurrency(data.valorVenda)}</span>
               {economiaPct > 0 && (
-                <span className="bg-[#C1F651]/20 text-[#0B1B17] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#C1F651]/30">
+                <span className="bg-[#C1F11D]/20 text-[#141414] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#C1F11D]/30">
                   {economiaPct}% abaixo FIPE
                 </span>
               )}
             </div>
 
             {/* Countdown widget */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 text-slate-500">RESERVADO EXCLUSIVAMENTE PARA VOCÊ</h3>
+            <div className="bg-[#141414] rounded-2xl p-5 mb-6 shadow-lg">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 text-[#B9B9B4]">RESERVADO EXCLUSIVAMENTE PARA VOCÊ</h3>
               <div className="flex justify-between items-end mb-3">
-                <span className="text-3xl font-black leading-none font-mono text-slate-900">{formatTimeFull(timeLeft)}</span>
-                <span className="bg-[#0B1B17] text-[#F9F9F6] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">ATIVO</span>
+                <span className="text-3xl font-black leading-none font-mono text-[#C1F11D]">{formatTimeFull(timeLeft)}</span>
+                <span className="bg-[#C1F11D] text-[#141414] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">ATIVO</span>
               </div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden border border-slate-300">
-                 <div className="bg-[#0B1B17] h-full" style={{ width: `${progressPercent}%` }}></div>
+              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                 <div className="bg-[#C1F11D] h-full" style={{ width: `${progressPercent}%` }}></div>
               </div>
-              <p className="text-[10px] text-slate-500 font-semibold mt-1">4 clientes estão visualizando este link agora</p>
+              <p className="text-[10px] text-[#B9B9B4] font-semibold mt-1">4 clientes estão visualizando este link agora</p>
             </div>
 
+            {/* AGENDAMENTO DE VISITA (slot picker estilo ReservaFast) */}
+            <SlotPickerCard titulo={data.title} onSelect={setSlotInfo} horarios={empresaLogada?.agendaHorarios} />
+
             {/* Tabs Bar */}
-            <div className="flex border-b border-slate-200 mb-6 bg-white shrink-0">
+            <div className="flex border-b border-[#E5E5E2] mb-6 bg-white shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('veiculo')}
                 className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
                   activeTab === 'veiculo'
-                    ? 'border-[#0B1B17] text-[#0B1B17]'
-                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                    ? 'border-[#141414] text-[#141414]'
+                    : 'border-transparent text-[#B9B9B4] hover:text-[#6F6F6A]'
                 }`}
               >
                 VEÍCULO
@@ -5327,8 +5704,8 @@ function MobileClientView({
                 onClick={() => setActiveTab('ficha')}
                 className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
                   activeTab === 'ficha'
-                    ? 'border-[#0B1B17] text-[#0B1B17]'
-                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                    ? 'border-[#141414] text-[#141414]'
+                    : 'border-transparent text-[#B9B9B4] hover:text-[#6F6F6A]'
                 }`}
               >
                 FICHA
@@ -5338,8 +5715,8 @@ function MobileClientView({
                 onClick={() => setActiveTab('atividade')}
                 className={`flex-1 pb-3 text-xs font-black text-center border-b-2 transition ${
                   activeTab === 'atividade'
-                    ? 'border-[#0B1B17] text-[#0B1B17]'
-                    : 'border-transparent text-slate-400 hover:text-slate-650'
+                    ? 'border-[#141414] text-[#141414]'
+                    : 'border-transparent text-[#B9B9B4] hover:text-[#6F6F6A]'
                 }`}
               >
                 ATIVIDADE
@@ -5350,26 +5727,26 @@ function MobileClientView({
             {activeTab === 'veiculo' && (
               <div className="space-y-6 animate-fadeIn text-left">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Combustível</span>
-                    <span className="block text-xs font-bold text-slate-900">{data.combustivel || 'Flex'}</span>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Combustível</span>
+                    <span className="block text-xs font-bold text-[#141414]">{data.combustivel || 'Flex'}</span>
                   </div>
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
-                    <span className="block text-xs font-bold text-slate-900">{data.km || 'N/A'}</span>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
+                    <span className="block text-xs font-bold text-[#141414]">{data.km || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Cor Externa</span>
-                    <span className="block text-xs font-bold text-slate-900">{data.corText || 'N/A'}</span>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Cor Externa</span>
+                    <span className="block text-xs font-bold text-[#141414]">{data.corText || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                    <span className="block text-[10px] text-slate-500 mb-0.5 font-bold uppercase tracking-wider">Câmbio</span>
-                    <span className="block text-xs font-bold text-slate-900">{data.cambio || 'N/A'}</span>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Câmbio</span>
+                    <span className="block text-xs font-bold text-[#141414]">{data.cambio || 'N/A'}</span>
                   </div>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mt-4 text-left">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Atendente Dedicado</h4>
+                <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-5 mt-4 text-left">
+                  <h4 className="text-xs font-black text-[#141414] uppercase tracking-wider mb-2">Atendente Dedicado</h4>
                   <div className="space-y-4">
                     <div className="relative">
                       <select 
@@ -5378,7 +5755,7 @@ function MobileClientView({
                           setSelectedAtendente(e.target.value);
                           data.vendedores = e.target.value;
                         }} 
-                        className="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-slate-850 transition appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]"
+                        className="w-full bg-white border-2 border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-bold text-[#2A2A26] outline-none focus:border-[#2A2A26] transition appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em]"
                         style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
                       >
                         <option value="" disabled>Selecione seu vendedor...</option>
@@ -5403,10 +5780,10 @@ function MobileClientView({
                         const text = `Olá ${selectedAtendente}, estou na página do veículo ${data.title} e gostaria de negociá-lo!`;
                         window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
                       }}
-                      className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-sm py-4 rounded-xl flex items-center justify-center transition gap-2"
+                      className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-sm py-4 rounded-xl flex items-center justify-center transition gap-2"
                     >
                       Negociar veículo
-                      <MessageCircle size={16} className="text-[#C1F651] stroke-[2.5]" />
+                      <MessageCircle size={16} className="text-[#C1F11D] stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
@@ -5417,68 +5794,68 @@ function MobileClientView({
             {activeTab === 'ficha' && (
               <div className="space-y-6 animate-fadeIn text-left">
                 {/* Ficha Técnica Detail List */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-2">Ficha Técnica</h4>
-                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
-                    <span className="text-slate-500 font-bold">Marca</span>
-                    <span className="font-extrabold text-slate-800">{data.marcaText || data.title.split(' ')[0]}</span>
+                <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-5 space-y-3">
+                  <h4 className="text-xs font-black text-[#141414] uppercase tracking-wider mb-2">Ficha Técnica</h4>
+                  <div className="flex justify-between text-xs py-1 border-b border-[#E5E5E2]">
+                    <span className="text-[#8A8A85] font-bold">Marca</span>
+                    <span className="font-extrabold text-[#2A2A26]">{data.marcaText || data.title.split(' ')[0]}</span>
                   </div>
-                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
-                    <span className="text-slate-500 font-bold">Modelo</span>
-                    <span className="font-extrabold text-slate-800">{data.modeloText || data.title.split(' ').slice(1).join(' ')}</span>
+                  <div className="flex justify-between text-xs py-1 border-b border-[#E5E5E2]">
+                    <span className="text-[#8A8A85] font-bold">Modelo</span>
+                    <span className="font-extrabold text-[#2A2A26]">{data.modeloText || data.title.split(' ').slice(1).join(' ')}</span>
                   </div>
-                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
-                    <span className="text-slate-500 font-bold">Ano</span>
-                    <span className="font-extrabold text-slate-800">{data.anoText}</span>
+                  <div className="flex justify-between text-xs py-1 border-b border-[#E5E5E2]">
+                    <span className="text-[#8A8A85] font-bold">Ano</span>
+                    <span className="font-extrabold text-[#2A2A26]">{data.anoText}</span>
                   </div>
-                  <div className="flex justify-between text-xs py-1 border-b border-slate-200">
-                    <span className="text-slate-500 font-bold">Motorização</span>
-                    <span className="font-extrabold text-slate-800">{data.motorText}</span>
+                  <div className="flex justify-between text-xs py-1 border-b border-[#E5E5E2]">
+                    <span className="text-[#8A8A85] font-bold">Motorização</span>
+                    <span className="font-extrabold text-[#2A2A26]">{data.motorText}</span>
                   </div>
                   <div className="flex justify-between text-xs py-1">
-                    <span className="text-slate-500 font-bold">Cor</span>
-                    <span className="font-extrabold text-slate-800">{data.corText}</span>
+                    <span className="text-[#8A8A85] font-bold">Cor</span>
+                    <span className="font-extrabold text-[#2A2A26]">{data.corText}</span>
                   </div>
                 </div>
 
                 {/* Opcionais do veículo */}
                 <div>
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">Opcionais inclusos</h4>
+                  <h4 className="text-xs font-black text-[#141414] uppercase tracking-wider mb-3">Opcionais inclusos</h4>
                   <div className="flex flex-wrap gap-2">
                     {data.opcionais ? data.opcionais.split(',').map((opc: string, idx: number) => (
-                      <span key={idx} className="bg-slate-50 text-slate-700 text-[10px] font-black px-3 py-1.5 rounded-xl border border-slate-200">
+                      <span key={idx} className="bg-[#F4F4F2] text-[#5F5F5A] text-[10px] font-black px-3 py-1.5 rounded-xl border border-[#E5E5E2]">
                         {opc.trim()}
                       </span>
                     )) : (
-                      <span className="text-xs text-slate-500 font-semibold">Nenhum opcional cadastrado.</span>
+                      <span className="text-xs text-[#8A8A85] font-semibold">Nenhum opcional cadastrado.</span>
                     )}
                   </div>
                 </div>
 
                 {/* Concessionária info */}
-                <div className="border-t border-slate-200 pt-6 mt-6">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">Sobre a Loja</h4>
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div className="border-t border-[#E5E5E2] pt-6 mt-6">
+                  <h4 className="text-xs font-black text-[#141414] uppercase tracking-wider mb-3">Sobre a Loja</h4>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-4 space-y-3">
                     <div>
-                      <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Razão Social</span>
-                      <span className="text-xs font-semibold text-slate-800">{empresaLogada?.nome || 'BMW Premium SP'}</span>
+                      <span className="block text-[8px] text-[#8A8A85] font-black uppercase tracking-widest">Razão Social</span>
+                      <span className="text-xs font-semibold text-[#2A2A26]">{empresaLogada?.nome || 'BMW Premium SP'}</span>
                     </div>
                     {empresaLogada?.cnpj && (
                       <div>
-                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">CNPJ</span>
-                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.cnpj}</span>
+                        <span className="block text-[8px] text-[#8A8A85] font-black uppercase tracking-widest">CNPJ</span>
+                        <span className="text-xs font-semibold text-[#2A2A26]">{empresaLogada.cnpj}</span>
                       </div>
                     )}
                     {empresaLogada?.email && (
                       <div>
-                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">E-mail de Contato</span>
-                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.email}</span>
+                        <span className="block text-[8px] text-[#8A8A85] font-black uppercase tracking-widest">E-mail de Contato</span>
+                        <span className="text-xs font-semibold text-[#2A2A26]">{empresaLogada.email}</span>
                       </div>
                     )}
                     {empresaLogada?.telefone && (
                       <div>
-                        <span className="block text-[8px] text-slate-500 font-black uppercase tracking-widest">Telefone Comercial</span>
-                        <span className="text-xs font-semibold text-slate-800">{empresaLogada.telefone}</span>
+                        <span className="block text-[8px] text-[#8A8A85] font-black uppercase tracking-widest">Telefone Comercial</span>
+                        <span className="text-xs font-semibold text-[#2A2A26]">{empresaLogada.telefone}</span>
                       </div>
                     )}
                   </div>
@@ -5489,17 +5866,17 @@ function MobileClientView({
             {/* ABA: ATIVIDADE */}
             {activeTab === 'atividade' && (
               <div className="space-y-6 animate-fadeIn text-left">
-                <h3 className="text-[11px] font-black mb-6 text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <Clock size={14} className="text-[#0B1B17]" />
+                <h3 className="text-[11px] font-black mb-6 text-[#8A8A85] uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock size={14} className="text-[#141414]" />
                   Linha do Tempo de Atividade
                 </h3>
                 
                 <div className="relative pl-6 ml-2 space-y-8">
                   {/* Linha vertical cinza estática traseira */}
-                  <div className="absolute left-[3px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
+                  <div className="absolute left-[3px] top-2 bottom-2 w-0.5 bg-[#EBEBE8]"></div>
                   {/* Linha vertical azul animada frontal */}
                   <div 
-                    className="absolute left-[3px] top-2 w-0.5 bg-[#0B1B17] transition-all duration-[1200ms] ease-out origin-top"
+                    className="absolute left-[3px] top-2 w-0.5 bg-[#141414] transition-all duration-[1200ms] ease-out origin-top"
                     style={{ 
                       height: animateTimeline ? '78%' : '0%' 
                     }}
@@ -5507,7 +5884,7 @@ function MobileClientView({
 
                   {/* 1. Vitrine Ativada */}
                   <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#0B1B17] border-2 border-white transition-all duration-500 transform ${
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
                       animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                     }`} style={{ transitionDelay: '100ms' }}></div>
                     
@@ -5515,18 +5892,18 @@ function MobileClientView({
                       animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                     }`} style={{ transitionDelay: '200ms' }}>
                       <div>
-                        <h4 className="text-xs font-black text-slate-900">Vitrine Ativada</h4>
-                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                        <h4 className="text-xs font-black text-[#141414]">Vitrine Ativada</h4>
+                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
                           O link exclusivo do veículo foi gerado e enviado para o cliente.
                         </p>
                       </div>
-                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+0min</span>
+                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+0min</span>
                     </div>
                   </div>
 
                   {/* 2. Tabela FIPE */}
                   <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#0B1B17] border-2 border-white transition-all duration-500 transform ${
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
                       animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                     }`} style={{ transitionDelay: '400ms' }}></div>
                     
@@ -5534,18 +5911,18 @@ function MobileClientView({
                       animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                     }`} style={{ transitionDelay: '500ms' }}>
                       <div>
-                        <h4 className="text-xs font-black text-slate-900">Atualização da Tabela FIPE</h4>
-                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                        <h4 className="text-xs font-black text-[#141414]">Atualização da Tabela FIPE</h4>
+                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
                           Tabela FIPE oficial carregada: Preço exclusivo tem margem de R$ 5.000,00 de desconto!
                         </p>
                       </div>
-                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+30min</span>
+                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+30min</span>
                     </div>
                   </div>
 
                   {/* 3. Vídeo */}
                   <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#0B1B17] border-2 border-white transition-all duration-500 transform ${
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
                       animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                     }`} style={{ transitionDelay: '700ms' }}></div>
                     
@@ -5553,26 +5930,26 @@ function MobileClientView({
                       animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                     }`} style={{ transitionDelay: '800ms' }}>
                       <div>
-                        <h4 className="text-xs font-black text-slate-900">Tour de Vídeo Adicionado</h4>
-                        <p className="text-[10.5px] text-slate-500 font-semibold mt-1 leading-relaxed">
+                        <h4 className="text-xs font-black text-[#141414]">Tour de Vídeo Adicionado</h4>
+                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
                           Vídeo completo do laudo estrutural e partida a frio foi disponibilizado.
                         </p>
                       </div>
-                      <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+60min</span>
+                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+60min</span>
                     </div>
                   </div>
 
                   {/* 4. Eventos Futuros */}
                   <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-slate-200 border-2 border-white transition-all duration-500 transform ${
+                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#E5E5E2] border-2 border-white transition-all duration-500 transform ${
                       animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                     }`} style={{ transitionDelay: '1000ms' }}></div>
                     
                     <div className={`transition-all duration-500 transform ${
                       animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                     }`} style={{ transitionDelay: '1100ms' }}>
-                      <h4 className="text-xs font-bold text-slate-400 italic">Eventos Futuros Agendados pelo Lojista...</h4>
-                      <p className="text-[10.5px] text-slate-400 font-medium mt-1 leading-relaxed italic font-semibold">
+                      <h4 className="text-xs font-bold text-[#B9B9B4] italic">Eventos Futuros Agendados pelo Lojista...</h4>
+                      <p className="text-[10.5px] text-[#B9B9B4] font-medium mt-1 leading-relaxed italic font-semibold">
                         Automatizações complementares estão escalonadas baseadas no seu tempo ativo.
                       </p>
                     </div>
@@ -5582,12 +5959,12 @@ function MobileClientView({
             )}
 
             {/* Garantir Reserva Info Box */}
-            <div className="p-5 border-t border-slate-150 bg-slate-50 text-left -mx-5 -mb-4 mt-8">
+            <div className="p-5 border-t border-[#EBEBE8] bg-[#F4F4F2] text-left -mx-5 -mb-4 mt-8">
               <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck className="text-[#0B1B17] shrink-0" size={16} />
-                <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">Garantir Reserva</h4>
+                <ShieldCheck className="text-[#141414] shrink-0" size={16} />
+                <h4 className="text-[10px] font-black text-[#141414] uppercase tracking-wider">Garantir Reserva</h4>
               </div>
-              <p className="text-[10px] text-slate-550 font-semibold leading-relaxed">
+              <p className="text-[10px] text-[#8A8A85] font-semibold leading-relaxed">
                 Ao efetuar o sinal de garantia, este veículo é bloqueado imediatamente de visitas, testes e outros vendedores até você assinar o contrato final.
               </p>
             </div>
@@ -5596,32 +5973,67 @@ function MobileClientView({
         </div>
 
         {/* Bottom Fixed Sticky Action Bar in phone emulator */}
-        <div className="absolute bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 flex items-center justify-between space-x-3 z-50 text-black">
-          <button 
-            onClick={() => {
-              if (!selectedAtendente) {
-                showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
-                return;
-              }
-              setShowPixModal(true);
-            }}
-            className="flex-1 bg-[#C1F651] text-[#0B1B17] font-bold text-sm py-4 rounded-2xl flex items-center justify-center hover:bg-[#b0e040] transition-colors"
-          >
-            Reservar com o PIX <ArrowRight size={16} className="ml-2" />
-          </button>
-          <button className="w-14 h-14 bg-white border border-slate-250 rounded-2xl flex items-center justify-center text-slate-800 hover:bg-slate-50 transition-colors">
-            <Heart size={20} />
-          </button>
+        <div className="absolute bottom-0 left-0 w-full bg-white border-t border-[#EBEBE8] p-4 z-50 text-black">
+          <div className="flex items-center justify-between space-x-3">
+            {slotInfo ? (
+              <button
+                onClick={() => setShowAgendarSheet(true)}
+                className="flex-1 bg-[#C1F11D] text-[#141414] font-extrabold text-sm py-4 rounded-full flex items-center justify-between px-6 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <span>Confirmar visita {slotInfo.diaLabel} às {slotInfo.hora}</span>
+                <span className="w-7 h-7 bg-[#141414]/10 rounded-full flex items-center justify-center"><ArrowRight size={15} /></span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!selectedAtendente) {
+                    showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
+                    return;
+                  }
+                  setShowPixModal(true);
+                }}
+                className="flex-1 bg-[#141414] text-white font-extrabold text-sm py-4 rounded-full flex items-center justify-center hover:bg-[#2A2A26] transition-colors cursor-pointer"
+              >
+                Reservar com o PIX <ArrowRight size={16} className="ml-2" />
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (!selectedAtendente) {
+                  showToast('Por favor, selecione seu atendente para prosseguir.', 'error');
+                  return;
+                }
+                setShowPixModal(true);
+              }}
+              title="Reservar com sinal Pix"
+              className="w-14 h-14 bg-white border border-[#EBEBE8] rounded-full flex items-center justify-center text-[#141414] hover:bg-[#F4F4F2] transition-colors cursor-pointer"
+            >
+              <CircleDollarSign size={20} />
+            </button>
+          </div>
+          <p className="text-center text-[10px] font-semibold text-[#8A8A85] mt-2">
+            {slotInfo ? 'Visita grátis · Cancele quando quiser' : 'Escolha um horário acima ou garanta já com Pix'}
+          </p>
         </div>
         
       </div>
-      
+
+      <AgendarVisitaSheet
+        open={showAgendarSheet}
+        onClose={() => setShowAgendarSheet(false)}
+        tituloVeiculo={data.title}
+        slotInfo={slotInfo}
+        telefone={empresaLogada?.telefone}
+        onConfirmado={handleVisitaConfirmada}
+        onPix={() => setShowPixModal(true)}
+      />
+
       {showPixModal && (
-        <PixModal 
-          onClose={() => setShowPixModal(false)} 
-          sinal={data.sinal} 
-          vendedor={selectedAtendente || 'Consultor'} 
-          showToast={showToast} 
+        <PixModal
+          onClose={() => setShowPixModal(false)}
+          sinal={data.sinal}
+          vendedor={selectedAtendente || 'Consultor'}
+          showToast={showToast}
           onConfirm={() => {
             // 1. Atualizar proposta em recentReservations
             setRecentReservations((prev: any) => prev.map((res: any) => {
@@ -5702,19 +6114,19 @@ function LiveChatSimulator({ sellerName, showToast, embeddedInMobile = false }) 
   };
 
   return (
-    <div className={`bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col h-[280px] ${embeddedInMobile ? 'h-[250px]' : ''}`}>
-      <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
-        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-          <MessageCircle size={12} className="text-[#0B1B17]" />
+    <div className={`bg-white border border-[#E5E5E2] rounded-2xl overflow-hidden flex flex-col h-[280px] ${embeddedInMobile ? 'h-[250px]' : ''}`}>
+      <div className="bg-[#F4F4F2] px-4 py-2 border-b border-[#E5E5E2] flex items-center justify-between">
+        <span className="text-[10px] font-black text-[#8A8A85] uppercase tracking-widest flex items-center gap-1.5">
+          <MessageCircle size={12} className="text-[#141414]" />
           Fale com o Atendente Dedicado
         </span>
-        <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">ONLINE</span>
+        <span className="text-[9px] text-[#141414] font-bold bg-[#C1F11D]/15 px-2 py-0.5 rounded-full">ONLINE</span>
       </div>
 
       {/* Messages Pane */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-50/50 scrollbar-thin">
+      <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-[#F4F4F2]/50 scrollbar-thin">
         {messages.map(msg => (
-          <div key={msg.id} className={`max-w-[85%] rounded-xl px-3 py-2 text-xs font-medium leading-relaxed ${msg.sender === 'seller' ? 'bg-slate-200 text-slate-800 self-start' : 'bg-[#0B1B17] text-[#F9F9F6] ml-auto'}`}>
+          <div key={msg.id} className={`max-w-[85%] rounded-xl px-3 py-2 text-xs font-medium leading-relaxed ${msg.sender === 'seller' ? 'bg-[#E5E5E2] text-[#2A2A26] self-start' : 'bg-[#141414] text-[#F4F4F2] ml-auto'}`}>
             <p>{msg.text}</p>
           </div>
         ))}
@@ -5722,15 +6134,15 @@ function LiveChatSimulator({ sellerName, showToast, embeddedInMobile = false }) 
       </div>
 
       {/* Sending Form */}
-      <form onSubmit={handleSend} className="p-2 border-t border-slate-200 bg-white flex items-center gap-2">
+      <form onSubmit={handleSend} className="p-2 border-t border-[#E5E5E2] bg-white flex items-center gap-2">
         <input 
           type="text" 
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Envie uma pergunta..."
-          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-950 transition"
+          className="flex-1 bg-[#F4F4F2] border border-[#E5E5E2] rounded-lg px-3 py-2 text-xs font-medium text-[#2A2A26] focus:outline-none focus:border-[#141414] transition"
         />
-        <button type="submit" className="w-8 h-8 bg-[#0B1B17] rounded-lg flex items-center justify-center text-white shrink-0 hover:bg-[#122621] transition">
+        <button type="submit" className="w-8 h-8 bg-[#141414] rounded-lg flex items-center justify-center text-white shrink-0 hover:bg-[#2A2A26] transition">
           <Send size={14} />
         </button>
       </form>
@@ -5758,70 +6170,70 @@ function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-white w-full max-w-md rounded-3xl p-8 relative border border-slate-200">
+      <div className="bg-white w-full max-w-md rounded-3xl p-8 relative border border-[#E5E5E2]">
         
         {status === 'waiting' ? (
           <>
-            <button onClick={onClose} className="absolute top-6 right-6 bg-slate-100 p-2.5 rounded-full hover:bg-slate-200 transition text-slate-650 border border-slate-200">
+            <button onClick={onClose} className="absolute top-6 right-6 bg-[#EBEBE8] p-2.5 rounded-full hover:bg-[#E5E5E2] transition text-[#6F6F6A] border border-[#E5E5E2]">
               <X size={16} />
             </button>
             
             <div className="text-center mb-6 pt-2">
-              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Pagamento do Sinal</h3>
-              <p className="text-xs font-semibold text-slate-500 mt-2">
-                Atendimento direcionado com: <strong className="text-[#0B1B17]">{vendedor}</strong>
+              <h3 className="text-2xl font-extrabold text-[#141414] tracking-tight">Pagamento do Sinal</h3>
+              <p className="text-xs font-semibold text-[#8A8A85] mt-2">
+                Atendimento direcionado com: <strong className="text-[#141414]">{vendedor}</strong>
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-5 text-center border border-slate-200 mb-6">
-              <span className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">SINAL REQUERIDO</span>
-              <span className="text-3xl font-black text-slate-900">{formatCurrency(sinal)}</span>
+            <div className="bg-[#F4F4F2] rounded-2xl p-5 text-center border border-[#E5E5E2] mb-6">
+              <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-widest mb-1.5">SINAL REQUERIDO</span>
+              <span className="text-3xl font-black text-[#141414]">{formatCurrency(sinal)}</span>
             </div>
 
             {/* Dynamic Simulated Stylized QR Code Component */}
             <div className="flex justify-center mb-6">
-              <div className="bg-white border-2 border-slate-200 p-4 rounded-2xl flex items-center justify-center">
+              <div className="bg-white border-2 border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-center">
                  <svg width="140" height="140" viewBox="0 0 100 100" fill="black" xmlns="http://www.w3.org/2000/svg">
                     {/* Top Left Finder Pattern */}
-                    <rect x="5" y="5" width="25" height="25" fill="#0B1B17"/>
+                    <rect x="5" y="5" width="25" height="25" fill="#141414"/>
                     <rect x="10" y="10" width="15" height="15" fill="white"/>
-                    <rect x="13" y="13" width="9" height="9" fill="#0B1B17"/>
+                    <rect x="13" y="13" width="9" height="9" fill="#141414"/>
                     
                     {/* Top Right Finder Pattern */}
-                    <rect x="70" y="5" width="25" height="25" fill="#0B1B17"/>
+                    <rect x="70" y="5" width="25" height="25" fill="#141414"/>
                     <rect x="75" y="10" width="15" height="15" fill="white"/>
-                    <rect x="78" y="13" width="9" height="9" fill="#0B1B17"/>
+                    <rect x="78" y="13" width="9" height="9" fill="#141414"/>
                     
                     {/* Bottom Left Finder Pattern */}
-                    <rect x="5" y="70" width="25" height="25" fill="#0B1B17"/>
+                    <rect x="5" y="70" width="25" height="25" fill="#141414"/>
                     <rect x="10" y="75" width="15" height="15" fill="white"/>
-                    <rect x="13" y="78" width="9" height="9" fill="#0B1B17"/>
+                    <rect x="13" y="78" width="9" height="9" fill="#141414"/>
                     
                     {/* Mock Randomized Data Blocks */}
-                    <rect x="40" y="10" width="8" height="8" fill="#0B1B17"/>
-                    <rect x="55" y="15" width="6" height="12" fill="#122621"/>
-                    <rect x="42" y="35" width="16" height="10" fill="#0B1B17"/>
-                    <rect x="10" y="45" width="12" height="12" fill="#122621"/>
-                    <rect x="55" y="55" width="10" height="10" fill="#0B1B17"/>
-                    <rect x="75" y="45" width="12" height="6" fill="#122621"/>
-                    <rect x="40" y="75" width="14" height="14" fill="#0B1B17"/>
-                    <rect x="75" y="75" width="15" height="15" fill="#122621"/>
+                    <rect x="40" y="10" width="8" height="8" fill="#141414"/>
+                    <rect x="55" y="15" width="6" height="12" fill="#2A2A26"/>
+                    <rect x="42" y="35" width="16" height="10" fill="#141414"/>
+                    <rect x="10" y="45" width="12" height="12" fill="#2A2A26"/>
+                    <rect x="55" y="55" width="10" height="10" fill="#141414"/>
+                    <rect x="75" y="45" width="12" height="6" fill="#2A2A26"/>
+                    <rect x="40" y="75" width="14" height="14" fill="#141414"/>
+                    <rect x="75" y="75" width="15" height="15" fill="#2A2A26"/>
                  </svg>
               </div>
             </div>
 
             <div className="mb-6">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Pix Copia e Cola</label>
+              <label className="block text-xs font-bold text-[#8A8A85] uppercase tracking-widest mb-3">Pix Copia e Cola</label>
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   readOnly 
                   value={pixHash}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-medium text-slate-700 outline-none truncate"
+                  className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-xs font-medium text-[#5F5F5A] outline-none truncate"
                 />
                 <button 
                   onClick={handleCopy}
-                  className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs rounded-xl px-5 py-3 transition flex items-center gap-1 shrink-0"
+                  className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs rounded-xl px-5 py-3 transition flex items-center gap-1 shrink-0"
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   <span>{copied ? 'Copiado!' : 'Copiar'}</span>
@@ -5835,23 +6247,23 @@ function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
                 showToast('Sinal processado e reserva garantida com sucesso!', 'success');
                 if (onConfirm) onConfirm();
               }}
-              className="w-full bg-white hover:bg-slate-50 text-slate-850 border border-slate-200 font-bold text-xs rounded-xl py-3.5 transition"
+              className="w-full bg-white hover:bg-[#F4F4F2] text-[#2A2A26] border border-[#E5E5E2] font-bold text-xs rounded-xl py-3.5 transition"
             >
               Simular Confirmação de Pagamento PIX
             </button>
           </>
         ) : (
           <div className="text-center py-6">
-            <div className="w-20 h-20 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 size={40} className="text-emerald-600 animate-bounce" />
+            <div className="w-20 h-20 bg-[#C1F11D]/15 border border-[#C1F11D]/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 size={40} className="text-[#141414] animate-bounce" />
             </div>
-            <h3 className="text-3xl font-black mb-3 text-slate-900 tracking-tight">Reserva Confirmada!</h3>
-            <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed px-2">
+            <h3 className="text-3xl font-black mb-3 text-[#141414] tracking-tight">Reserva Confirmada!</h3>
+            <p className="text-sm font-medium text-[#8A8A85] mb-8 leading-relaxed px-2">
               O sinal foi processado com sucesso. O veículo foi travado e retirado da vitrine comercial do showroom para seu fechamento presencial presencial.
             </p>
             <button 
               onClick={onClose}
-              className="bg-[#0B1B17] text-[#F9F9F6] font-bold text-sm rounded-full px-12 py-4 hover:bg-[#122621] transition"
+              className="bg-[#141414] text-[#F4F4F2] font-bold text-sm rounded-full px-12 py-4 hover:bg-[#2A2A26] transition"
             >
               Fechar Painel
             </button>
@@ -5867,10 +6279,10 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   if (reservasUsadas >= totalReservasPlano) {
     return (
       <div className="pt-28 pb-20 px-4 max-w-md mx-auto text-center">
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-          <h2 className="text-xl font-black text-slate-900 mb-2">Limite de Propostas Atingido</h2>
-          <p className="text-slate-500 text-xs mb-6 font-medium">Seu plano atual permite até {totalReservasPlano} propostas ativas em paralelo. Realize o upgrade para continuar cadastrando.</p>
-          <button onClick={() => navigateTo('configuracoes')} className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold py-3.5 rounded-xl transition text-sm">Fazer Upgrade do Plano</button>
+        <div className="bg-white border border-[#E5E5E2] rounded-3xl p-8 shadow-sm">
+          <h2 className="text-xl font-black text-[#141414] mb-2">Limite de Propostas Atingido</h2>
+          <p className="text-[#8A8A85] text-xs mb-6 font-medium">Seu plano atual permite até {totalReservasPlano} propostas ativas em paralelo. Realize o upgrade para continuar cadastrando.</p>
+          <button onClick={() => navigateTo('configuracoes')} className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold py-3.5 rounded-xl transition text-sm">Fazer Upgrade do Plano</button>
         </div>
       </div>
     );
@@ -6159,16 +6571,16 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     navigateTo('preview');
   };
 
-  const inputClass = "w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:border-black transition";
-  const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
+  const inputClass = "w-full bg-[#F4F4F2] border-2 border-[#E5E5E2] rounded-xl px-4 py-3.5 text-sm font-bold text-[#2A2A26] outline-none focus:border-black transition";
+  const labelClass = "block text-xs font-bold uppercase tracking-wider text-[#8A8A85] mb-2";
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-slate-900 pt-28 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-28 pb-20 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
         
         {/* Progress Tracker bar */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-6">
-          <div className="flex justify-between items-center text-xs font-bold mb-4 text-slate-500 uppercase tracking-widest">
+        <div className="bg-white rounded-2xl p-6 border border-[#E5E5E2] shadow-sm mb-6">
+          <div className="flex justify-between items-center text-xs font-bold mb-4 text-[#8A8A85] uppercase tracking-widest">
             <span className="text-xl font-black text-black tracking-tight">Criar Proposta de Reserva</span>
             <span>Fluxo do Cliente</span>
           </div>
@@ -6183,21 +6595,21 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             ].map(s => (
               <div key={s.num} className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white ${step >= s.num ? 'bg-[#0B1B17]' : 'bg-slate-200'}`}>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white ${step >= s.num ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}>
                     {step > s.num ? '✓' : s.num}
                   </span>
-                  <span className="font-bold text-[10px] text-slate-600 hidden md:inline">{s.label}</span>
+                  <span className="font-bold text-[10px] text-[#6F6F6A] hidden md:inline">{s.label}</span>
                 </div>
-                <div className={`h-1 w-full rounded-full ${step >= s.num ? 'bg-[#0B1B17]' : 'bg-slate-200'}`}></div>
+                <div className={`h-1 w-full rounded-full ${step >= s.num ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}></div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-3xl p-6 md:p-10 border border-slate-200 shadow-md min-h-[460px] flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-6 md:p-10 border border-[#E5E5E2] shadow-md min-h-[460px] flex flex-col justify-between relative overflow-hidden">
           {isFipeLoading && marcas.length === 0 && (
-            <div className="absolute inset-0 bg-white/75 backdrop-blur-sm flex items-center justify-center gap-2 text-indigo-600 font-bold z-35">
+            <div className="absolute inset-0 bg-white/75 backdrop-blur-sm flex items-center justify-center gap-2 text-[#141414] font-bold z-35">
               <RefreshCw className="animate-spin" size={20} /> Carregando base FIPE...
             </div>
           )}
@@ -6207,14 +6619,14 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             {step === 1 && (
               <div className="max-w-xl mx-auto w-full text-center py-4">
                 <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Selecione a fipe do veiculo</h2>
-                <p className="text-slate-500 text-xs mb-8 font-medium">Consulte em tempo real as informações oficiais da FIPE para preencher seu anúncio.</p>
+                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Consulte em tempo real as informações oficiais da FIPE para preencher seu anúncio.</p>
                 
                 <div className="text-left space-y-4">
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Marca</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8A85]">Marca</label>
                       {isFipeLoading && marcas.length === 0 && (
-                        <span className="text-[10px] text-[#0B1B17] font-bold flex items-center gap-1">
+                        <span className="text-[10px] text-[#141414] font-bold flex items-center gap-1">
                           <RefreshCw size={10} className="animate-spin" /> Carregando marcas...
                         </span>
                       )}
@@ -6226,9 +6638,9 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Modelo</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8A85]">Modelo</label>
                       {isModelosLoading && (
-                        <span className="text-[10px] text-[#0B1B17] font-bold flex items-center gap-1">
+                        <span className="text-[10px] text-[#141414] font-bold flex items-center gap-1">
                           <RefreshCw size={10} className="animate-spin" /> Carregando modelos...
                         </span>
                       )}
@@ -6240,14 +6652,14 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Ano / Versão</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#8A8A85]">Ano / Versão</label>
                       {isAnosLoading && (
-                        <span className="text-[10px] text-[#0B1B17] font-bold flex items-center gap-1">
+                        <span className="text-[10px] text-[#141414] font-bold flex items-center gap-1">
                           <RefreshCw size={10} className="animate-spin" /> Carregando versões...
                         </span>
                       )}
                       {isPrecoLoading && (
-                        <span className="text-[10px] text-[#0B1B17] font-bold flex items-center gap-1">
+                        <span className="text-[10px] text-[#141414] font-bold flex items-center gap-1">
                           <RefreshCw size={10} className="animate-spin" /> Buscando preço...
                         </span>
                       )}
@@ -6265,7 +6677,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             {step === 2 && (
               <div className="max-w-xl mx-auto w-full py-4 text-left">
                 <h2 className="text-2xl font-black text-black mb-2 text-center tracking-tight">Qual o preço e quilometragem do veículo?</h2>
-                <p className="text-slate-500 text-xs mb-8 text-center font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
+                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-4">
@@ -6337,7 +6749,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <label className={labelClass}>Expiração da reserva *</label>
-                        <span className="text-[10px] font-black text-[#0B1B17] bg-[#C1F651]/20 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-black text-[#141414] bg-[#C1F11D]/20 px-2 py-0.5 rounded-md">
                           {formatExpiracaoLabel(expiracao)}
                         </span>
                       </div>
@@ -6349,9 +6761,9 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                           step="15" 
                           value={expiracao} 
                           onChange={(e) => setExpiracao(Number(e.target.value))} 
-                          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0B1B17] focus:outline-none"
+                          className="w-full h-2 bg-[#E5E5E2] rounded-lg appearance-none cursor-pointer accent-[#141414] focus:outline-none"
                         />
-                        <div className="flex justify-between text-[9px] text-slate-400 font-bold px-1 mt-2 select-none">
+                        <div className="flex justify-between text-[9px] text-[#B9B9B4] font-bold px-1 mt-2 select-none">
                           <span>15m</span>
                           <span>1h</span>
                           <span>2h</span>
@@ -6365,14 +6777,14 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   </div>
 
                   {/* Resumo financeiro limpo */}
-                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
-                    <div className="flex justify-between items-center text-xs font-semibold text-slate-600">
+                  <div className="bg-[#F4F4F2] p-6 rounded-2xl border border-[#E5E5E2] space-y-4">
+                    <div className="flex justify-between items-center text-xs font-semibold text-[#6F6F6A]">
                       <span>Preço FIPE Lido</span>
                       <span className="font-bold text-black font-mono">{formatCurrency(vehicleData.fipePrice || 0)}</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-slate-200 pt-3 text-xs font-semibold text-slate-600">
+                    <div className="flex justify-between items-center border-t border-[#E5E5E2] pt-3 text-xs font-semibold text-[#6F6F6A]">
                       <span>Preço do Veículo Escolhido</span>
-                      <span className="font-black text-[#0B1B17] text-sm font-mono">{formatCurrency(parseFloat(vehicleData.price) || 0)}</span>
+                      <span className="font-black text-[#141414] text-sm font-mono">{formatCurrency(parseFloat(vehicleData.price) || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -6383,7 +6795,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             {step === 3 && (
               <div className="max-w-3xl mx-auto w-full text-center py-4">
                 <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Informe os opcionais do seu veículo</h2>
-                <p className="text-slate-500 text-xs mb-8 font-medium">Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.</p>
+                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.</p>
                 
                 <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl mx-auto">
                   {[...opcionaisPool, ...customOpcionais].map((opc, idx) => {
@@ -6395,8 +6807,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         onClick={() => handleToggleOpcional(opc)}
                         className={`px-4 py-2.5 rounded-full text-xs font-bold border-2 transition-all flex items-center gap-1.5 ${
                           isSelected 
-                            ? 'bg-slate-800 border-slate-800 text-white' 
-                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-slate-50'
+                            ? 'bg-[#2A2A26] border-[#2A2A26] text-white' 
+                            : 'bg-white border-[#E5E5E2] text-[#6F6F6A] hover:border-[#B9B9B4] hover:bg-[#F4F4F2]'
                         }`}
                       >
                         <span>{opc}</span>
@@ -6413,7 +6825,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     value={newOpcional}
                     onChange={(e) => setNewOpcional(e.target.value)}
                     placeholder="Ex: Teto solar panorâmico"
-                    className="max-w-xs bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#0B1B17] transition"
+                    className="max-w-xs bg-white border border-[#E5E5E2] rounded-xl px-4 py-2.5 text-xs font-bold text-[#2A2A26] outline-none focus:border-[#141414] transition"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -6424,7 +6836,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <button
                     type="button"
                     onClick={handleAddCustomOpcional}
-                    className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] text-xs font-bold px-4 py-2.5 rounded-xl transition uppercase tracking-wider"
+                    className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] text-xs font-bold px-4 py-2.5 rounded-xl transition uppercase tracking-wider"
                   >
                     + Adicionar
                   </button>
@@ -6436,46 +6848,46 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             {step === 4 && (
               <div className="max-w-2xl mx-auto w-full text-center py-4">
                 <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Adicione as fotos do veículo</h2>
-                <p className="text-slate-500 text-xs mb-8 font-medium">Boas fotos aumentam as chances de reserva em até 70%.</p>
+                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Boas fotos aumentam as chances de reserva em até 70%.</p>
                 
-                <div className="border-2 border-dashed border-slate-350 rounded-3xl p-6 hover:border-black transition bg-slate-50 cursor-pointer flex flex-col items-center">
-                  <UploadCloud className="text-slate-450 mb-2" size={32} />
-                  <span className="font-bold text-xs text-slate-800">Carregar fotos do veículo</span>
-                  <span className="text-[10px] text-slate-400 mt-1">Formatos suportados: PNG, JPG, JPEG</span>
+                <div className="border-2 border-dashed border-[#D9D9D5] rounded-3xl p-6 hover:border-black transition bg-[#F4F4F2] cursor-pointer flex flex-col items-center">
+                  <UploadCloud className="text-[#B9B9B4] mb-2" size={32} />
+                  <span className="font-bold text-xs text-[#2A2A26]">Carregar fotos do veículo</span>
+                  <span className="text-[10px] text-[#B9B9B4] mt-1">Formatos suportados: PNG, JPG, JPEG</span>
                   
                   <div className="mt-4 flex flex-wrap gap-2 justify-center">
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                      className="bg-white border border-[#D9D9D5] hover:border-[#B9B9B4] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition"
                     >
                       + FRENTE+
                     </button>
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                      className="bg-white border border-[#D9D9D5] hover:border-[#B9B9B4] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition"
                     >
                       + Traseira
                     </button>
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                      className="bg-white border border-[#D9D9D5] hover:border-[#B9B9B4] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition"
                     >
                       + Interior +
                     </button>
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                      className="bg-white border border-[#D9D9D5] hover:border-[#B9B9B4] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition"
                     >
                       + Lateral +
                     </button>
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80')}
-                      className="bg-white border border-slate-300 hover:border-slate-400 text-[10px] font-black px-3 py-1.5 rounded-xl text-slate-700 transition"
+                      className="bg-white border border-[#D9D9D5] hover:border-[#B9B9B4] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition"
                     >
                       + Frente Extra +
                     </button>
@@ -6485,7 +6897,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                 {vehicleData.photos.length > 0 && (
                   <div className="grid grid-cols-4 gap-2.5 max-w-md mx-auto mt-6">
                     {vehicleData.photos.map((url, i) => (
-                      <div key={i} className="relative h-16 rounded-xl overflow-hidden border border-slate-200 group">
+                      <div key={i} className="relative h-16 rounded-xl overflow-hidden border border-[#E5E5E2] group">
                         <img src={url} className="w-full h-full object-cover" />
                         <button 
                           type="button" 
@@ -6505,7 +6917,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             {step === 5 && (
               <div className="max-w-xl mx-auto w-full text-left py-4">
                 <h2 className="text-2xl font-black text-black mb-2 text-center tracking-tight">Dados do Lead</h2>
-                <p className="text-slate-500 text-xs mb-8 text-center font-medium">Informe os dados do lead para quem você enviará este link de reserva e sinal.</p>
+                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe os dados do lead para quem você enviará este link de reserva e sinal.</p>
                 
                 <div className="space-y-4">
                   <div>
@@ -6554,7 +6966,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
           </div>
 
           {/* Footer Action buttons */}
-          <div className="flex justify-between items-center border-t border-slate-200 pt-6 mt-8">
+          <div className="flex justify-between items-center border-t border-[#E5E5E2] pt-6 mt-8">
             <button
               type="button"
               onClick={() => {
@@ -6564,7 +6976,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   setStep(prev => prev - 1);
                 }
               }}
-              className="flex items-center gap-1 text-slate-500 hover:text-black font-bold text-xs transition uppercase tracking-wider"
+              className="flex items-center gap-1 text-[#8A8A85] hover:text-black font-bold text-xs transition uppercase tracking-wider"
             >
               <ChevronLeft size={14} /> Voltar
             </button>
@@ -6598,7 +7010,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   }
                   setStep(prev => prev + 1);
                 }}
-                className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
               >
                 Continuar <ChevronRight size={14} />
               </button>
@@ -6606,7 +7018,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
               <button
                 type="button"
                 onClick={handlePreviewRedirect}
-                className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
               >
                 Visualizar Link de Reserva <ChevronRight size={14} />
               </button>
@@ -6619,15 +7031,187 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   );
 }
 
+// --- NEW COMPONENT: PRICING VIEW (página de planos estilo SaaS) ---
+function PricingView({ navigateTo, setPlanoSelecionado }) {
+  const [ciclo, setCiclo] = useState<'mensal' | 'anual'>('mensal');
+  const [activeFaq, setActiveFaq] = useState<number | null>(0);
+
+  const precoMes = (p) => ciclo === 'mensal' ? p.precoMensal : p.precoAnual / 12;
+  const escolher = (id) => { setPlanoSelecionado(id); navigateTo('assinar'); };
+
+  const Cel = ({ on, children }: any) => (
+    children !== undefined
+      ? <span className="font-bold text-[#141414]">{children}</span>
+      : (on ? <Check size={16} className="text-[#141414] mx-auto" strokeWidth={3} /> : <span className="text-[#D9D9D5]">—</span>)
+  );
+
+  const linhas = [
+    { label: 'Links de reserva ativos', val: (p) => p.limite },
+    { label: 'Vendedores', val: (p) => p.vendedores },
+    { label: 'Painel ao vivo', val: () => true },
+    { label: 'Busca FIPE automática', val: () => true },
+    { label: 'Pix direto na conta', val: () => true },
+    { label: 'Relatórios avançados', val: (p) => p.relatorios },
+    { label: 'Suporte', val: (p) => p.suporte },
+  ];
+
+  const faqs = [
+    { q: 'Tem fidelidade ou multa?', a: 'Não. Você pode cancelar a assinatura quando quiser, sem multa. O acesso permanece ativo até o fim do ciclo já pago.' },
+    { q: 'Como funciona o plano anual?', a: 'No ciclo anual você paga 10 meses e ganha 2 meses grátis. O valor é cobrado uma vez por ano, e exibimos o equivalente por mês para facilitar a comparação.' },
+    { q: 'Posso trocar de plano depois?', a: 'Sim. Pelo painel de Configurações você faz upgrade ou downgrade a qualquer momento; o novo limite de links passa a valer imediatamente.' },
+    { q: 'Há taxa por reserva ou comissão?', a: 'Não cobramos comissão sobre reservas. Você paga apenas a assinatura fixa, e o sinal via Pix cai direto na conta da sua loja.' },
+  ];
+
+  return (
+    <div className="bg-[#F4F4F2] text-[#141414] min-h-screen antialiased">
+      <SiteHeader navigateTo={navigateTo} activePage="pricing" />
+
+      {/* HERO + TOGGLE */}
+      <section className="bg-[#141414] text-white pt-40 md:pt-48 pb-36 text-center relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#C1F11D]/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="max-w-3xl mx-auto px-6 space-y-6 relative z-10">
+          <div className="inline-flex items-center gap-2 bg-[#C1F11D]/20 text-[#C1F11D] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">Preços</div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">Planos que cabem no seu <span className="text-[#C1F11D]">showroom</span></h1>
+          <p className="text-[#B9B9B4] text-lg leading-relaxed max-w-xl mx-auto">Assinatura fixa, sem comissão por reserva. Escolha o número de propostas ativas que sua equipe gerencia em paralelo.</p>
+          {/* Toggle */}
+          <div className="inline-flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-full">
+            <button onClick={() => setCiclo('mensal')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${ciclo === 'mensal' ? 'bg-[#C1F11D] text-[#141414]' : 'text-white/70 hover:text-white'}`}>Mensal</button>
+            <button onClick={() => setCiclo('anual')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${ciclo === 'anual' ? 'bg-[#C1F11D] text-[#141414]' : 'text-white/70 hover:text-white'}`}>
+              Anual
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${ciclo === 'anual' ? 'bg-[#141414] text-[#C1F11D]' : 'bg-[#C1F11D]/20 text-[#C1F11D]'}`}>2 meses grátis</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 CARDS */}
+      <section className="px-6 -mt-24 relative z-10">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6 items-start">
+          {PLANOS_ORDEM.map((id) => {
+            const p = PLANOS[id];
+            return (
+              <div key={id} className={`relative bg-white rounded-[24px] p-7 border-2 flex flex-col h-full ${p.destaque ? 'border-[#141414] ring-2 ring-[#C1F11D] shadow-[0_30px_60px_-20px_rgba(20,20,20,0.25)] md:-mt-4' : 'border-[rgba(20,20,20,0.08)] shadow-[0_20px_40px_-15px_rgba(20,20,20,0.1)]'}`}>
+                {p.destaque && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#C1F11D] text-[#141414] text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Mais Popular</span>
+                )}
+                <span className="text-[10px] font-bold text-[#8A8A85] uppercase tracking-widest">{p.tag}</span>
+                <h3 className="text-2xl font-black text-[#141414] mt-1">{p.nome}</h3>
+                <div className="mt-4 mb-1">
+                  <span className="text-4xl font-black text-[#141414]">{formatBRL(precoMes(p))}</span>
+                  <span className="text-sm font-bold text-[#B9B9B4]">/mês</span>
+                </div>
+                <p className="text-[11px] text-[#8A8A85] font-semibold h-4">
+                  {ciclo === 'anual' ? `${formatBRL(p.precoAnual)} cobrado anualmente` : 'Cobrado mensalmente'}
+                </p>
+                <button
+                  onClick={() => escolher(id)}
+                  className={`mt-6 w-full font-bold text-sm py-3.5 rounded-full transition-all duration-300 ${p.destaque ? 'bg-[#141414] text-[#F4F4F2] hover:bg-[#C1F11D] hover:text-[#141414]' : 'bg-[#C1F11D] text-[#141414] hover:bg-[#141414] hover:text-[#F4F4F2]'}`}
+                >
+                  Assinar {p.nome}
+                </button>
+                <ul className="mt-7 space-y-3 border-t border-[rgba(20,20,20,0.08)] pt-6">
+                  {p.recursos.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm">
+                      <CheckCircle2 size={18} className="text-[#141414] shrink-0 mt-0.5" />
+                      <span className="text-[#8A8A85] font-medium leading-snug">{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* FAIXA DE CONFIANÇA */}
+      <section className="py-12 text-center px-6">
+        <p className="text-sm font-bold text-[#8A8A85]">Sem comissão por reserva &nbsp;·&nbsp; Pix direto na sua conta &nbsp;·&nbsp; Cancele quando quiser</p>
+      </section>
+
+      {/* TABELA COMPARATIVA */}
+      <section className="pb-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-center mb-10">Compare os planos</h2>
+          <div className="overflow-x-auto rounded-[20px] border border-[rgba(20,20,20,0.08)] bg-white shadow-[0_20px_40px_-15px_rgba(20,20,20,0.06)]">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="border-b border-[rgba(20,20,20,0.08)]">
+                  <th className="text-left font-extrabold text-[#141414] p-5">Recurso</th>
+                  {PLANOS_ORDEM.map((id) => (
+                    <th key={id} className={`text-center font-black p-5 ${PLANOS[id].destaque ? 'bg-[#C1F11D]/15 text-[#141414]' : 'text-[#141414]'}`}>{PLANOS[id].nome}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {linhas.map((ln, i) => (
+                  <tr key={i} className="border-b border-[rgba(20,20,20,0.05)] last:border-0">
+                    <td className="text-left font-semibold text-[#8A8A85] p-5">{ln.label}</td>
+                    {PLANOS_ORDEM.map((id) => {
+                      const v = ln.val(PLANOS[id]);
+                      return (
+                        <td key={id} className={`text-center p-5 ${PLANOS[id].destaque ? 'bg-[#C1F11D]/10' : ''}`}>
+                          {typeof v === 'boolean' ? <Cel on={v} /> : <Cel>{v}</Cel>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="pb-20 px-6">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-center mb-10">Dúvidas sobre cobrança</h2>
+          <div className="space-y-4">
+            {faqs.map((f, i) => (
+              <div key={i} className="bg-white rounded-[20px] border border-[rgba(20,20,20,0.05)] overflow-hidden shadow-sm">
+                <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} className="w-full text-left p-6 flex justify-between items-center gap-4 cursor-pointer">
+                  <span className="font-bold text-base text-[#141414] leading-snug">{f.q}</span>
+                  <span className="text-2xl font-light text-[#141414] shrink-0">{activeFaq === i ? '−' : '+'}</span>
+                </button>
+                <div className={`grid transition-all duration-300 ease-in-out ${activeFaq === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <p className="px-6 pb-6 text-sm text-[#8A8A85] leading-relaxed">{f.a}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="bg-[#141414] text-white py-20 text-center px-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight">Pronto para vender com garantia de sinal?</h2>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onClick={() => navigateTo('assinar')} className="w-full sm:w-auto bg-[#C1F11D] text-[#141414] font-bold px-8 py-4 rounded-full hover:bg-white transition-all duration-300">Assinar Reservacar</button>
+            <button onClick={() => navigateTo('empresa')} className="w-full sm:w-auto border border-white/20 text-white hover:bg-white/5 font-bold px-8 py-4 rounded-full transition-all duration-300">Falar com a equipe</button>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="bg-[#141414] text-[#8A8A85] border-t border-white/10 py-8 text-center text-xs">
+        <p>© 2026 Reservacar Ltda. Todos os direitos reservados.</p>
+      </footer>
+    </div>
+  );
+}
+
 // --- NEW COMPONENT: WIZARD FLOW "ASSINATURA CONCESSIONÁRIA" ---
-function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, setReservasUsadas, setEmpresaLogada }) {
+function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, setReservasUsadas, setEmpresaLogada, planoSelecionado }) {
   const [step, setStep] = useState(1);
   const [empresaData, setEmpresaData] = useState<any>({
     nome: '',
     cnpj: '',
     email: '',
     telefone: '',
-    plano: 'Plus', // 'Basic', 'Plus', 'Premium'
+    plano: PLANOS[planoSelecionado] ? planoSelecionado : 'Plus', // pré-seleção vinda da Pricing
     paymentMethod: 'credit_card',
     couponCode: '',
     discountApplied: false,
@@ -6651,9 +7235,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
   };
 
   const getPlanPrice = () => {
-    let basePrice = 239.90;
-    if (empresaData.plano === 'Basic') basePrice = 159.90;
-    if (empresaData.plano === 'Premium') basePrice = 349.90;
+    const basePrice = (PLANOS[empresaData.plano] || PLANOS.Plus).precoMensal;
     return empresaData.discountApplied ? basePrice * 0.85 : basePrice;
   };
 
@@ -6666,11 +7248,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
     }
   };
 
-  const getPlanCredits = () => {
-    if (empresaData.plano === 'Basic') return 10;
-    if (empresaData.plano === 'Premium') return 50;
-    return 30; // Plus
-  };
+  const getPlanCredits = () => (PLANOS[empresaData.plano] || PLANOS.Plus).limite;
 
   const handleToggleRamo = (ramo) => {
     const isSelected = empresaData.ramos.includes(ramo);
@@ -6733,20 +7311,20 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
       ]
     });
     showToast(`Assinatura realizada com sucesso! Você contratou o Plano ${empresaData.plano} com ${credits} créditos.`, 'success');
-    navigateTo('hub');
+    navigateTo('sales-stats');
   };
 
-  const inputClass = "w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-800 outline-none focus:border-slate-900 transition";
-  const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
+  const inputClass = "w-full bg-white border-2 border-[rgba(20,20,20,0.1)] rounded-xl px-4 py-3.5 text-sm font-bold text-[#141414] outline-none focus:border-[#141414] transition";
+  const labelClass = "block text-xs font-bold uppercase tracking-wider text-[#8A8A85] mb-2";
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-slate-900 pt-28 pb-20 px-4 md:px-8 relative">
-      
+    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-28 pb-20 px-4 md:px-8 relative">
+
       <div className="max-w-4xl mx-auto">
         {/* Progress Tracker bar */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6">
-          <div className="flex justify-between items-center text-xs font-bold mb-4 text-slate-500 uppercase tracking-widest">
-            <span className="text-xl font-black text-slate-900 tracking-tight">Assinar Reservacar</span>
+        <div className="bg-white border border-[rgba(20,20,20,0.08)] rounded-[24px] p-6 shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)] mb-6">
+          <div className="flex justify-between items-center text-xs font-bold mb-4 text-[#8A8A85] uppercase tracking-widest">
+            <span className="text-xl font-black text-[#141414] tracking-tight">Assinar Reservacar</span>
             <span>Cadastro Lojista</span>
           </div>
           
@@ -6759,26 +7337,26 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
             ].map(s => (
               <div key={s.num} className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white ${step >= s.num ? 'bg-[#0B1B17]' : 'bg-slate-200'}`}>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white ${step >= s.num ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}>
                     {step > s.num ? '✓' : s.num}
                   </span>
-                  <span className="font-bold text-[10px] text-slate-500 hidden md:inline">{s.label}</span>
+                  <span className="font-bold text-[10px] text-[#8A8A85] hidden md:inline">{s.label}</span>
                 </div>
-                <div className={`h-1 w-full rounded-full ${step >= s.num ? 'bg-[#0B1B17]' : 'bg-slate-200'}`}></div>
+                <div className={`h-1 w-full rounded-full ${step >= s.num ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}></div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Main Content Box */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-10 min-h-[480px] flex flex-col justify-between">
+        <div className="bg-white border border-[rgba(20,20,20,0.08)] rounded-[28px] p-6 md:p-10 min-h-[480px] flex flex-col justify-between shadow-[0_20px_40px_-15px_rgba(20,20,20,0.06)]">
           
           <div>
             {/* STEP 1: IDENTIFICACAO */}
             {step === 1 && (
               <div className="max-w-xl mx-auto w-full py-4 text-left">
-                <h2 className="text-2xl font-black text-slate-900 mb-2 text-center tracking-tight">Identificação Corporativa</h2>
-                <p className="text-slate-500 text-xs mb-8 text-center font-medium">Informe os dados da sua empresa ou concessionária para cadastro.</p>
+                <h2 className="text-2xl font-black text-[#141414] mb-2 text-center tracking-tight">Identificação Corporativa</h2>
+                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe os dados da sua empresa ou concessionária para cadastro.</p>
 
                 <div className="space-y-4">
                   <div>
@@ -6806,8 +7384,8 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
             {/* STEP 2: DADOS OPERACIONAIS (NOVO) */}
             {step === 2 && (
               <div className="max-w-2xl mx-auto w-full py-4 text-left">
-                <h2 className="text-2xl font-black text-slate-900 mb-2 text-center tracking-tight">Dados Operacionais e Showroom</h2>
-                <p className="text-slate-500 text-xs mb-8 text-center font-medium">Configure as informações operacionais essenciais da sua loja.</p>
+                <h2 className="text-2xl font-black text-[#141414] mb-2 text-center tracking-tight">Dados Operacionais e Showroom</h2>
+                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Configure as informações operacionais essenciais da sua loja.</p>
 
                 <div className="space-y-6">
                   {/* Endereço e CEP */}
@@ -6824,11 +7402,11 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
 
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Endereço de Cobrança</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#8A8A85]">Endereço de Cobrança</label>
                       <button 
                         type="button" 
                         onClick={() => setEmpresaData(prev => ({ ...prev, enderecoCobranca: prev.endereco }))}
-                        className="text-[10px] font-bold text-[#0B1B17] hover:underline"
+                        className="text-[10px] font-bold text-[#141414] hover:underline"
                       >
                         Copiar Comercial
                       </button>
@@ -6850,8 +7428,8 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                               onClick={() => handleToggleRamo(r)}
                               className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${
                                 isSelected 
-                                  ? 'bg-[#0B1B17] text-[#F9F9F6] border-[#0B1B17] shadow-sm' 
-                                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                                  ? 'bg-[#141414] text-[#F4F4F2] border-[#141414] shadow-sm' 
+                                  : 'bg-white text-[#6F6F6A] border-[#E5E5E2] hover:border-[#B9B9B4]'
                               }`}
                             >
                               {r}
@@ -6867,8 +7445,8 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                   </div>
 
                   {/* Cadastrar Vendedores Iniciais */}
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-6 mt-4">
-                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Vendedores do Showroom</h3>
+                  <div className="bg-[#F4F4F2] border border-[#EBEBE8] rounded-2xl p-4 md:p-6 mt-4">
+                    <h3 className="text-xs font-bold text-[#5F5F5A] uppercase tracking-wider mb-3">Vendedores do Showroom</h3>
                     
                     <div className="flex flex-col md:flex-row gap-3 mb-4">
                       <div className="flex-1">
@@ -6877,14 +7455,14 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                           placeholder="Nome do Vendedor" 
                           value={novoVendedorNome} 
                           onChange={(e) => setNovoVendedorNome(e.target.value)} 
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none"
+                          className="w-full bg-white border border-[#E5E5E2] rounded-xl px-3 py-2.5 text-xs font-bold text-[#2A2A26] outline-none"
                         />
                       </div>
                       <div className="w-full md:w-48">
                         <select 
                           value={novoVendedorCargo} 
                           onChange={(e) => setNovoVendedorCargo(e.target.value)} 
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-850 outline-none"
+                          className="w-full bg-white border border-[#E5E5E2] rounded-xl px-3 py-2.5 text-xs font-bold text-[#2A2A26] outline-none"
                         >
                           <option value="Consultor de Vendas">Consultor de Vendas</option>
                           <option value="Consultor Premium">Consultor Premium</option>
@@ -6895,7 +7473,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                       <button 
                         type="button" 
                         onClick={handleAddVendedor}
-                        className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-4 py-2.5 rounded-xl transition"
+                        className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-4 py-2.5 rounded-xl transition"
                       >
                         + Adicionar
                       </button>
@@ -6904,10 +7482,10 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                     {empresaData.vendedores.length > 0 ? (
                       <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                         {empresaData.vendedores.map((v) => (
-                          <div key={v.id} className="flex justify-between items-center bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold">
+                          <div key={v.id} className="flex justify-between items-center bg-white border border-[#E5E5E2] px-3 py-2.5 rounded-xl text-xs font-bold">
                             <div>
-                              <span className="text-slate-800">{v.nome}</span>
-                              <span className="bg-slate-100 text-slate-500 text-[9px] px-2 py-0.5 rounded-full ml-2 uppercase">{v.cargo}</span>
+                              <span className="text-[#2A2A26]">{v.nome}</span>
+                              <span className="bg-[#EBEBE8] text-[#8A8A85] text-[9px] px-2 py-0.5 rounded-full ml-2 uppercase">{v.cargo}</span>
                             </div>
                             <button 
                               type="button" 
@@ -6920,7 +7498,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-400 font-medium italic">Nenhum vendedor cadastrado ainda. O sistema carregará os 3 vendedores padrão como demonstração caso prossiga em branco.</p>
+                      <p className="text-[11px] text-[#B9B9B4] font-medium italic">Nenhum vendedor cadastrado ainda. O sistema carregará os 3 vendedores padrão como demonstração caso prossiga em branco.</p>
                     )}
                   </div>
                 </div>
@@ -6930,52 +7508,39 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
             {/* STEP 3: ESCOLHA DO PLANO */}
             {step === 3 && (
               <div className="w-full py-4 text-center">
-                <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Escolha o plano de créditos ideal para sua concessionária</h2>
-                <p className="text-slate-500 text-xs mb-8 font-medium">Selecione a quantidade de propostas ativas que deseja gerenciar em paralelo.</p>
+                <h2 className="text-2xl font-black text-[#141414] mb-2 tracking-tight">Escolha o plano de créditos ideal para sua concessionária</h2>
+                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Selecione a quantidade de propostas ativas que deseja gerenciar em paralelo.</p>
 
                 <div className="grid md:grid-cols-3 gap-5 max-w-3xl mx-auto">
-                  {/* Basic */}
-                  <div 
-                    onClick={() => setEmpresaData(prev => ({ ...prev, plano: 'Basic' }))}
-                    className={`bg-white border-2 rounded-2xl p-5 text-left cursor-pointer transition-all flex flex-col justify-between h-56 ${empresaData.plano === 'Basic' ? 'border-[#0B1B17]' : 'border-slate-200 opacity-60 hover:opacity-100'}`}
-                  >
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">PLANO BASICO</span>
-                      <h4 className="text-xl font-black text-slate-900 mt-1">Basic</h4>
-                      <p className="text-2xl font-black text-slate-900 mt-3">R$ 159,90</p>
-                      <p className="text-[10px] text-slate-500 font-bold">10 links de reserva ativos</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400">Recomendado para pequenas lojas</span>
-                  </div>
-
-                  {/* Plus */}
-                  <div 
-                    onClick={() => setEmpresaData(prev => ({ ...prev, plano: 'Plus' }))}
-                    className={`bg-white border-2 rounded-2xl p-5 text-left cursor-pointer transition-all flex flex-col justify-between h-56 relative ${empresaData.plano === 'Plus' ? 'border-[#0B1B17]' : 'border-slate-200 opacity-60 hover:opacity-100'}`}
-                  >
-                    <span className="absolute -top-2.5 right-4 bg-[#0B1B17] text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Mais Popular</span>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">PLANO RECOMENDADO</span>
-                      <h4 className="text-xl font-black text-slate-900 mt-1">Plus</h4>
-                      <p className="text-2xl font-black text-slate-900 mt-3">R$ 239,90</p>
-                      <p className="text-[10px] text-slate-500 font-bold">30 links de reserva ativos</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400">Melhor custo benefício</span>
-                  </div>
-
-                  {/* Premium */}
-                  <div 
-                    onClick={() => setEmpresaData(prev => ({ ...prev, plano: 'Premium' }))}
-                    className={`bg-white border-2 rounded-2xl p-5 text-left cursor-pointer transition-all flex flex-col justify-between h-56 ${empresaData.plano === 'Premium' ? 'border-[#0B1B17]' : 'border-slate-200 opacity-60 hover:opacity-100'}`}
-                  >
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">PLANO CORPORATIVO</span>
-                      <h4 className="text-xl font-black text-slate-900 mt-1">Premium</h4>
-                      <p className="text-2xl font-black text-slate-900 mt-3">R$ 349,90</p>
-                      <p className="text-[10px] text-slate-500 font-bold">50 links de reserva ativos</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400">Exposição máxima do showroom</span>
-                  </div>
+                  {PLANOS_ORDEM.map((id) => {
+                    const p = PLANOS[id];
+                    const selected = empresaData.plano === id;
+                    return (
+                      <div
+                        key={id}
+                        onClick={() => setEmpresaData(prev => ({ ...prev, plano: id }))}
+                        className={`relative rounded-[20px] p-5 text-left cursor-pointer transition-all flex flex-col justify-between h-56 border-2 ${
+                          selected
+                            ? 'border-[#141414] bg-[#C1F11D]/10 ring-2 ring-[#C1F11D] shadow-[0_16px_32px_-12px_rgba(20,20,20,0.12)]'
+                            : 'border-[rgba(20,20,20,0.12)] bg-white opacity-70 hover:opacity-100 hover:border-[rgba(20,20,20,0.3)]'
+                        }`}
+                      >
+                        {p.destaque && (
+                          <span className="absolute -top-2.5 right-4 bg-[#C1F11D] text-[#141414] text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Mais Popular</span>
+                        )}
+                        <div>
+                          <span className="text-[9px] font-bold text-[#8A8A85] uppercase tracking-widest">{p.tag}</span>
+                          <h4 className="text-xl font-black text-[#141414] mt-1">{p.nome}</h4>
+                          <p className="text-2xl font-black text-[#141414] mt-3">{formatBRL(p.precoMensal)}<span className="text-xs font-bold text-[#B9B9B4]">/mês</span></p>
+                          <p className="text-[10px] text-[#8A8A85] font-bold">{p.limite} links de reserva ativos</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {selected && <CheckCircle2 size={14} className="text-[#141414] shrink-0" />}
+                          <span className="text-[10px] font-bold text-[#B9B9B4]">{p.nota}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -6983,43 +7548,43 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
             {/* STEP 4: CHECKOUT PAGAMENTO */}
             {step === 4 && (
               <div className="max-w-2xl mx-auto w-full py-4">
-                <h2 className="text-2xl font-black text-slate-900 text-center mb-6 tracking-tight">Forma de Pagamento da Assinatura</h2>
+                <h2 className="text-2xl font-black text-[#141414] text-center mb-6 tracking-tight">Forma de Pagamento da Assinatura</h2>
                 
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 space-y-4 text-left">
                     <div 
                       onClick={() => setEmpresaData(prev => ({ ...prev, paymentMethod: 'credit_card' }))}
-                      className={`bg-slate-50 border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all ${empresaData.paymentMethod === 'credit_card' ? 'border-[#0B1B17] bg-white' : 'border-slate-200'}`}
+                      className={`bg-[#F4F4F2] border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all ${empresaData.paymentMethod === 'credit_card' ? 'border-[#141414] bg-white' : 'border-[#E5E5E2]'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <input type="radio" checked={empresaData.paymentMethod === 'credit_card'} onChange={() => {}} className="accent-[#0B1B17] w-4 h-4" />
+                        <input type="radio" checked={empresaData.paymentMethod === 'credit_card'} onChange={() => {}} className="accent-[#141414] w-4 h-4" />
                         <div>
-                          <h4 className="font-extrabold text-xs text-slate-900">Cartão de Crédito</h4>
-                          <p className="text-[10px] text-slate-500">Liberação instantânea dos créditos</p>
+                          <h4 className="font-extrabold text-xs text-[#141414]">Cartão de Crédito</h4>
+                          <p className="text-[10px] text-[#8A8A85]">Liberação instantânea dos créditos</p>
                         </div>
                       </div>
-                      <CreditCard className="text-slate-500" size={20} />
+                      <CreditCard className="text-[#8A8A85]" size={20} />
                     </div>
 
                     <div 
                       onClick={() => setEmpresaData(prev => ({ ...prev, paymentMethod: 'pix' }))}
-                      className={`bg-slate-50 border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all ${empresaData.paymentMethod === 'pix' ? 'border-[#0B1B17] bg-white' : 'border-slate-200'}`}
+                      className={`bg-[#F4F4F2] border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all ${empresaData.paymentMethod === 'pix' ? 'border-[#141414] bg-white' : 'border-[#E5E5E2]'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <input type="radio" checked={empresaData.paymentMethod === 'pix'} onChange={() => {}} className="accent-[#0B1B17] w-4 h-4" />
+                        <input type="radio" checked={empresaData.paymentMethod === 'pix'} onChange={() => {}} className="accent-[#141414] w-4 h-4" />
                         <div className="flex items-center gap-1.5">
                           <div>
-                            <h4 className="font-extrabold text-xs text-slate-900">Pix</h4>
-                            <p className="text-[10px] text-slate-500">Aprovação em segundos</p>
+                            <h4 className="font-extrabold text-xs text-[#141414]">Pix</h4>
+                            <p className="text-[10px] text-[#8A8A85]">Aprovação em segundos</p>
                           </div>
-                          <span className="bg-emerald-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0 self-start">5% OFF</span>
+                          <span className="bg-[#141414] text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0 self-start">5% OFF</span>
                         </div>
                       </div>
-                      <DollarSign className="text-slate-500" size={20} />
+                      <DollarSign className="text-[#8A8A85]" size={20} />
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Possui cupom de desconto?</label>
+                    <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8A8A85] mb-1.5">Possui cupom de desconto?</label>
                       <div className="flex gap-2">
                         <input 
                           type="text" 
@@ -7027,41 +7592,41 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                           value={empresaData.couponCode}
                           onChange={handleInputChange}
                           placeholder="DIGITE O CUPOM"
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none uppercase"
+                          className="w-full bg-white border border-[#E5E5E2] rounded-xl px-3 py-2 text-xs font-bold text-[#2A2A26] outline-none uppercase"
                         />
                         <button 
                           type="button" 
                           onClick={applyCoupon}
-                          className="bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs px-4 py-2 rounded-xl border border-slate-200 transition"
+                          className="bg-white hover:bg-[#F4F4F2] text-[#2A2A26] font-bold text-xs px-4 py-2 rounded-xl border border-[#E5E5E2] transition"
                         >
                           Aplicar
                         </button>
                       </div>
                       {empresaData.discountApplied && (
-                        <p className="text-[10px] text-emerald-600 font-bold mt-1.5">✓ Cupom aplicado com sucesso!</p>
+                        <p className="text-[10px] text-[#141414] font-bold mt-1.5">✓ Cupom aplicado com sucesso!</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-left h-max">
-                    <h4 className="text-[9px] font-bold text-slate-555 uppercase tracking-widest mb-3">Resumo da Assinatura</h4>
-                    <div className="text-xs space-y-2 border-b border-slate-200 pb-3 mb-3">
-                      <div className="flex justify-between text-slate-550">
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-5 rounded-2xl text-left h-max">
+                    <h4 className="text-[9px] font-bold text-[#8A8A85] uppercase tracking-widest mb-3">Resumo da Assinatura</h4>
+                    <div className="text-xs space-y-2 border-b border-[#E5E5E2] pb-3 mb-3">
+                      <div className="flex justify-between text-[#8A8A85]">
                         <span>Plano:</span>
-                        <span className="text-slate-900 font-bold">{empresaData.plano}</span>
+                        <span className="text-[#141414] font-bold">{empresaData.plano}</span>
                       </div>
-                      <div className="flex justify-between text-slate-550">
+                      <div className="flex justify-between text-[#8A8A85]">
                         <span>Créditos:</span>
-                        <span className="text-slate-900 font-bold">{getPlanCredits()} links</span>
+                        <span className="text-[#141414] font-bold">{getPlanCredits()} links</span>
                       </div>
-                      <div className="flex justify-between text-slate-550">
+                      <div className="flex justify-between text-[#8A8A85]">
                         <span>Preço:</span>
-                        <span className="text-slate-900 font-bold">{formatCurrency(getPlanPrice())}</span>
+                        <span className="text-[#141414] font-bold">{formatCurrency(getPlanPrice())}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-slate-700">Total a pagar:</span>
-                      <span className="text-lg font-black text-slate-900">{formatCurrency(getPlanPrice())}</span>
+                      <span className="font-bold text-[#5F5F5A]">Total a pagar:</span>
+                      <span className="text-lg font-black text-[#141414]">{formatCurrency(getPlanPrice())}</span>
                     </div>
                   </div>
                 </div>
@@ -7070,7 +7635,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
           </div>
 
           {/* Footer Navigation */}
-          <div className="flex justify-between items-center border-t border-slate-200 pt-6 mt-8">
+          <div className="flex justify-between items-center border-t border-[#E5E5E2] pt-6 mt-8">
             <button
               type="button"
               onClick={() => {
@@ -7080,7 +7645,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                   setStep(prev => prev - 1);
                 }
               }}
-              className="flex items-center gap-1 text-slate-550 hover:text-slate-900 font-bold text-xs transition uppercase tracking-wider"
+              className="flex items-center gap-1 text-[#8A8A85] hover:text-[#141414] font-bold text-xs transition uppercase tracking-wider"
             >
               <ChevronLeft size={14} /> Voltar
             </button>
@@ -7095,7 +7660,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
                   }
                   setStep(prev => prev + 1);
                 }}
-                className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#C1F11D] hover:text-[#141414] text-[#F4F4F2] font-bold text-xs px-7 py-3.5 rounded-full flex items-center gap-1 transition-all duration-300"
               >
                 Continuar <ChevronRight size={14} />
               </button>
@@ -7103,7 +7668,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
               <button
                 type="button"
                 onClick={handleFinalize}
-                className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#C1F11D] hover:text-[#141414] text-[#F4F4F2] font-bold text-xs px-7 py-3.5 rounded-full flex items-center gap-1 transition-all duration-300"
               >
                 Finalizar Assinatura <ChevronRight size={14} />
               </button>
@@ -7117,7 +7682,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
 }
 
 // --- CONFIGURACOES VIEW ---
-function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, totalReservasPlano, setTotalReservasPlano, setPlanoUpgrade }) {
+function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, totalReservasPlano, setTotalReservasPlano, setPlanoUpgrade, embedded = false, section = 'all' }) {
   const [formData, setFormData] = useState({
     nome: empresaLogada.nome || '',
     telefone: empresaLogada.telefone || '',
@@ -7126,6 +7691,12 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
     endereco: empresaLogada.endereco || '',
     cep: empresaLogada.cep || ''
   });
+
+  // Agenda de visitas do showroom (horários que aparecem para o cliente no slot picker)
+  const [agendaHorarios, setAgendaHorarios] = useState<string[]>(empresaLogada.agendaHorarios || [...HORARIOS_VISITA]);
+  const toggleHorario = (h: string) => {
+    setAgendaHorarios(prev => prev.includes(h) ? prev.filter(x => x !== h) : [...prev, h].sort());
+  };
 
   const planosNivel = { 'Basic': 1, 'Plus': 2, 'Premium': 3 };
 
@@ -7179,15 +7750,21 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
       return;
     }
 
+    if (agendaHorarios.length === 0) {
+      showToast('Mantenha ao menos um horário de visita ativo na agenda.', 'error');
+      return;
+    }
+
     setEmpresaLogada(prev => ({
       ...prev,
       nome: formData.nome,
       telefone: formData.telefone,
       valorMinimoSinal: Number(formData.valorMinimoSinal),
       endereco: formData.endereco,
-      cep: formData.cep
+      cep: formData.cep,
+      agendaHorarios: [...agendaHorarios].sort()
     }));
-    
+
     showToast('Configurações salvas com sucesso!', 'success');
   };
 
@@ -7217,27 +7794,30 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 md:px-12">
-      <div className="max-w-[1600px] mx-auto">
-        <div className="mb-8 text-left">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Configurações do Lojista</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
-        </div>
+    <div className={embedded ? '' : 'min-h-screen bg-[#F4F4F2] pt-24 pb-12 px-4 md:px-12'}>
+      <div className={embedded ? '' : 'max-w-[1600px] mx-auto'}>
+        {!embedded && (
+          <div className="mb-8 text-left">
+            <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Configurações do Lojista</h2>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
+          </div>
+        )}
 
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left flex flex-col justify-between">
+        <form onSubmit={handleSave} className={`grid grid-cols-1 gap-8 ${section === 'all' ? 'lg:grid-cols-2' : ''}`}>
+
+          {section !== 'plano' && (
+          <div className="bg-white border border-[#E5E5E2] rounded-2xl p-6 text-left flex flex-col justify-between">
             <div>
               <div className="mb-6">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                <span className="text-[11px] font-black uppercase text-[#8A8A85] tracking-wider">
                   Dados da Loja / Perfil
                 </span>
-                <div className="h-px bg-slate-100 mt-2"></div>
+                <div className="h-px bg-[#EBEBE8] mt-2"></div>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label htmlFor="nome" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="nome" className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                     Nome da Loja Exibida na Vitrine
                   </label>
                   <input
@@ -7247,12 +7827,12 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                     value={formData.nome}
                     onChange={handleInputChange}
                     placeholder="Ex: Veloce Premium Motors"
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                    className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#2A2A26] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="telefone" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="telefone" className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                     Número Oficial de WhatsApp do Lojista
                   </label>
                   <input
@@ -7262,13 +7842,13 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                     value={formData.telefone}
                     onChange={handleInputChange}
                     placeholder="Ex: (11) 99999-8822"
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                    className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#2A2A26] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
-                    <label htmlFor="endereco" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    <label htmlFor="endereco" className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                       Endereço Comercial da Loja
                     </label>
                     <input
@@ -7278,11 +7858,11 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                       value={formData.endereco}
                       onChange={handleInputChange}
                       placeholder="Ex: Av. das Nações Unidas, 12345"
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                      className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#2A2A26] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                     />
                   </div>
                   <div>
-                    <label htmlFor="cep" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    <label htmlFor="cep" className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                       CEP
                     </label>
                     <input
@@ -7292,13 +7872,13 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                       value={formData.cep}
                       onChange={handleInputChange}
                       placeholder="Ex: 04578-000"
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                      className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#2A2A26] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="valorMinimoSinal" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="valorMinimoSinal" className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                     Valor Mínimo para Sinal Pix de Reserva (R$)
                   </label>
                   <input
@@ -7308,29 +7888,63 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                     value={formData.valorMinimoSinal}
                     onChange={handleInputChange}
                     placeholder="Ex: 1500"
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                    className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#2A2A26] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                   />
+                </div>
+
+                {/* Agenda de visitas do showroom */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">
+                      Agenda de Visitas do Showroom
+                    </label>
+                    <span className="text-[10px] font-bold text-[#8A8A85]">{agendaHorarios.length} de {HORARIOS_VISITA.length} ativos</span>
+                  </div>
+                  <p className="text-[11px] text-[#8A8A85] font-medium mb-3 leading-relaxed">
+                    Estes são os horários que o cliente vê ao agendar a visita pelo link da proposta. Desative os que sua equipe não atende.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {HORARIOS_VISITA.map((h) => {
+                      const ativo = agendaHorarios.includes(h);
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          onClick={() => toggleHorario(h)}
+                          className={`px-4 py-2.5 rounded-full text-xs font-extrabold transition-all cursor-pointer border-[1.5px] ${
+                            ativo
+                              ? 'bg-[#141414] text-[#C1F11D] border-[#141414]'
+                              : 'bg-white text-[#B9B9B4] border-[#E5E5E2] hover:border-[#B9B9B4] line-through'
+                          }`}
+                        >
+                          {h}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mt-8 pt-6 border-t border-[#EBEBE8]">
               <button
                 type="submit"
-                className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
+                className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
               >
                 Salvar Configurações
               </button>
             </div>
           </div>
+          )}
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left flex flex-col justify-between">
+          {section !== 'geral' && (
+          <div className="bg-white border border-[#E5E5E2] rounded-2xl p-6 text-left flex flex-col justify-between">
             <div>
               <div className="mb-6">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                <span className="text-[11px] font-black uppercase text-[#8A8A85] tracking-wider">
                   Seu Plano SaaS Autolock
                 </span>
-                <div className="h-px bg-slate-100 mt-2"></div>
+                <div className="h-px bg-[#EBEBE8] mt-2"></div>
               </div>
 
               <div className="space-y-4">
@@ -7353,41 +7967,41 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                       }}
                       className={`border rounded-2xl p-4 transition-all flex flex-col justify-between ${
                         isDowngrade
-                          ? 'opacity-40 cursor-not-allowed pointer-events-none bg-slate-50 border-slate-200'
+                          ? 'opacity-40 cursor-not-allowed pointer-events-none bg-[#F4F4F2] border-[#E5E5E2]'
                           : isSelected
-                            ? 'border-[#0B1B17] bg-[#C1F651]/10 cursor-pointer'
-                            : 'border-slate-200 hover:border-slate-400 bg-white cursor-pointer opacity-40 hover:opacity-75'
+                            ? 'border-[#141414] bg-[#C1F11D]/10 cursor-pointer'
+                            : 'border-[#E5E5E2] hover:border-[#B9B9B4] bg-white cursor-pointer opacity-40 hover:opacity-75'
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
+                            <span className="text-[9px] font-black text-[#B9B9B4] uppercase tracking-wider bg-[#EBEBE8] px-2 py-0.5 rounded">
                               {plano.tag}
                             </span>
                             {plano.destaque && (
-                              <span className="text-[9px] font-black text-[#0B1B17] uppercase tracking-wider bg-[#C1F651] px-2 py-0.5 rounded">
+                              <span className="text-[9px] font-black text-[#141414] uppercase tracking-wider bg-[#C1F11D] px-2 py-0.5 rounded">
                                 Destaque
                               </span>
                             )}
                           </div>
-                          <h4 className="text-sm font-black text-slate-900">{plano.nome}</h4>
-                          <p className="text-xs text-slate-650 font-semibold">{plano.limite}</p>
-                          <p className="text-[11px] text-slate-400 font-semibold">{plano.detalhe}</p>
+                          <h4 className="text-sm font-black text-[#141414]">{plano.nome}</h4>
+                          <p className="text-xs text-[#6F6F6A] font-semibold">{plano.limite}</p>
+                          <p className="text-[11px] text-[#B9B9B4] font-semibold">{plano.detalhe}</p>
                         </div>
                         
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <span className="block text-base font-black text-slate-900">{plano.preco}</span>
-                            <span className="block text-[9px] text-slate-400 font-bold uppercase">/mês</span>
+                            <span className="block text-base font-black text-[#141414]">{plano.preco}</span>
+                            <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase">/mês</span>
                           </div>
 
                           <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition ${
                             isSelected 
-                              ? 'border-[#0B1B17] bg-[#0B1B17] text-white' 
+                              ? 'border-[#141414] bg-[#141414] text-white' 
                               : isDowngrade
-                                ? 'border-slate-200 bg-slate-100 text-slate-400'
-                                : 'border-slate-300 bg-white'
+                                ? 'border-[#E5E5E2] bg-[#EBEBE8] text-[#B9B9B4]'
+                                : 'border-[#D9D9D5] bg-white'
                           }`}>
                             {isSelected && <Check size={12} strokeWidth={3} />}
                           </div>
@@ -7396,8 +8010,8 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
 
                       {/* Linha heurística para Upgrade com botão */}
                       {isSelected && isUpgrade && (
-                        <div className="mt-4 pt-4 border-t border-slate-150 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fadeIn w-full">
-                          <p className="text-[10px] text-slate-600 font-semibold leading-relaxed">
+                        <div className="mt-4 pt-4 border-t border-[#EBEBE8] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fadeIn w-full">
+                          <p className="text-[10px] text-[#6F6F6A] font-semibold leading-relaxed">
                             💡 Você selecionou um plano maior. Clique em upgrade para realizar o pagamento.
                           </p>
                           <button
@@ -7406,7 +8020,7 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                               e.stopPropagation();
                               handleUpgradeClick(plano.nome);
                             }}
-                            className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-[10px] px-4 py-2 rounded-xl transition uppercase tracking-wider shrink-0"
+                            className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-[10px] px-4 py-2 rounded-xl transition uppercase tracking-wider shrink-0"
                           >
                             Fazer Upgrade
                           </button>
@@ -7418,12 +8032,13 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-slate-100">
-              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+            <div className="mt-8 pt-4 border-t border-[#EBEBE8]">
+              <p className="text-[10px] text-[#B9B9B4] font-semibold leading-relaxed">
                 *Nota: No plano Premium/Enterprise, a plataforma retém 1,5% sobre o sinal PIX processado para fins de cobertura de infraestrutura de webhook e processamento de segurança.
               </p>
             </div>
           </div>
+          )}
 
         </form>
       </div>
@@ -7450,14 +8065,9 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
   const [pixGenerated, setPixGenerated] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mapeamento dos valores e limites dos planos
-  const infoPlanos = {
-    'Basic': { preco: 'R$ 159,90', valor: 159.90, limite: 10, descricao: 'Plano Básico - 10 links ativos' },
-    'Plus': { preco: 'R$ 239,90', valor: 239.90, limite: 30, descricao: 'Plano Recomendado - 30 links ativos' },
-    'Premium': { preco: 'R$ 349,90', valor: 349.90, limite: 50, descricao: 'Plano Corporativo - 50 links ativos' }
-  };
-
-  const planoInfo = infoPlanos[planoUpgrade] || infoPlanos['Plus'];
+  // Mapeamento dos valores e limites dos planos (derivado da fonte única PLANOS)
+  const toInfo = (p) => ({ preco: formatBRL(p.precoMensal), valor: p.precoMensal, limite: p.limite, descricao: `${p.tag} - ${p.limite} links ativos` });
+  const planoInfo = toInfo(PLANOS[planoUpgrade] || PLANOS.Plus);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -7534,7 +8144,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-slate-900">
+    <div className="min-h-screen bg-[#F4F4F2] pt-24 pb-12 px-4 sm:px-6 lg:px-8 text-[#141414]">
       <div className="max-w-5xl mx-auto">
         
         {/* Header */}
@@ -7542,24 +8152,24 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
           <button 
             type="button"
             onClick={() => navigateTo('configuracoes')}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition mb-3 uppercase tracking-wider"
+            className="flex items-center gap-1.5 text-xs font-bold text-[#8A8A85] hover:text-[#2A2A26] transition mb-3 uppercase tracking-wider"
           >
             <ArrowLeft size={14} /> Voltar para Configurações
           </button>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Checkout de Assinatura SaaS</h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
+          <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Checkout de Assinatura SaaS</h2>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
           
           {/* Coluna Esquerda: Formulário de Pagamento */}
-          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-white border border-[rgba(20,20,20,0.08)] rounded-[24px] p-6 flex flex-col justify-between shadow-[0_20px_40px_-15px_rgba(20,20,20,0.06)]">
             <div>
               <div className="mb-6">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                <span className="text-[11px] font-black uppercase text-[#8A8A85] tracking-wider">
                   Método de Pagamento
                 </span>
-                <div className="h-px bg-slate-100 mt-2"></div>
+                <div className="h-px bg-[#EBEBE8] mt-2"></div>
               </div>
 
               {/* Seletor de Abas Flat */}
@@ -7569,8 +8179,8 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                   onClick={() => setPaymentMethod('credit_card')}
                   className={`py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border-2 ${
                     paymentMethod === 'credit_card'
-                      ? 'border-[#0B1B17] bg-[#C1F651]/10 text-[#0B1B17] font-extrabold'
-                      : 'border-slate-200 hover:border-slate-300 text-slate-650 bg-white'
+                      ? 'border-[#141414] bg-[#C1F11D]/10 text-[#141414] font-extrabold'
+                      : 'border-[#E5E5E2] hover:border-[#D9D9D5] text-[#6F6F6A] bg-white'
                   }`}
                 >
                   <CreditCard size={16} /> Cartão de Crédito
@@ -7580,8 +8190,8 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                   onClick={() => setPaymentMethod('pix')}
                   className={`py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border-2 ${
                     paymentMethod === 'pix'
-                      ? 'border-[#0B1B17] bg-[#C1F651]/10 text-[#0B1B17] font-extrabold'
-                      : 'border-slate-200 hover:border-slate-300 text-slate-655 bg-white'
+                      ? 'border-[#141414] bg-[#C1F11D]/10 text-[#141414] font-extrabold'
+                      : 'border-[#E5E5E2] hover:border-[#D9D9D5] text-[#6F6F6A] bg-white'
                   }`}
                 >
                   <CircleDollarSign size={16} /> Pix Instantâneo
@@ -7592,7 +8202,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
               {paymentMethod === 'credit_card' && (
                 <form onSubmit={handleConfirmarPagamento} className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                       Número do Cartão
                     </label>
                     <input
@@ -7601,13 +8211,13 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                       value={cardData.numero}
                       onChange={handleInputChange}
                       placeholder="0000 0000 0000 0000"
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                      className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#141414] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                       Nome Impresso no Cartão
                     </label>
                     <input
@@ -7616,14 +8226,14 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                       value={cardData.nome}
                       onChange={handleInputChange}
                       placeholder="MARIA SILVA SOUZA"
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition uppercase"
+                      className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#141414] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition uppercase"
                       required
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                         Validade (MM/AA)
                       </label>
                       <input
@@ -7632,12 +8242,12 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                         value={cardData.validade}
                         onChange={handleInputChange}
                         placeholder="MM/AA"
-                        className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                        className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#141414] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
                         CVC / CVV
                       </label>
                       <input
@@ -7646,7 +8256,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                         value={cardData.cvv}
                         onChange={handleInputChange}
                         placeholder="123"
-                        className="w-full bg-slate-50 border border-slate-200 focus:border-slate-800 focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition"
+                        className="w-full bg-[#F4F4F2] border border-[#E5E5E2] focus:border-[#141414] focus:bg-white rounded-xl px-4 py-3 text-sm font-semibold text-[#141414] outline-none transition"
                         required
                       />
                     </div>
@@ -7659,64 +8269,64 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                 <div className="space-y-5 text-center py-2">
                   {!pixGenerated ? (
                     <div className="space-y-4 text-left">
-                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                        <h4 className="text-sm font-bold text-slate-900 mb-2">Pague instantaneamente via PIX</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Ao clicar no botão abaixo, geraremos um QR Code dinâmico do Pix e um código Pix Copia e Cola no valor de <strong className="text-slate-800">{planoInfo.preco}</strong> correspondente ao primeiro mês.
+                      <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-5">
+                        <h4 className="text-sm font-bold text-[#141414] mb-2">Pague instantaneamente via PIX</h4>
+                        <p className="text-xs text-[#8A8A85] leading-relaxed">
+                          Ao clicar no botão abaixo, geraremos um QR Code dinâmico do Pix e um código Pix Copia e Cola no valor de <strong className="text-[#2A2A26]">{planoInfo.preco}</strong> correspondente ao primeiro mês.
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setPixGenerated(true)}
-                        className="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
+                        className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white font-bold px-6 py-3.5 rounded-xl transition text-sm flex items-center justify-center gap-2"
                       >
                         Gerar QR Code e Copia e Cola
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-5">
-                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#E5E5E2] rounded-2xl bg-[#F4F4F2]">
                         {/* Placeholder QR Code Flat com design legal */}
-                        <div className="w-40 h-40 bg-white border border-slate-300 p-2 rounded-lg flex flex-col justify-between items-center relative mb-4">
+                        <div className="w-40 h-40 bg-white border border-[#D9D9D5] p-2 rounded-lg flex flex-col justify-between items-center relative mb-4">
                           {/* Desenho Flat de QR Code */}
-                          <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-1.5 p-1 bg-slate-50">
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
+                          <div className="w-full h-full grid grid-cols-5 grid-rows-5 gap-1.5 p-1 bg-[#F4F4F2]">
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
                             
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
                             
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
                             
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
                             
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-100"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
-                            <div className="bg-slate-900 rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#EBEBE8]"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
+                            <div className="bg-[#141414] rounded-sm"></div>
                           </div>
-                           <span className="absolute text-[8px] font-black uppercase text-[#0B1B17] bg-[#C1F651] px-2 py-0.5 border border-[#0B1B17] rounded">PIX RESERVACAR</span>
+                           <span className="absolute text-[8px] font-black uppercase text-[#141414] bg-[#C1F11D] px-2 py-0.5 border border-[#141414] rounded">PIX RESERVACAR</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 font-bold mb-2">Escaneie o QR Code acima usando o aplicativo do seu banco.</p>
+                        <p className="text-[11px] text-[#8A8A85] font-bold mb-2">Escaneie o QR Code acima usando o aplicativo do seu banco.</p>
                       </div>
 
                       <div className="space-y-2 text-left">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                        <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">
                           Pix Copia e Cola
                         </label>
                         <div className="flex gap-2">
@@ -7724,12 +8334,12 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                             type="text"
                             readOnly
                             value="00020101021226830014br.gov.bcb.pix2561api.reservacar.com.br/pix/v2/cob46a782b5e2"
-                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-500 outline-none"
+                            className="flex-1 bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-xs font-semibold text-[#8A8A85] outline-none"
                           />
                           <button
                             type="button"
                             onClick={handleCopyPix}
-                            className="bg-slate-900 hover:bg-slate-950 text-white font-bold px-4 py-3 rounded-xl transition text-xs flex items-center gap-1.5 shrink-0"
+                            className="bg-[#141414] hover:bg-[#2A2A26] text-white font-bold px-4 py-3 rounded-xl transition text-xs flex items-center gap-1.5 shrink-0"
                           >
                             <Copy size={14} /> Copiar
                           </button>
@@ -7742,12 +8352,12 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
             </div>
 
             {/* Ações de Botões */}
-            <div className="mt-8 pt-6 border-t border-slate-100 space-y-3">
+            <div className="mt-8 pt-6 border-t border-[#EBEBE8] space-y-3">
               <button
                 type="button"
                 onClick={handleConfirmarPagamento}
                 disabled={isProcessing}
-                className="w-full bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold px-6 py-4 rounded-xl transition text-sm flex items-center justify-center gap-2"
+                className="w-full bg-[#141414] hover:bg-[#C1F11D] hover:text-[#141414] text-[#F4F4F2] font-bold px-6 py-4 rounded-full transition-all duration-300 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {isProcessing ? (
                   <>
@@ -7764,56 +8374,56 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
           </div>
 
           {/* Coluna Direita: Resumo do Pedido */}
-          <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col justify-between h-fit space-y-6">
+          <div className="lg:col-span-5 bg-[#F4F4F2] border border-[rgba(20,20,20,0.08)] rounded-[24px] p-6 flex flex-col justify-between h-fit space-y-6 shadow-[0_20px_40px_-15px_rgba(20,20,20,0.05)]">
             <div>
               <div className="mb-4">
-                <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
+                <span className="text-[11px] font-black uppercase text-[#8A8A85] tracking-wider">
                   Resumo do Pedido
                 </span>
-                <div className="h-px bg-slate-200 mt-2"></div>
+                <div className="h-px bg-[#E5E5E2] mt-2"></div>
               </div>
 
               {/* Card de Detalhe do Plano */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 text-left">
+              <div className="bg-white border border-[#E5E5E2] rounded-2xl p-4 space-y-3 text-left">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black text-[#0B1B17] uppercase tracking-wider bg-[#C1F651]/20 px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-black text-[#141414] uppercase tracking-wider bg-[#C1F11D]/20 px-2 py-0.5 rounded">
                     PLANO SELECIONADO
                   </span>
-                  <span className="text-xs text-slate-500 font-bold">Recorrência Mensal</span>
+                  <span className="text-xs text-[#8A8A85] font-bold">Recorrência Mensal</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900">{planoUpgrade}</h3>
-                  <p className="text-xs text-slate-500 font-semibold mt-0.5">{planoInfo.descricao}</p>
+                  <h3 className="text-xl font-black text-[#141414]">{planoUpgrade}</h3>
+                  <p className="text-xs text-[#8A8A85] font-semibold mt-0.5">{planoInfo.descricao}</p>
                 </div>
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">Valor Mensal</span>
-                  <span className="text-lg font-black text-slate-900">{planoInfo.preco}</span>
+                <div className="pt-3 border-t border-[#EBEBE8] flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#8A8A85]">Valor Mensal</span>
+                  <span className="text-lg font-black text-[#141414]">{planoInfo.preco}</span>
                 </div>
               </div>
 
               {/* Detalhes de Limites */}
               <div className="mt-6 space-y-3">
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                <div className="flex justify-between items-center text-xs font-semibold text-[#6F6F6A]">
                   <span>Links de Reserva Disponíveis:</span>
-                  <span className="font-bold text-slate-950">{planoInfo.limite} links ativos</span>
+                  <span className="font-bold text-[#141414]">{planoInfo.limite} links ativos</span>
                 </div>
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                <div className="flex justify-between items-center text-xs font-semibold text-[#6F6F6A]">
                   <span>Taxa de Processamento de Sinal:</span>
-                  <span className="font-bold text-slate-950">1,5% retido</span>
+                  <span className="font-bold text-[#141414]">1,5% retido</span>
                 </div>
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-650">
+                <div className="flex justify-between items-center text-xs font-semibold text-[#6F6F6A]">
                   <span>Atendimento Integrado:</span>
-                  <span className="font-bold text-slate-950">Disponível</span>
+                  <span className="font-bold text-[#141414]">Disponível</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-slate-200 space-y-3 text-left">
+            <div className="pt-6 border-t border-[#E5E5E2] space-y-3 text-left">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-extrabold text-slate-900">Total a pagar:</span>
-                <span className="text-2xl font-black text-[#0B1B17]">{planoInfo.preco}</span>
+                <span className="text-sm font-extrabold text-[#141414]">Total a pagar:</span>
+                <span className="text-2xl font-black text-[#141414]">{planoInfo.preco}</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+              <p className="text-[10px] text-[#B9B9B4] font-semibold leading-relaxed">
                 *Ao clicar em finalizar pagamento, você concorda com os termos de uso do Reservacar SaaS e autoriza a cobrança recorrente no método de pagamento selecionado.
               </p>
             </div>
@@ -7828,7 +8438,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
 }
 
 // --- NEW COMPONENT: VENDEDORES VIEW (SHOWROOM GERENCIAMENTO) ---
-function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada }) {
+function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, embedded = false }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [vendedorParaGerenciar, setVendedorParaGerenciar] = useState<any>(null);
   const [formData, setFormData] = useState({ nome: '', cargo: 'Consultor de Vendas' });
@@ -7897,21 +8507,21 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
     showToast('Vendedor removido com sucesso.', 'success');
   };
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition";
-  const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5";
+  const inputClass = "w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition";
+  const labelClass = "block text-xs font-bold uppercase tracking-wider text-[#8A8A85] mb-1.5";
 
   return (
-    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-      
+    <div className={embedded ? '' : 'pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto'}>
+
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Equipe de Vendedores</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
+          <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Equipe de Vendedores</h1>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="text-xs font-bold bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] px-5 py-3 rounded-xl transition flex items-center gap-1.5"
+          className="text-xs font-bold bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] px-5 py-3 rounded-xl transition flex items-center gap-1.5"
         >
           <UserPlus size={14} /> Adicionar Vendedor
         </button>
@@ -7924,45 +8534,45 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
             <div 
               key={v.id} 
               className={`bg-white border rounded-[24px] p-6 transition relative flex flex-col justify-between ${
-                v.ativo ? 'border-slate-200 hover:border-slate-400' : 'border-slate-100 opacity-60'
+                v.ativo ? 'border-[#E5E5E2] hover:border-[#B9B9B4]' : 'border-[#EBEBE8] opacity-60'
               }`}
             >
               {/* Top Tag & Date Row */}
               <div className="flex justify-between items-center mb-5">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2.5 py-1 border border-slate-200 rounded-md">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#8A8A85] bg-[#F4F4F2] px-2.5 py-1 border border-[#E5E5E2] rounded-md">
                   {v.cargo || 'Consultor'}
                 </span>
-                <span className="text-[10px] font-bold text-slate-400 font-mono">
+                <span className="text-[10px] font-bold text-[#B9B9B4] font-mono">
                   {v.dataCadastro || '31/05/2026'}
                 </span>
               </div>
 
               {/* Vendedor Name */}
               <div className="mb-4">
-                <h3 className="text-[16px] font-bold text-[#0B1B17] tracking-tight leading-snug uppercase">
+                <h3 className="text-[16px] font-bold text-[#141414] tracking-tight leading-snug uppercase">
                   {v.nome}
                 </h3>
-                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-0.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${v.ativo ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                <span className="text-[10px] font-bold text-[#B9B9B4] flex items-center gap-1 mt-0.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${v.ativo ? 'bg-[#C1F11D]' : 'bg-rose-500'}`}></span>
                   {v.ativo ? 'Ativo no Showroom' : 'Inativo / Bloqueado'}
                 </span>
               </div>
 
               {/* Performance Metric Panel */}
-              <div className="grid grid-cols-2 divide-x divide-slate-200 bg-slate-50 border border-slate-150 rounded-2xl p-4 mb-4 text-center">
+              <div className="grid grid-cols-2 divide-x divide-[#E5E5E2] bg-[#F4F4F2] border border-[#EBEBE8] rounded-2xl p-4 mb-4 text-center">
                 <div>
-                  <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                  <span className="block text-[9px] font-bold text-[#B9B9B4] tracking-wider uppercase mb-1">
                     Links Gerados
                   </span>
-                  <span className="block text-base font-bold font-mono text-slate-900">
+                  <span className="block text-base font-bold font-mono text-[#141414]">
                     {v.linksGerados !== undefined ? v.linksGerados : 0}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                  <span className="block text-[9px] font-bold text-[#B9B9B4] tracking-wider uppercase mb-1">
                     Taxa Conversão
                   </span>
-                  <span className="block text-base font-bold text-slate-900 font-mono">
+                  <span className="block text-base font-bold text-[#141414] font-mono">
                     {v.conversao !== undefined ? `${v.conversao}%` : '0%'}
                   </span>
                 </div>
@@ -7972,13 +8582,13 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
               <div className="flex gap-2">
                 <button
                   onClick={() => showToast(`Desempenho detalhado de ${v.nome} carregado no log.`, 'info')}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 bg-white"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#E5E5E2] hover:bg-[#F4F4F2] text-[#5F5F5A] bg-white"
                 >
                   <BarChart2 size={12} /> Desempenho
                 </button>
                 <button
                   onClick={() => window.open(`https://api.whatsapp.com/send?phone=${empresaLogada.telefone}&text=Olá%20${v.nome},%20sua%20conta%20está%20configurada!`, '_blank')}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 bg-white"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#E5E5E2] hover:bg-[#F4F4F2] text-[#5F5F5A] bg-white"
                 >
                   <MessageCircle size={12} /> WhatsApp
                 </button>
@@ -7987,7 +8597,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
               {/* Main Manage Button */}
               <button
                 onClick={() => handleOpenEdit(v)}
-                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 mt-4"
+                className="w-full bg-[#141414] hover:bg-black text-white font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2 mt-4"
               >
                 <Settings size={12} /> Gerenciar Vendedor
               </button>
@@ -7996,19 +8606,19 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white border border-slate-200 rounded-3xl p-10 max-w-xl mx-auto">
-          <Users size={48} className="mx-auto text-slate-300 mb-4" />
-          <h3 className="text-lg font-bold text-slate-800">Nenhum vendedor cadastrado</h3>
-          <p className="text-slate-500 text-xs mt-1">Sua concessionária precisa cadastrar vendedores para assinar e emitir links de propostas Pix.</p>
+        <div className="text-center py-16 bg-white border border-[#E5E5E2] rounded-3xl p-10 max-w-xl mx-auto">
+          <Users size={48} className="mx-auto text-[#D9D9D5] mb-4" />
+          <h3 className="text-lg font-bold text-[#2A2A26]">Nenhum vendedor cadastrado</h3>
+          <p className="text-[#8A8A85] text-xs mt-1">Sua concessionária precisa cadastrar vendedores para assinar e emitir links de propostas Pix.</p>
         </div>
       )}
 
       {/* MODAL ADICIONAR VENDEDOR */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1">Adicionar Vendedor</h3>
-            <p className="text-slate-500 text-xs mb-6 font-medium">Cadastre um novo atendente para habilitá-lo na criação de reservas.</p>
+          <div className="bg-white border border-[#E5E5E2] rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-[#141414] tracking-tight mb-1">Adicionar Vendedor</h3>
+            <p className="text-[#8A8A85] text-xs mb-6 font-medium">Cadastre um novo atendente para habilitá-lo na criação de reservas.</p>
 
             <form onSubmit={handleAddVendedor} className="space-y-4">
               <div>
@@ -8038,17 +8648,17 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                 </select>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-4 border-t border-[#EBEBE8]">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition uppercase tracking-wider text-center"
+                  className="flex-1 py-3 text-[#8A8A85] hover:bg-[#F4F4F2] hover:text-[#2A2A26] font-bold text-xs rounded-xl border border-[#E5E5E2] transition uppercase tracking-wider text-center"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
+                  className="flex-1 py-3 bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
                 >
                   Salvar Cadastro
                 </button>
@@ -8061,9 +8671,9 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       {/* MODAL GERENCIAR VENDEDOR (EDITAR / EXCLUIR) */}
       {vendedorParaGerenciar && (
         <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-[#E5E5E2] rounded-3xl max-w-md w-full p-6 md:p-8 text-left animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-start mb-1">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Gerenciar Vendedor</h3>
+              <h3 className="text-xl font-black text-[#141414] tracking-tight">Gerenciar Vendedor</h3>
               <button 
                 onClick={() => handleExcluirVendedor(vendedorParaGerenciar.id)}
                 className="text-rose-600 hover:text-rose-800 font-bold text-[10px] uppercase bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-100"
@@ -8071,7 +8681,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                 Excluir Cadastro
               </button>
             </div>
-            <p className="text-slate-500 text-xs mb-6 font-medium">Modifique as informações ou bloqueie o acesso do atendente.</p>
+            <p className="text-[#8A8A85] text-xs mb-6 font-medium">Modifique as informações ou bloqueie o acesso do atendente.</p>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
@@ -8102,16 +8712,16 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
               </div>
 
               {/* Status Switcher Toggle */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl">
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800">Vendedor Ativo</h4>
-                  <p className="text-[10px] text-slate-500">Inativo bloqueia a criação de links</p>
+                  <h4 className="text-xs font-bold text-[#2A2A26]">Vendedor Ativo</h4>
+                  <p className="text-[10px] text-[#8A8A85]">Inativo bloqueia a criação de links</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setEditFormData(prev => ({ ...prev, ativo: !prev.ativo }))}
                   className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${
-                    editFormData.ativo ? 'bg-[#0B1B17]' : 'bg-slate-300'
+                    editFormData.ativo ? 'bg-[#141414]' : 'bg-[#D9D9D5]'
                   }`}
                 >
                   <div
@@ -8122,17 +8732,17 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                 </button>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
+              <div className="flex gap-3 pt-4 border-t border-[#EBEBE8] mt-6">
                 <button
                   type="button"
                   onClick={() => setVendedorParaGerenciar(null)}
-                  className="flex-1 py-3 text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition uppercase tracking-wider text-center"
+                  className="flex-1 py-3 text-[#8A8A85] hover:bg-[#F4F4F2] hover:text-[#2A2A26] font-bold text-xs rounded-xl border border-[#E5E5E2] transition uppercase tracking-wider text-center"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
+                  className="flex-1 py-3 bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs rounded-xl transition uppercase tracking-wider text-center"
                 >
                   Salvar Dados
                 </button>
@@ -8147,7 +8757,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
 }
 
 // --- NEW COMPONENT: RELATÓRIO DE RESERVAS E LOGS ---
-function RelatorioReservasView({ navigateTo, showToast, recentReservations, setRecentReservations }) {
+function RelatorioReservasView({ navigateTo, showToast, recentReservations, setRecentReservations, embedded = false }) {
   const [selectedId, setSelectedId] = useState<any>(null);
   
   // Form states for the selected reservation
@@ -8255,11 +8865,11 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
       case 'Active':
         return 'bg-amber-50 text-amber-700 border-amber-250';
       case 'Completed':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-250';
+        return 'bg-[#C1F11D]/15 text-[#141414] border-[#C1F11D]/30';
       case 'Expired':
         return 'bg-rose-50 text-rose-700 border-rose-250';
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200';
+        return 'bg-[#F4F4F2] text-[#5F5F5A] border-[#E5E5E2]';
     }
   };
 
@@ -8278,19 +8888,19 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
     }
   };
 
-  const inputClass = "w-full bg-[#f8fafc] border border-slate-200 rounded-2xl px-5 py-4 text-sm font-semibold text-slate-800 outline-none focus:border-[#0B1B17] transition";
-  const labelClass = "block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5";
+  const inputClass = "w-full bg-[#f8fafc] border border-[#E5E5E2] rounded-2xl px-5 py-4 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition";
+  const labelClass = "block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2.5";
 
   return (
-    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-      
+    <div className={embedded ? '' : 'pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto'}>
+
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-slate-200 pb-6 text-left">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6 text-left">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <FileText size={28} className="text-[#0B1B17]" /> Relatório de Reservas
+          <h1 className="text-3xl font-bold text-[#141414] tracking-tight flex items-center gap-2">
+            <FileText size={28} className="text-[#141414]" /> Relatório de Reservas
           </h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
         </div>
       </div>
 
@@ -8299,7 +8909,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           
           {/* Left Column: List of Reservations */}
           <div className="space-y-4 lg:col-span-1 text-left max-h-[80vh] overflow-y-auto pr-2">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1">Selecione uma Proposta</span>
+            <span className="block text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider mb-2 px-1">Selecione uma Proposta</span>
             {recentReservations.map((res: any) => {
               const isSelected = res.id === selectedId;
               const dateOnly = res.created ? res.created.split('de')[1] || res.created : 'Recente';
@@ -8308,18 +8918,18 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   key={res.id}
                   onClick={() => setSelectedId(res.id)}
                   className={`w-full text-left bg-white border p-5 rounded-[22px] transition flex flex-col gap-3.5 ${
-                    isSelected ? 'border-slate-800' : 'border-slate-200 hover:border-slate-400'
+                    isSelected ? 'border-[#2A2A26]' : 'border-[#E5E5E2] hover:border-[#B9B9B4]'
                   }`}
                 >
                   <div>
-                    <h4 className="text-[13px] font-bold text-slate-900 tracking-tight leading-tight line-clamp-2">
+                    <h4 className="text-[13px] font-bold text-[#141414] tracking-tight leading-tight line-clamp-2">
                       {res.title}
                     </h4>
-                    <span className="text-[10px] font-bold text-slate-400 block mt-1">{res.vendedores || 'Sem Atendente'}</span>
+                    <span className="text-[10px] font-bold text-[#B9B9B4] block mt-1">{res.vendedores || 'Sem Atendente'}</span>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-1">
-                    <span className="text-[10px] font-mono text-slate-400">{dateOnly.trim()}</span>
+                  <div className="flex items-center justify-between border-t border-[#EBEBE8] pt-3 mt-1">
+                    <span className="text-[10px] font-mono text-[#B9B9B4]">{dateOnly.trim()}</span>
                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getStatusBadge(res.status)}`}>
                       {getStatusLabel(res.status)}
                     </span>
@@ -8332,12 +8942,12 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           {/* Right Column: Detailed Proposal Log Panel */}
           {selectedRes ? (
             <div className="lg:col-span-2">
-              <div className="bg-white border border-slate-200 rounded-[32px] p-6 md:p-8 text-left">
+              <div className="bg-white border border-[#E5E5E2] rounded-[32px] p-6 md:p-8 text-left">
                 
                 {/* Proposal Title Header */}
-                <div className="border-b border-slate-100 pb-5 mb-6">
-                  <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">Gerenciar Reserva</h3>
-                  <p className="text-[11px] font-semibold text-slate-400 tracking-wide mt-1">
+                <div className="border-b border-[#EBEBE8] pb-5 mb-6">
+                  <h3 className="text-xl font-bold text-[#141414] tracking-tight leading-tight">Gerenciar Reserva</h3>
+                  <p className="text-[11px] font-semibold text-[#B9B9B4] tracking-wide mt-1">
                     {selectedRes.title}
                   </p>
                 </div>
@@ -8345,16 +8955,16 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                 <div className="space-y-6">
                   
                   {/* Lead and Date Card */}
-                  <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200 p-5 rounded-[20px] text-xs">
+                  <div className="grid grid-cols-2 gap-4 bg-[#F4F4F2] border border-[#E5E5E2] p-5 rounded-[20px] text-xs">
                     <div>
-                      <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Lead Associado</span>
-                      <strong className="text-slate-800 text-sm font-extrabold">
+                      <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Lead Associado</span>
+                      <strong className="text-[#2A2A26] text-sm font-extrabold">
                         {selectedRes.clienteNome || 'Não informado'}
                       </strong>
                     </div>
                     <div>
-                      <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Criado em</span>
-                      <strong className="text-slate-800 text-sm font-semibold">
+                      <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
+                      <strong className="text-[#2A2A26] text-sm font-semibold">
                         {selectedRes.created || 'Hoje'}
                       </strong>
                     </div>
@@ -8404,19 +9014,19 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   {/* Proposal History Logs */}
                   <div>
                     <label className={labelClass}>Histórico da Proposta</label>
-                    <div className="space-y-4 bg-[#f8fafc] border border-slate-200 p-5 rounded-[22px] max-h-56 overflow-y-auto">
+                    <div className="space-y-4 bg-[#f8fafc] border border-[#E5E5E2] p-5 rounded-[22px] max-h-56 overflow-y-auto">
                       {selectedRes.logs && selectedRes.logs.length > 0 ? (
                         selectedRes.logs.map((log: any, idx: number) => {
                           const isAccess = log.time.toLowerCase().includes('acesso') || log.text.toLowerCase().includes('visualizada') || log.text.toLowerCase().includes('visualizado');
                           return (
                             <div key={idx} className="flex items-start gap-4">
                               <span className={`text-[10px] font-mono shrink-0 w-36 mt-0.5 font-bold ${
-                                isAccess ? 'text-[#94a3b8]' : 'text-slate-400'
+                                isAccess ? 'text-[#94a3b8]' : 'text-[#B9B9B4]'
                               }`}>
                                 {log.time}
                               </span>
                               <p className={`text-xs leading-snug font-bold ${
-                                isAccess ? 'text-[#1e3a8a]' : 'text-slate-800'
+                                isAccess ? 'text-[#1e3a8a]' : 'text-[#2A2A26]'
                               }`}>{log.text}</p>
                             </div>
                           );
@@ -8425,18 +9035,18 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                         // Fallback logs generated on the fly if logs array is not present yet
                         <>
                           <div className="flex items-start gap-4">
-                            <span className="text-[10px] font-mono text-slate-400 shrink-0 w-36 mt-0.5 font-bold">
+                            <span className="text-[10px] font-mono text-[#B9B9B4] shrink-0 w-36 mt-0.5 font-bold">
                               {selectedRes.created || 'Hoje'}
                             </span>
-                            <p className="text-xs font-bold text-slate-800 leading-snug">
+                            <p className="text-xs font-bold text-[#2A2A26] leading-snug">
                               Proposta criada por {selectedRes.vendedores ? selectedRes.vendedores.split(',')[0] : 'Consultor'}
                             </p>
                           </div>
                           <div className="flex items-start gap-4">
-                            <span className="text-[10px] font-mono text-slate-400 shrink-0 w-36 mt-0.5 font-bold">
+                            <span className="text-[10px] font-mono text-[#B9B9B4] shrink-0 w-36 mt-0.5 font-bold">
                               {selectedRes.created || 'Hoje'}
                             </span>
-                            <p className="text-xs font-bold text-slate-800 leading-snug">
+                            <p className="text-xs font-bold text-[#2A2A26] leading-snug">
                               Link de sinal de R$ {Number(selectedRes.signal || selectedRes.sinal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ativado
                             </p>
                           </div>
@@ -8448,7 +9058,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100 mt-8 justify-between">
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-[#EBEBE8] mt-8 justify-between">
                   {status === 'Active' ? (
                     <button
                       onClick={handleCancel}
@@ -8462,13 +9072,13 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                   <div className="flex gap-3">
                     <button
                       onClick={handleDiscard}
-                      className="bg-white border border-slate-200 text-slate-750 font-bold py-4 px-6 rounded-2xl text-xs hover:bg-slate-50 transition uppercase tracking-wider"
+                      className="bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-4 px-6 rounded-2xl text-xs hover:bg-[#F4F4F2] transition uppercase tracking-wider"
                     >
                       Descartar
                     </button>
                     <button
                       onClick={handleSave}
-                      className="bg-[#0B1B17] hover:bg-[#122621] text-[#F9F9F6] font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
+                      className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
                     >
                       Salvar Alterações
                     </button>
@@ -8478,19 +9088,19 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
               </div>
             </div>
           ) : (
-            <div className="lg:col-span-2 text-center py-20 bg-white border border-slate-200 rounded-[32px] p-10">
-              <FileText size={48} className="mx-auto text-slate-300 mb-4" />
-              <h3 className="text-lg font-bold text-slate-800">Selecione uma reserva</h3>
-              <p className="text-slate-550 text-xs mt-1">Escolha uma proposta na coluna da esquerda para auditar o log completo.</p>
+            <div className="lg:col-span-2 text-center py-20 bg-white border border-[#E5E5E2] rounded-[32px] p-10">
+              <FileText size={48} className="mx-auto text-[#D9D9D5] mb-4" />
+              <h3 className="text-lg font-bold text-[#2A2A26]">Selecione uma reserva</h3>
+              <p className="text-[#8A8A85] text-xs mt-1">Escolha uma proposta na coluna da esquerda para auditar o log completo.</p>
             </div>
           )}
 
         </div>
       ) : (
-        <div className="text-center py-20 bg-white border border-slate-200 rounded-[32px] p-10 max-w-xl mx-auto">
-          <FileText size={48} className="mx-auto text-slate-300 mb-4" />
-          <h3 className="text-lg font-bold text-slate-800">Nenhum histórico disponível</h3>
-          <p className="text-slate-555 text-xs mt-1">Crie novas propostas de reservas no painel para visualizar o log de auditoria.</p>
+        <div className="text-center py-20 bg-white border border-[#E5E5E2] rounded-[32px] p-10 max-w-xl mx-auto">
+          <FileText size={48} className="mx-auto text-[#D9D9D5] mb-4" />
+          <h3 className="text-lg font-bold text-[#2A2A26]">Nenhum histórico disponível</h3>
+          <p className="text-[#8A8A85] text-xs mt-1">Crie novas propostas de reservas no painel para visualizar o log de auditoria.</p>
         </div>
       )}
 
