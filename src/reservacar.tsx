@@ -8,6 +8,7 @@ import {
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
   ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera, PanelsTopLeft
 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
 
 // --- UTILITY FUNCTIONS ---
@@ -6519,6 +6520,38 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     showToast('Foto adicionada com sucesso!', 'success');
   };
 
+  const [uploadingFotos, setUploadingFotos] = useState(false);
+
+  // Upload real para o Supabase Storage (bucket "veiculos") -> guarda a URL pública
+  const uploadFotos = async (fileList: FileList | null) => {
+    const arquivos = Array.from(fileList || []);
+    if (arquivos.length === 0) return;
+    if (!isSupabaseConfigured) {
+      showToast('Supabase não configurado (preencha o .env e reinicie o dev).', 'error');
+      return;
+    }
+    const espaco = 8 - vehicleData.photos.length;
+    if (espaco <= 0) { showToast('Limite de 8 fotos atingido.', 'info'); return; }
+    setUploadingFotos(true);
+    try {
+      const novasUrls: string[] = [];
+      for (const file of arquivos.slice(0, espaco)) {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `propostas/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage.from('veiculos').upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        const { data } = supabase.storage.from('veiculos').getPublicUrl(path);
+        novasUrls.push(data.publicUrl);
+      }
+      setVehicleData((prev) => ({ ...prev, photos: [...prev.photos, ...novasUrls] }));
+      showToast(`${novasUrls.length} foto(s) enviada(s) com sucesso!`, 'success');
+    } catch (e: any) {
+      showToast('Erro ao enviar foto: ' + (e?.message || 'tente novamente'), 'error');
+    } finally {
+      setUploadingFotos(false);
+    }
+  };
+
   const removePhoto = (index) => {
     setVehicleData((prev) => ({
       ...prev,
@@ -6850,12 +6883,18 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                 <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Adicione as fotos do veículo</h2>
                 <p className="text-[#8A8A85] text-xs mb-8 font-medium">Boas fotos aumentam as chances de reserva em até 70%.</p>
                 
-                <div className="border-2 border-dashed border-[#D9D9D5] rounded-3xl p-6 hover:border-black transition bg-[#F4F4F2] cursor-pointer flex flex-col items-center">
-                  <UploadCloud className="text-[#B9B9B4] mb-2" size={32} />
-                  <span className="font-bold text-xs text-[#2A2A26]">Carregar fotos do veículo</span>
-                  <span className="text-[10px] text-[#B9B9B4] mt-1">Formatos suportados: PNG, JPG, JPEG</span>
-                  
-                  <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                <label className={`border-2 border-dashed rounded-3xl p-6 transition flex flex-col items-center ${uploadingFotos ? 'border-[#C1F11D] bg-[#C1F11D]/10 cursor-wait' : 'border-[#D9D9D5] hover:border-black bg-[#F4F4F2] cursor-pointer'}`}>
+                  <input type="file" accept="image/*" multiple className="hidden" disabled={uploadingFotos} onChange={(e) => { uploadFotos(e.target.files); e.currentTarget.value = ''; }} />
+                  {uploadingFotos
+                    ? <RefreshCw className="text-[#141414] mb-2 animate-spin" size={32} />
+                    : <UploadCloud className="text-[#B9B9B4] mb-2" size={32} />}
+                  <span className="font-bold text-xs text-[#2A2A26]">{uploadingFotos ? 'Enviando fotos...' : 'Carregar fotos do veículo'}</span>
+                  <span className="text-[10px] text-[#B9B9B4] mt-1">Clique para selecionar · PNG, JPG, JPEG</span>
+                </label>
+
+                <div className="mt-3 text-center">
+                  <span className="text-[10px] text-[#B9B9B4] font-semibold uppercase tracking-wider">ou use um preset rápido</span>
+                  <div className="mt-2 flex flex-wrap gap-2 justify-center">
                     <button 
                       type="button"
                       onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80')}
