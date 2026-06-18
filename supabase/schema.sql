@@ -1,0 +1,93 @@
+-- ============================================================
+--  Reservacar — schema inicial (rascunho)
+--  Aplicar em: Supabase > SQL Editor > New query > Run
+--  Ajuste conforme necessário antes de produção.
+-- ============================================================
+
+-- ---------- Tabelas ----------
+
+create table if not exists public.lojas (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  cnpj text,
+  email text,
+  telefone text,
+  endereco text,
+  cep text,
+  valor_minimo_sinal numeric not null default 1500,
+  plano text not null default 'Plus' check (plano in ('Basic','Plus','Premium')),
+  agenda_horarios text[] not null default '{09:00,10:00,11:00,14:00,15:00,16:00,17:00,18:00,19:00}',
+  owner_id uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.vendedores (
+  id uuid primary key default gen_random_uuid(),
+  loja_id uuid not null references public.lojas (id) on delete cascade,
+  nome text not null,
+  cargo text not null default 'Consultor de Vendas',
+  ativo boolean not null default true,
+  links_gerados int not null default 0,
+  conversao int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.propostas (
+  id uuid primary key default gen_random_uuid(),
+  loja_id uuid not null references public.lojas (id) on delete cascade,
+  vendedor_id uuid references public.vendedores (id) on delete set null,
+  title text not null,
+  ano text, cor text, motor text, cambio text, km text, opcionais text,
+  fipe_value numeric, valor_venda numeric,
+  sinal numeric not null default 0,
+  expiracao int not null default 60,                       -- minutos
+  status text not null default 'Active' check (status in ('Active','Completed','Expired')),
+  cliente_nome text,
+  fotos text[] not null default '{}',                      -- URLs públicas do Storage
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.visitas (
+  id uuid primary key default gen_random_uuid(),
+  proposta_id uuid not null references public.propostas (id) on delete cascade,
+  cliente_nome text not null,
+  whatsapp text not null,
+  dia date not null,
+  hora text not null,                                      -- "16:00"
+  status text not null default 'agendada' check (status in ('agendada','compareceu','cancelada','no-show')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_vendedores_loja on public.vendedores (loja_id);
+create index if not exists idx_propostas_loja on public.propostas (loja_id);
+create index if not exists idx_visitas_proposta on public.visitas (proposta_id);
+
+-- ---------- Row Level Security ----------
+-- Esboço mínimo. A proposta e a visita precisam ser legíveis publicamente
+-- (o cliente abre o link sem login); escrita restrita ao dono autenticado.
+
+alter table public.lojas       enable row level security;
+alter table public.vendedores  enable row level security;
+alter table public.propostas   enable row level security;
+alter table public.visitas     enable row level security;
+
+-- Leitura pública das propostas/visitas (link do cliente):
+create policy "propostas legíveis publicamente" on public.propostas for select using (true);
+create policy "visitas legíveis publicamente"   on public.visitas   for select using (true);
+
+-- Cliente pode CRIAR uma visita (agendamento) sem login:
+create policy "qualquer um cria visita" on public.visitas for insert with check (true);
+
+-- Dono autenticado gerencia a própria loja e dados relacionados:
+create policy "dono lê sua loja"      on public.lojas      for select using (auth.uid() = owner_id);
+create policy "dono edita sua loja"   on public.lojas      for update using (auth.uid() = owner_id);
+create policy "dono gere vendedores"  on public.vendedores for all
+  using (exists (select 1 from public.lojas l where l.id = loja_id and l.owner_id = auth.uid()));
+create policy "dono gere propostas"   on public.propostas  for all
+  using (exists (select 1 from public.lojas l where l.id = loja_id and l.owner_id = auth.uid()));
+
+-- ---------- Storage (fotos dos veículos) ----------
+-- Rode também (ou crie pelo painel: Storage > New bucket > "veiculos", público):
+--   insert into storage.buckets (id, name, public) values ('veiculos','veiculos', true)
+--   on conflict (id) do nothing;
+-- E uma policy de upload autenticado / leitura pública no bucket 'veiculos'.
