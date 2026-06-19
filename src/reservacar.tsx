@@ -296,6 +296,52 @@ export default function App() {
     }
   };
 
+  // Carrega a loja do usuário autenticado (lojas + vendedores) e mapeia p/ o formato do app.
+  const carregarLojaDoUsuario = async () => {
+    if (!isSupabaseConfigured) return null;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: loja } = await supabase.from('lojas').select('*').eq('owner_id', user.id).maybeSingle();
+    if (!loja) return null;
+    const { data: vends } = await supabase.from('vendedores').select('*').eq('loja_id', loja.id).order('created_at');
+    const mapped = {
+      id: loja.id,
+      nome: loja.nome,
+      cnpj: loja.cnpj,
+      email: loja.email || user.email,
+      telefone: loja.telefone,
+      valorMinimoSinal: Number(loja.valor_minimo_sinal) || 1500,
+      plano: loja.plano,
+      planoAtivo: loja.plano,
+      endereco: loja.endereco,
+      enderecoCobranca: loja.endereco,
+      cep: loja.cep,
+      ramos: [],
+      estoque: 0,
+      agendaHorarios: loja.agenda_horarios || HORARIOS_VISITA,
+      vendedores: (vends || []).map((v: any) => ({
+        id: v.id, nome: v.nome, cargo: v.cargo, ativo: v.ativo,
+        dataCadastro: new Date(v.created_at).toLocaleDateString('pt-BR'),
+        linksGerados: v.links_gerados, conversao: v.conversao,
+      })),
+    };
+    setEmpresaLogada(mapped);
+    return mapped;
+  };
+
+  // Pós-login: se já tem loja -> painel; senão -> onboarding (Assinar).
+  const handleAuthenticated = async () => {
+    setCurrentUserRole('owner');
+    const loja = await carregarLojaDoUsuario();
+    navigateTo(loja ? 'sales-stats' : 'assinar');
+  };
+
+  // Ao montar, se há sessão, pré-carrega a loja (sem forçar navegação).
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    carregarLojaDoUsuario().catch(() => {});
+  }, []);
+
   // Sincronização reativa de créditos de acordo com o plano ativo
   useEffect(() => {
     const plano = empresaLogada?.planoAtivo || empresaLogada?.plano || 'Plus';
@@ -398,6 +444,7 @@ export default function App() {
           <LoginView
             navigateTo={navigateTo}
             setCurrentUserRole={setCurrentUserRole}
+            onAuthenticated={handleAuthenticated}
           />
         )}
         
@@ -3504,7 +3551,7 @@ function EmpresaView({ navigateTo }) {
 }
 
 // --- LOGIN VIEW ---
-function LoginView({ navigateTo, setCurrentUserRole }) {
+function LoginView({ navigateTo, setCurrentUserRole, onAuthenticated }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -3528,8 +3575,7 @@ function LoginView({ navigateTo, setCurrentUserRole }) {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
-        setCurrentUserRole('owner');
-        navigateTo('sales-stats');
+        await onAuthenticated();
       }
     } catch (err: any) {
       const m = String(err?.message || 'Erro inesperado');
@@ -7351,34 +7397,69 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
     showToast('Vendedor removido.', 'info');
   };
 
-  const handleFinalize = () => {
+  const vendedoresDefault = [
+    { nome: 'Carla Silva', cargo: 'Consultora Premium', ativo: true, dataCadastro: '31/05/2026', linksGerados: 14, conversao: 64 },
+    { nome: 'Roberto Oliveira', cargo: 'Gerente de Vendas', ativo: true, dataCadastro: '24/05/2026', linksGerados: 28, conversao: 71 },
+    { nome: 'Marcos Souza', cargo: 'Consultor de Vendas', ativo: true, dataCadastro: '28/05/2026', linksGerados: 9, conversao: 56 },
+  ];
+
+  const handleFinalize = async () => {
     if (!empresaData.nome || !empresaData.cnpj || !empresaData.email) {
       showToast('Por favor, preencha todos os campos obrigatórios da Concessionária.', 'error');
       return;
     }
     const credits = getPlanCredits();
+    const vendsBase = empresaData.vendedores.length > 0 ? empresaData.vendedores : vendedoresDefault;
+
+    // Persistir no Supabase se o usuário estiver autenticado
+    if (isSupabaseConfigured) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        try {
+          const { data: loja, error: e1 } = await supabase.from('lojas').insert({
+            nome: empresaData.nome, cnpj: empresaData.cnpj, email: empresaData.email,
+            telefone: empresaData.telefone || null, endereco: empresaData.endereco || null,
+            cep: empresaData.cep || null, plano: empresaData.plano, owner_id: user.id,
+          }).select().single();
+          if (e1) throw e1;
+
+          const { data: vends } = await supabase.from('vendedores')
+            .insert(vendsBase.map((v: any) => ({ loja_id: loja.id, nome: v.nome, cargo: v.cargo })))
+            .select();
+
+          setTotalReservasPlano(credits);
+          setReservasUsadas(0);
+          setEmpresaLogada({
+            id: loja.id, nome: loja.nome, cnpj: loja.cnpj, email: loja.email, telefone: loja.telefone,
+            plano: loja.plano, planoAtivo: loja.plano, valorMinimoSinal: Number(loja.valor_minimo_sinal) || 1500,
+            endereco: loja.endereco, enderecoCobranca: loja.endereco, cep: loja.cep,
+            ramos: [], estoque: 0, agendaHorarios: loja.agenda_horarios,
+            vendedores: (vends || []).map((v: any) => ({ id: v.id, nome: v.nome, cargo: v.cargo, ativo: v.ativo, dataCadastro: new Date(v.created_at).toLocaleDateString('pt-BR'), linksGerados: v.links_gerados, conversao: v.conversao })),
+          });
+          showToast(`Loja criada e salva! Plano ${empresaData.plano} com ${credits} créditos.`, 'success');
+          navigateTo('sales-stats');
+          return;
+        } catch (err: any) {
+          showToast('Erro ao salvar a loja: ' + (err?.message || 'tente novamente'), 'error');
+          return;
+        }
+      }
+    }
+
+    // Fallback (demo público sem login)
     setTotalReservasPlano(credits);
     setReservasUsadas(0);
     setEmpresaLogada({
-      nome: empresaData.nome,
-      cnpj: empresaData.cnpj,
-      email: empresaData.email,
-      telefone: empresaData.telefone,
-      plano: empresaData.plano,
-      planoAtivo: empresaData.plano,
-      valorMinimoSinal: 1500,
+      nome: empresaData.nome, cnpj: empresaData.cnpj, email: empresaData.email, telefone: empresaData.telefone,
+      plano: empresaData.plano, planoAtivo: empresaData.plano, valorMinimoSinal: 1500,
       endereco: empresaData.endereco || 'Endereço não informado',
       enderecoCobranca: empresaData.enderecoCobranca || empresaData.endereco || 'Endereço não informado',
       cep: empresaData.cep || '00000-000',
       ramos: empresaData.ramos.length > 0 ? empresaData.ramos : ['Geral'],
       estoque: Number(empresaData.estoque) || 0,
-      vendedores: empresaData.vendedores.length > 0 ? empresaData.vendedores : [
-        { id: 1, nome: 'Carla Silva', cargo: 'Consultora Premium', ativo: true, dataCadastro: '31/05/2026', linksGerados: 14, conversao: 64 },
-        { id: 2, nome: 'Roberto Oliveira', cargo: 'Gerente de Vendas', ativo: true, dataCadastro: '24/05/2026', linksGerados: 28, conversao: 71 },
-        { id: 3, nome: 'Marcos Souza', cargo: 'Consultor de Vendas', ativo: true, dataCadastro: '28/05/2026', linksGerados: 9, conversao: 56 }
-      ]
+      vendedores: vendsBase.map((v: any, i: number) => ({ id: i + 1, ...v, ativo: v.ativo ?? true, dataCadastro: v.dataCadastro || new Date().toLocaleDateString('pt-BR'), linksGerados: v.linksGerados || 0, conversao: v.conversao || 0 })),
     });
-    showToast(`Assinatura realizada com sucesso! Você contratou o Plano ${empresaData.plano} com ${credits} créditos.`, 'success');
+    showToast(`Assinatura realizada com sucesso! Plano ${empresaData.plano} com ${credits} créditos.`, 'success');
     navigateTo('sales-stats');
   };
 
