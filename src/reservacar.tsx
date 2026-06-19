@@ -395,9 +395,8 @@ export default function App() {
         {currentRoute === 'empresa' && <EmpresaView navigateTo={navigateTo} />}
         {currentRoute === 'pricing' && <PricingView navigateTo={navigateTo} setPlanoSelecionado={setPlanoSelecionado} />}
         {currentRoute === 'login' && (
-          <LoginView 
-            navigateTo={navigateTo} 
-            currentUserRole={currentUserRole}
+          <LoginView
+            navigateTo={navigateTo}
             setCurrentUserRole={setCurrentUserRole}
           />
         )}
@@ -1004,7 +1003,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
       {/* Footer Section */}
       <div className={`pt-2 pb-4 border-t border-[#E5E5E2] bg-[#F4F4F2]/30 ${isCol ? 'px-2' : 'px-4'}`}>
         <button
-          onClick={() => handleNavigate('home')}
+          onClick={() => { supabase.auth.signOut().catch(() => {}); handleNavigate('home'); }}
           title={isCol ? 'Sair da Loja' : undefined}
           className={`w-full flex items-center rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition duration-150 ${isCol ? 'justify-center py-3' : 'gap-3 px-4 py-3'}`}
         >
@@ -1239,7 +1238,7 @@ function Topbar({ currentRoute, navigateTo, empresaLogada, liveNotifications = [
               </div>
               <button onClick={() => { navigateTo('configuracoes'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#2A2A26] hover:bg-[#F4F4F2] transition cursor-pointer"><Settings size={16} className="text-[#8A8A85]" /> Configurações</button>
               <button onClick={() => { showToast('Suporte Reservacar: suporte@reservacar.com.br', 'info'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#2A2A26] hover:bg-[#F4F4F2] transition cursor-pointer"><HelpCircle size={16} className="text-[#8A8A85]" /> Suporte</button>
-              <button onClick={() => { navigateTo('home'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"><LogOut size={16} /> Sair da Loja</button>
+              <button onClick={() => { supabase.auth.signOut().catch(() => {}); navigateTo('home'); fechar(); }} className="w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"><LogOut size={16} /> Sair da Loja</button>
             </div>
           )}
         </div>
@@ -3505,20 +3504,44 @@ function EmpresaView({ navigateTo }) {
 }
 
 // --- LOGIN VIEW ---
-function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
-  const [email, setEmail] = React.useState(currentUserRole === 'owner' ? 'dono@bmwpremium.com.br' : 'vendedor@bmwpremium.com.br');
-  const [password, setPassword] = React.useState('123456');
+function LoginView({ navigateTo, setCurrentUserRole }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
 
-  React.useEffect(() => {
-    setEmail(currentUserRole === 'owner' ? 'dono@bmwpremium.com.br' : 'vendedor@bmwpremium.com.br');
-  }, [currentUserRole]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (currentUserRole === 'owner') {
-      navigateTo('sales-stats');
-    } else {
-      navigateTo('dashboard');
+    setMsg(null);
+    if (!isSupabaseConfigured) {
+      setMsg({ type: 'error', text: 'Supabase não configurado — preencha o .env e reinicie o dev.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({ email: email.trim(), password });
+        if (error) throw error;
+        setMsg({ type: 'info', text: 'Conta criada! Enviamos um link de confirmação ao seu e-mail. Confirme e depois faça login.' });
+        setMode('login');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        setCurrentUserRole('owner');
+        navigateTo('sales-stats');
+      }
+    } catch (err: any) {
+      const m = String(err?.message || 'Erro inesperado');
+      setMsg({
+        type: 'error',
+        text: m.includes('Email not confirmed') ? 'E-mail ainda não confirmado. Verifique sua caixa de entrada.'
+          : m.includes('Invalid login') ? 'E-mail ou senha inválidos.'
+          : m.includes('already registered') ? 'Este e-mail já tem conta. Faça login.'
+          : m,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -3587,31 +3610,35 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
             </div>
           </div>
 
-          {/* Seletor de Perfil Flat */}
+          {/* Seletor Entrar / Criar conta */}
           <div className="grid grid-cols-2 gap-2 p-1 bg-[#EBEBE8] rounded-2xl border border-[#E5E5E2]">
             <button
               type="button"
-              onClick={() => setCurrentUserRole('owner')}
+              onClick={() => { setMode('login'); setMsg(null); }}
               className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
-                currentUserRole === 'owner'
-                  ? 'bg-[#141414] text-[#C1F11D]'
-                  : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
+                mode === 'login' ? 'bg-[#141414] text-[#C1F11D]' : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
               }`}
             >
-              Dono da Loja
+              Entrar
             </button>
             <button
               type="button"
-              onClick={() => setCurrentUserRole('employee')}
+              onClick={() => { setMode('signup'); setMsg(null); }}
               className={`py-3 px-4 rounded-xl text-xs font-bold transition-all duration-150 ${
-                currentUserRole === 'employee'
-                  ? 'bg-[#141414] text-[#C1F11D]'
-                  : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
+                mode === 'signup' ? 'bg-[#141414] text-[#C1F11D]' : 'text-[#8A8A85] hover:text-[#141414] bg-transparent'
               }`}
             >
-              Funcionário / Vendedor
+              Criar conta
             </button>
           </div>
+
+          {msg && (
+            <div className={`rounded-2xl px-4 py-3 text-xs font-semibold leading-relaxed ${
+              msg.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-[#C1F11D]/15 text-[#141414] border border-[#C1F11D]/40'
+            }`}>
+              {msg.text}
+            </div>
+          )}
 
           {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -3646,11 +3673,13 @@ function LoginView({ navigateTo, currentUserRole, setCurrentUserRole }) {
               />
             </div>
 
-            <button 
+            <button
               type="submit"
-              className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white font-bold rounded-2xl py-4 mt-2 transition duration-200 shadow-sm"
+              disabled={loading}
+              className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white font-bold rounded-2xl py-4 mt-2 transition duration-200 shadow-sm flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              Entrar no Sistema
+              {loading && <RefreshCw size={16} className="animate-spin" />}
+              {loading ? 'Aguarde...' : mode === 'signup' ? 'Criar conta' : 'Entrar no Sistema'}
             </button>
           </form>
 
