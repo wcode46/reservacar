@@ -5805,7 +5805,7 @@ function MobileClientView({
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
 
   return (
-    <div className="min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4">
+    <div className={publicMode ? "min-h-screen bg-white relative" : "min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4"}>
       {!publicMode && (
         <button
           onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)}
@@ -5830,25 +5830,29 @@ function MobileClientView({
         </div>
       )}
 
-      {/* Realistic Mobile Device Container Frame */}
-      <div className="w-[390px] h-[820px] bg-[#141414] rounded-[48px] shadow-2xl overflow-hidden relative border-[8px] border-[#2A2A26] flex flex-col scale-95 md:scale-100">
-        
-        {/* Notch dynamic simulated island */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-5 bg-black rounded-full z-[60] flex items-center justify-center">
-          <div className="w-2.5 h-2.5 bg-[#141414] rounded-full ml-auto mr-3 border border-[#2A2A26]"></div>
-        </div>
+      {/* Container — moldura de celular (preview do lojista) ou site normal (link público) */}
+      <div className={publicMode
+        ? "w-full max-w-md mx-auto min-h-screen bg-white relative flex flex-col"
+        : "w-[390px] h-[820px] bg-[#141414] rounded-[48px] shadow-2xl overflow-hidden relative border-[8px] border-[#2A2A26] flex flex-col scale-95 md:scale-100"}>
 
-        {/* Mobile App View Header */}
-        <div className="bg-white text-[#141414] px-5 pt-10 pb-4 flex justify-between items-center shrink-0 border-b border-[#E5E5E2]">
+        {/* Notch dynamic simulated island (só no preview do lojista) */}
+        {!publicMode && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-5 bg-black rounded-full z-[60] flex items-center justify-center">
+            <div className="w-2.5 h-2.5 bg-[#141414] rounded-full ml-auto mr-3 border border-[#2A2A26]"></div>
+          </div>
+        )}
+
+        {/* App View Header */}
+        <div className={`bg-white text-[#141414] px-5 pb-4 flex justify-between items-center shrink-0 border-b border-[#E5E5E2] ${publicMode ? 'pt-4 sticky top-0 z-30' : 'pt-10'}`}>
           <div className="flex items-center">
-            <ArrowLeft size={20} className="mr-3 cursor-pointer text-[#2A2A26]" onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} />
+            {!publicMode && <ArrowLeft size={20} className="mr-3 cursor-pointer text-[#2A2A26]" onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} />}
             <h2 className="text-base font-bold">Proposta de Showroom</h2>
           </div>
           <Share size={18} className="cursor-pointer text-[#2A2A26]" />
         </div>
 
-        {/* Scrollable container on phone view */}
-        <div className="flex-1 overflow-y-auto pb-24 bg-white">
+        {/* Conteúdo: scroll interno no preview, fluxo normal no site público */}
+        <div className={publicMode ? "pb-28 bg-white" : "flex-1 overflow-y-auto pb-24 bg-white"}>
           
           {/* Photos and Indicators (slider funcional: dots clicáveis + setas + swipe) */}
           <div
@@ -6246,9 +6250,9 @@ function MobileClientView({
           </div>
         </div>
 
-        {/* Bottom Fixed Sticky Action Bar in phone emulator */}
-        <div className="absolute bottom-0 left-0 w-full bg-white border-t border-[#EBEBE8] p-4 z-50 text-black">
-          <div className="flex items-center justify-between space-x-3">
+        {/* Barra de ação inferior — absoluta no preview, fixa na viewport no site público */}
+        <div className={`bg-white border-t border-[#EBEBE8] p-4 z-50 text-black ${publicMode ? 'fixed bottom-0 left-0 right-0' : 'absolute bottom-0 left-0 w-full'}`}>
+          <div className="flex items-center justify-between space-x-3 max-w-md mx-auto w-full">
             {slotInfo ? (
               <button
                 onClick={() => setShowAgendarSheet(true)}
