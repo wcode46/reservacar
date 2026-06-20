@@ -329,7 +329,9 @@ export default function App() {
 
     // Carrega as propostas da loja do banco e mapeia p/ o formato da UI
     const { data: props } = await supabase.from('propostas').select('*').eq('loja_id', loja.id).order('created_at', { ascending: false });
-    setRecentReservations((props || []).map((p: any) => mapPropostaToUI(p, mapped.vendedores)));
+    const propostas = (props || []).map((p: any) => mapPropostaToUI(p, mapped.vendedores));
+    setRecentReservations(propostas);
+    setReservasUsadas(propostas.length); // créditos usados = nº real de propostas da loja (não o mock de demo)
     return mapped;
   };
 
@@ -4561,9 +4563,11 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 // Timer
                 const totalSeconds = res.expiracao * 60;
                 const remainingSeconds = Math.max(0, totalSeconds - (res.elapsedSeconds || 0));
-                const mins = Math.floor(remainingSeconds / 60);
+                const pad2 = (n: number) => n.toString().padStart(2, '0');
+                const hrs = Math.floor(remainingSeconds / 3600);
+                const mins = Math.floor((remainingSeconds % 3600) / 60);
                 const secs = remainingSeconds % 60;
-                const timerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                const timerText = hrs > 0 ? `${pad2(hrs)}:${pad2(mins)}:${pad2(secs)}` : `${pad2(mins)}:${pad2(secs)}`;
                 const progressPercent = (remainingSeconds / totalSeconds) * 100;
                 const isUrgente = !isCompleted && !isExpired && remainingSeconds < 300;
 
@@ -5020,9 +5024,12 @@ function PreviewView({
   }, [timeLeft]);
 
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    // Mostra horas só quando a expiração passa de 60min (ex.: 6h -> 05:59:01, não 359:01)
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
   };
 
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
