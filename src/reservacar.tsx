@@ -223,7 +223,7 @@ export default function App() {
   ]);
 
   // Initial Seed for Reservations (idêntico aos prints!)
-  const [recentReservations, setRecentReservations] = useState([
+  const [recentReservations, setRecentReservations] = useState<any[]>([
     { 
       id: 1, title: 'Audi A3 1.6 3p 2002 Gasolina', signal: 1500, duration: '60', created: '12:12:33 de 24/05/2026',
       anoText: '2002', corText: 'Prata', motorText: '1.6 Gasolina', fipeValue: 22000, valorVenda: 19780, km: '185.000', cambio: 'Manual',
@@ -326,7 +326,54 @@ export default function App() {
       })),
     };
     setEmpresaLogada(mapped);
+
+    // Carrega as propostas da loja do banco e mapeia p/ o formato da UI
+    const { data: props } = await supabase.from('propostas').select('*').eq('loja_id', loja.id).order('created_at', { ascending: false });
+    setRecentReservations((props || []).map((p: any) => mapPropostaToUI(p, mapped.vendedores)));
     return mapped;
+  };
+
+  // Mapeia uma linha de "propostas" (DB) para o formato de reserva usado na UI
+  const mapPropostaToUI = (p: any, vendedores: any[] = []) => {
+    const vendName = (vendedores.find((v: any) => v.id === p.vendedor_id) || {}).nome || '';
+    return {
+      id: p.id, title: p.title,
+      anoText: p.ano, corText: p.cor, motorText: p.motor, cambio: p.cambio, km: p.km,
+      combustivel: p.motor, opcionais: p.opcionais || '',
+      fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
+      sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
+      expiracao: p.expiracao, duration: String(p.expiracao),
+      status: p.status, clienteNome: p.cliente_nome || 'Não informado',
+      fotos: (p.fotos || []).join(','), vendedores: vendName,
+      created: new Date(p.created_at).toLocaleString('pt-BR'),
+      elapsedSeconds: 0, laudoAprovado: true, logs: [],
+    };
+  };
+
+  // Publica uma proposta: persiste no banco (se autenticado) e atualiza a lista local
+  const publicarProposta = async (r: any) => {
+    if (isSupabaseConfigured && empresaLogada?.id) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const vend = (empresaLogada.vendedores || []).find((v: any) => (v.nome || '').trim().toLowerCase() === (r.vendedores || '').trim().toLowerCase());
+        const fotosArr = String(r.fotos || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const { data, error } = await supabase.from('propostas').insert({
+          loja_id: empresaLogada.id, vendedor_id: vend?.id || null,
+          title: r.title, ano: r.anoText || null, cor: r.corText || null, motor: r.motorText || null,
+          cambio: r.cambio || null, km: r.km || null, opcionais: r.opcionais || null,
+          fipe_value: r.fipeValue || null, valor_venda: r.valorVenda || null,
+          sinal: r.sinal || 0, expiracao: r.expiracao || 60, status: 'Active',
+          cliente_nome: r.clienteNome || null, fotos: fotosArr,
+        }).select().single();
+        if (!error && data) {
+          const saved = { ...r, id: data.id, created: new Date(data.created_at).toLocaleString('pt-BR') };
+          setRecentReservations((prev: any) => [saved, ...prev]);
+          return saved;
+        }
+      }
+    }
+    setRecentReservations((prev: any) => [r, ...prev]);
+    return r;
   };
 
   // Pós-login: se já tem loja -> painel; senão -> onboarding (Assinar).
@@ -498,13 +545,14 @@ export default function App() {
             empresaLogada={empresaLogada}
             setEmpresaLogada={setEmpresaLogada}
             previewOrigin={previewOrigin}
+            publicarProposta={publicarProposta}
           />
         )}
-        
+
         {currentRoute === 'mobile-preview' && (
-          <MobileClientView 
-            reservation={activeReservation} 
-            navigateTo={navigateTo} 
+          <MobileClientView
+            reservation={activeReservation}
+            navigateTo={navigateTo}
             showToast={showToast}
             recentReservations={recentReservations}
             setRecentReservations={setRecentReservations}
@@ -514,6 +562,7 @@ export default function App() {
             empresaLogada={empresaLogada}
             setEmpresaLogada={setEmpresaLogada}
             previewOrigin={previewOrigin}
+            publicarProposta={publicarProposta}
           />
         )}
 
@@ -4782,18 +4831,19 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
 }
 
 // --- CLIENT PREVIEW VIEW (DESKTOP VERSION) ---
-function PreviewView({ 
-  reservation, 
-  navigateTo, 
-  showToast, 
-  recentReservations = [], 
-  setRecentReservations, 
-  setReservasUsadas, 
-  reservasUsadas = 0, 
+function PreviewView({
+  reservation,
+  navigateTo,
+  showToast,
+  recentReservations = [],
+  setRecentReservations,
+  setReservasUsadas,
+  reservasUsadas = 0,
   totalReservasPlano = 30,
   empresaLogada,
   setEmpresaLogada,
-  previewOrigin
+  previewOrigin,
+  publicarProposta
 }) {
   const data = reservation || {
     title: 'BMW 320i Sport GP 2.0 Turbo ActiveFlex',
@@ -4858,12 +4908,12 @@ function PreviewView({
 
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (reservasUsadas >= totalReservasPlano) {
       showToast('Limite de links do plano atingido pela concessionária.', 'error');
       return;
     }
-    setRecentReservations([reservation, ...recentReservations]);
+    if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
     setReservasUsadas((prev: any) => prev + 1);
 
     // Incrementa linksGerados do vendedor associado à proposta
@@ -5480,6 +5530,7 @@ function AgendarVisitaSheet({ open, onClose, tituloVeiculo, slotInfo, telefone, 
 
 // --- NEW: MOBILE CLIENT VIEW (PREMIUM SMARTPHONE SIMULATOR) ---
 function MobileClientView({
+  publicarProposta,
   reservation, 
   navigateTo, 
   showToast, 
@@ -5565,12 +5616,12 @@ function MobileClientView({
 
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (reservasUsadas >= totalReservasPlano) {
       showToast('Limite de links do plano atingido pela concessionária.', 'error');
       return;
     }
-    setRecentReservations([reservation, ...recentReservations]);
+    if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
     setReservasUsadas((prev: any) => prev + 1);
 
     // Incrementa linksGerados do vendedor associado à proposta
