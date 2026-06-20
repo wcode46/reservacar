@@ -4355,7 +4355,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
         {/* Veículos cadastrados: contador por cima do carro (gradiente lima do design system) */}
         <div
-          className="rounded-3xl overflow-hidden min-h-[200px] flex items-center justify-end px-6 py-5 border border-[#E5E5E2] relative"
+          className="rounded-3xl overflow-hidden h-[210px] border border-[#E5E5E2] relative"
           style={{ background: 'radial-gradient(120% 120% at 50% 0%, #d8f750 0%, #eafbb0 42%, #ffffff 100%)' }}
         >
           {/* Contador de unidades (propostas cadastradas) */}
@@ -4367,7 +4367,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             src="/img/placeholder-car.png"
             alt="Volvo EX30 — veículo em destaque"
             loading="lazy"
-            className="w-[92%] max-w-[340px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)] -mr-2"
+            className="absolute bottom-0 right-0 h-[135%] w-auto max-w-none object-contain object-bottom translate-x-[16%] drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)]"
           />
         </div>
 
@@ -4850,7 +4850,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 function DashboardView({ navigateTo, setActiveReservation, recentReservations, setRecentReservations, showToast, reservasUsadas, totalReservasPlano, setReservaParaGerenciar }) {
   const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
   return (
-    <div className="pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
+    <div className="pt-8 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Gerador de Reservas</h1>
@@ -4885,7 +4885,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-bold text-[#8A8A85] uppercase tracking-widest flex items-center gap-2">
-            <Sparkles className="text-[#141414]" size={16} /> Links Criados Recentemente
+            <LinkIcon className="text-[#141414]" size={16} /> Reservas
           </h3>
           <span className="text-xs text-[#8A8A85] font-semibold">{recentReservations.length} links ativos</span>
         </div>
