@@ -75,6 +75,10 @@ alter table public.visitas     enable row level security;
 create policy "propostas legíveis publicamente" on public.propostas for select using (true);
 create policy "visitas legíveis publicamente"   on public.visitas   for select using (true);
 
+-- Link público da proposta também precisa ler nome/contato da loja e nome do vendedor:
+create policy "lojas legiveis publicamente"      on public.lojas      for select to public using (true);
+create policy "vendedores legiveis publicamente" on public.vendedores for select to public using (true);
+
 -- Cliente pode CRIAR uma visita (agendamento) sem login:
 create policy "qualquer um cria visita" on public.visitas for insert with check (true);
 

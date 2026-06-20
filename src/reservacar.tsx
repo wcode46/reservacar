@@ -4919,7 +4919,8 @@ function PreviewView({
   empresaLogada,
   setEmpresaLogada,
   previewOrigin,
-  publicarProposta
+  publicarProposta,
+  publicMode = false
 }) {
   const data = reservation || {
     title: 'BMW 320i Sport GP 2.0 Turbo ActiveFlex',
@@ -5027,13 +5028,26 @@ function PreviewView({
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
 
   return (
-    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] flex flex-col items-center pt-12 pb-24 px-6 relative">
-      <button 
-        onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} 
-        className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
-      >
-        <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Sistema'}
-      </button>
+    <div className={`min-h-screen bg-[#F4F4F2] text-[#141414] flex flex-col items-center pb-24 px-6 relative ${publicMode ? 'pt-0' : 'pt-12'}`}>
+      {publicMode ? (
+        <header className="w-full bg-white border-b border-[#E5E5E2] sticky top-0 z-30 -mx-6 px-6 mb-10">
+          <div className="max-w-5xl mx-auto py-4 flex items-center gap-3">
+            <div className="w-9 h-9 bg-[#141414] rounded-xl flex items-center justify-center shrink-0">
+              <Car size={18} className="text-[#C1F11D]" />
+            </div>
+            <span className="font-extrabold text-base tracking-tight text-[#141414] truncate">
+              {empresaLogada?.nome || 'Showroom'}
+            </span>
+          </div>
+        </header>
+      ) : (
+        <button
+          onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)}
+          className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
+        >
+          <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Sistema'}
+        </button>
+      )}
 
       {isPrePublish && (
         <div className="w-full max-w-5xl bg-white border border-[#E5E5E2] p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4 mt-12 relative overflow-hidden">
@@ -5060,8 +5074,8 @@ function PreviewView({
         </div>
       )}
 
-      <div className="w-full max-w-5xl mt-12">
-        
+      <div className={`w-full max-w-5xl ${publicMode ? 'mt-0' : 'mt-12'}`}>
+
         {/* Header proposal segment */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -5610,6 +5624,15 @@ function PublicPropostaView({ id, showToast }) {
   const [reserva, setReserva] = useState<any>(null);
   const [loja, setLoja] = useState<any>(null);
   const [erro, setErro] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -5653,23 +5676,26 @@ function PublicPropostaView({ id, showToast }) {
     );
   }
 
-  return (
-    <MobileClientView
-      reservation={reserva}
-      navigateTo={() => {}}
-      showToast={showToast}
-      recentReservations={[reserva]}
-      setRecentReservations={() => {}}
-      setReservasUsadas={() => {}}
-      reservasUsadas={0}
-      totalReservasPlano={999}
-      empresaLogada={loja}
-      setEmpresaLogada={() => {}}
-      previewOrigin={'home'}
-      publicarProposta={undefined}
-      publicMode={true}
-    />
-  );
+  const sharedProps = {
+    reservation: reserva,
+    navigateTo: () => {},
+    showToast,
+    recentReservations: [reserva],
+    setRecentReservations: () => {},
+    setReservasUsadas: () => {},
+    reservasUsadas: 0,
+    totalReservasPlano: 999,
+    empresaLogada: loja,
+    setEmpresaLogada: () => {},
+    previewOrigin: 'home',
+    publicarProposta: undefined,
+    publicMode: true as const,
+  };
+
+  // Desktop: mesmo layout largo do preview do lojista. Mobile: visão de celular.
+  return isDesktop
+    ? <PreviewView {...sharedProps} />
+    : <MobileClientView {...sharedProps} />;
 }
 
 // --- NEW: MOBILE CLIENT VIEW (PREMIUM SMARTPHONE SIMULATOR) ---
@@ -5846,7 +5872,12 @@ function MobileClientView({
         <div className={`bg-white text-[#141414] px-5 pb-4 flex justify-between items-center shrink-0 border-b border-[#E5E5E2] ${publicMode ? 'pt-4 sticky top-0 z-30' : 'pt-10'}`}>
           <div className="flex items-center">
             {!publicMode && <ArrowLeft size={20} className="mr-3 cursor-pointer text-[#2A2A26]" onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} />}
-            <h2 className="text-base font-bold">Proposta de Showroom</h2>
+            {publicMode && (
+              <div className="w-7 h-7 bg-[#141414] rounded-lg flex items-center justify-center mr-2.5 shrink-0">
+                <Car size={15} className="text-[#C1F11D]" />
+              </div>
+            )}
+            <h2 className="text-base font-bold truncate">{publicMode ? (empresaLogada?.nome || 'Showroom') : 'Proposta de Showroom'}</h2>
           </div>
           <Share size={18} className="cursor-pointer text-[#2A2A26]" />
         </div>
