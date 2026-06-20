@@ -4353,13 +4353,17 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </div>
         </div>
 
-        {/* Placeholder (conteúdo a definir) */}
-        <div className="rounded-3xl border-2 border-dashed border-[#E5E5E2] bg-[#F4F4F2] min-h-[200px] flex flex-col items-center justify-center text-center px-6 gap-2.5">
-          <span className="w-12 h-12 rounded-2xl bg-white border border-[#E5E5E2] flex items-center justify-center">
-            <BarChart2 size={20} className="text-[#B9B9B4]" />
-          </span>
-          <p className="text-sm font-bold text-[#6F6F6A]">Espaço reservado</p>
-          <p className="text-xs text-[#B9B9B4] font-medium max-w-[210px] leading-relaxed">Em breve um novo widget vai aparecer aqui.</p>
+        {/* Placeholder com veículo em destaque (gradiente lima do design system) */}
+        <div
+          className="rounded-3xl overflow-hidden min-h-[200px] flex items-center justify-center px-6 py-5 border border-[#E5E5E2]"
+          style={{ background: 'radial-gradient(120% 120% at 50% 0%, #d8f750 0%, #eafbb0 42%, #ffffff 100%)' }}
+        >
+          <img
+            src="/img/placeholder-car.png"
+            alt="Volvo EX30 — veículo em destaque"
+            loading="lazy"
+            className="w-[82%] max-w-[300px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)]"
+          />
         </div>
 
         {/* Ações */}
