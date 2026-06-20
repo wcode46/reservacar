@@ -4367,7 +4367,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             src="/img/placeholder-car.png"
             alt="Volvo EX30 — veículo em destaque"
             loading="lazy"
-            className="w-[72%] max-w-[270px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)]"
+            className="w-[92%] max-w-[340px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)] -mr-2"
           />
         </div>
 
