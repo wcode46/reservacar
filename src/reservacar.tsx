@@ -4272,35 +4272,11 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
   return (
     <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto">
-      {/* Faixa de reserva ativa — só mobile, no topo, com as cores do design system */}
-      {urgenteReserva && tempoRestanteSegundos > 0 && (
-        <div className="lg:hidden mb-5">
-          <div className="flex items-center gap-3 rounded-2xl bg-[#141414] px-4 py-3">
-            <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-              <Clock size={17} className="text-[#C1F11D]" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                  {tempoRestanteSegundos < 300 ? 'Expira em instantes' : 'Reserva ativa'}
-                </span>
-              </div>
-              <p className="text-sm font-bold text-white truncate mt-0.5">
-                {obterNomeSimplificado(urgenteReserva.title)}
-                <span className="text-white/65 font-semibold"> expira em </span>
-                <span className={tempoRestanteSegundos < 300 ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header estilo Meridian Overview */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 text-left">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real · {reservasDisponiveis} créditos livres</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
         </div>
         <div className="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3">
           {urgenteReserva && tempoRestanteSegundos > 0 && (
@@ -4322,8 +4298,30 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
-      {/* Bloco mobile: uso do plano + placeholder + ações (espelha o layout do app no celular) */}
+      {/* Bloco mobile: reserva ativa + uso do plano + placeholder + ações (espelha o layout do app no celular) */}
       <div className="lg:hidden space-y-4 mb-8">
+        {/* Faixa de reserva ativa — abaixo do título, com as cores do design system */}
+        {urgenteReserva && tempoRestanteSegundos > 0 && (
+          <div className="flex items-center gap-3 rounded-2xl bg-[#141414] px-4 py-3">
+            <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <Clock size={17} className="text-[#C1F11D]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                  {tempoRestanteSegundos < 300 ? 'Expira em instantes' : 'Reserva ativa'}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-white truncate mt-0.5">
+                {obterNomeSimplificado(urgenteReserva.title)}
+                <span className="text-white/65 font-semibold"> expira em </span>
+                <span className={tempoRestanteSegundos < 300 ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Uso do plano */}
         <div className="bg-white border border-[#E5E5E2] rounded-3xl p-5">
           <div className="flex items-center justify-between mb-3">
