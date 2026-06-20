@@ -5030,7 +5030,7 @@ function PreviewView({
   return (
     <div className={`min-h-screen bg-[#F4F4F2] text-[#141414] flex flex-col items-center pb-24 px-6 relative ${publicMode ? 'pt-0' : 'pt-12'}`}>
       {publicMode ? (
-        <header className="w-full bg-white border-b border-[#E5E5E2] sticky top-0 z-30 -mx-6 px-6 mb-10">
+        <header className="self-stretch bg-white border-b border-[#E5E5E2] sticky top-0 z-30 -mx-6 px-6 mb-10">
           <div className="max-w-5xl mx-auto py-4 flex items-center gap-3">
             <div className="w-9 h-9 bg-[#141414] rounded-xl flex items-center justify-center shrink-0">
               <Car size={18} className="text-[#C1F11D]" />
