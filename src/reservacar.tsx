@@ -421,9 +421,25 @@ export default function App() {
 
   const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
 
+  // Link público da proposta para o cliente (?p=<id>) — renderiza só a proposta, sem app.
+  const publicPropostaId = useMemo(() => new URLSearchParams(window.location.search).get('p'), []);
+  if (publicPropostaId) {
+    return (
+      <div className="min-h-screen bg-[#F4F4F2] text-[#141414] font-sans selection:bg-[#C1F11D] selection:text-[#141414]">
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-[99] max-w-sm bg-white border border-[#E5E5E2] border-l-4 border-[#141414] text-[#141414] p-4 rounded-r-xl flex items-center gap-3 animate-bounce">
+            <Sparkles className="text-[#141414] shrink-0" size={20} />
+            <span className="text-sm font-medium">{toastMessage.text}</span>
+          </div>
+        )}
+        <PublicPropostaView id={publicPropostaId} showToast={showToast} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#141414] font-sans selection:bg-[#C1F11D] selection:text-[#141414] transition-colors duration-200">
-      
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[99] max-w-sm bg-white border border-[#E5E5E2] border-l-4 border-[#141414] text-[#141414] p-4 rounded-r-xl flex items-center gap-3 animate-bounce">
@@ -630,6 +646,7 @@ export default function App() {
         <GerenciarReservaModal
           reserva={reservaParaGerenciar}
           currentUserRole={currentUserRole}
+          showToast={showToast}
           onClose={() => setReservaParaGerenciar(null)}
           onSave={(updatedRes) => {
             setRecentReservations(prev => prev.map(res => res.id === updatedRes.id ? updatedRes : res));
@@ -667,13 +684,38 @@ export default function App() {
 }
 
 // --- MODAL DE GERENCIAMENTO DE RESERVA (F5) ---
-function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, currentUserRole = 'owner' }) {
+function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, currentUserRole = 'owner', showToast = (..._a: any[]) => {} }) {
   const [sinal, setSinal] = useState(String(reserva.signal || reserva.sinal || 0));
   const [status, setStatus] = useState(reserva.status || 'Active');
   const [vendedor, setVendedor] = useState(reserva.vendedores || '');
-  const [fotoUrl, setFotoUrl] = useState(reserva.fotos || reserva.foto || '');
+  const [fotos, setFotos] = useState<string[]>(String(reserva.fotos || reserva.foto || '').split(',').map(s => s.trim()).filter(Boolean));
   const [showPhotoSelector, setShowPhotoSelector] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
+  const [uploadingFotos, setUploadingFotos] = useState(false);
+
+  const addFoto = (url: string) => { if (url && fotos.length < 8) setFotos(prev => [...prev, url]); };
+  const removeFoto = (i: number) => setFotos(prev => prev.filter((_, idx) => idx !== i));
+  const uploadFotosModal = async (fileList: FileList | null) => {
+    const arquivos = Array.from(fileList || []);
+    if (arquivos.length === 0) return;
+    if (!isSupabaseConfigured) { showToast('Supabase não configurado.', 'error'); return; }
+    const espaco = 8 - fotos.length;
+    if (espaco <= 0) { showToast('Limite de 8 fotos atingido.', 'info'); return; }
+    setUploadingFotos(true);
+    try {
+      const novas: string[] = [];
+      for (const file of arquivos.slice(0, espaco)) {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `propostas/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage.from('veiculos').upload(path, file, { contentType: file.type });
+        if (error) throw error;
+        novas.push(supabase.storage.from('veiculos').getPublicUrl(path).data.publicUrl);
+      }
+      setFotos(prev => [...prev, ...novas]);
+      showToast(`${novas.length} foto(s) enviada(s)!`, 'success');
+    } catch (e: any) { showToast('Erro no upload: ' + (e?.message || 'tente novamente'), 'error'); }
+    finally { setUploadingFotos(false); }
+  };
 
   const handleSave = () => {
     const novosLogs = [...(reserva.logs || [])];
@@ -709,11 +751,17 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
       });
     }
 
-    if (fotoUrl !== (reserva.fotos || '')) {
+    const fotosStr = fotos.join(',');
+    if (fotosStr !== (reserva.fotos || '')) {
       novosLogs.push({
         time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
-        text: `Foto do veículo atualizada por ${currentUserRole === 'owner' ? 'Dono' : 'Vendedor'}`
+        text: `Fotos do veículo atualizadas por ${currentUserRole === 'owner' ? 'Dono' : 'Vendedor'}`
       });
+    }
+
+    // Persiste no banco quando a proposta veio do Supabase (id é uuid)
+    if (isSupabaseConfigured && reserva.id && String(reserva.id).includes('-')) {
+      supabase.from('propostas').update({ fotos, sinal: signalToSave, status }).eq('id', reserva.id).then(() => {});
     }
 
     onSave({
@@ -722,8 +770,8 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
       sinal: signalToSave,
       status: status,
       vendedores: sellerToSave,
-      fotos: fotoUrl,
-      foto: fotoUrl,
+      fotos: fotosStr,
+      foto: fotos[0] || '',
       logs: novosLogs
     });
   };
@@ -768,52 +816,56 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
           {/* Galeria de Fotos */}
           <div className="space-y-3 bg-[#F4F4F2] border border-[#EBEBE8] p-4 rounded-2xl">
             <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Galeria / Fotos do Veículo</label>
-            <div className="flex items-center gap-4">
-              <div className="w-24 h-16 rounded-xl overflow-hidden border border-[#E5E5E2] bg-white shrink-0 relative">
-                {fotoUrl ? (
-                  <img src={fotoUrl} alt="Veículo" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#B9B9B4]">
-                    <Car size={24} />
+
+            {/* Fotos atuais */}
+            {fotos.length > 0 ? (
+              <div className="grid grid-cols-4 gap-2">
+                {fotos.map((url, i) => (
+                  <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E5E2] bg-white">
+                    <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removeFoto(i)} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition">
+                      <X size={10} />
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowPhotoSelector(!showPhotoSelector)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[#5F5F5A] bg-white border border-[#E5E5E2] hover:bg-[#F4F4F2] transition"
-                >
-                  <Camera size={14} className="text-[#141414]" />
-                  <span>Atualizar Imagem</span>
-                </button>
-                <p className="text-[10px] text-[#B9B9B4] font-semibold leading-none">Selecione presets do showroom ou URL externa</p>
-              </div>
+            ) : (
+              <p className="text-[11px] text-[#B9B9B4] font-medium italic">Nenhuma foto ainda — envie ou escolha um preset.</p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${uploadingFotos ? 'bg-[#C1F11D]/15 text-[#141414] cursor-wait' : 'text-[#5F5F5A] bg-white border border-[#E5E5E2] hover:bg-[#F4F4F2] cursor-pointer'}`}>
+                <input type="file" accept="image/*" multiple className="hidden" disabled={uploadingFotos} onChange={(e) => { uploadFotosModal(e.target.files); e.currentTarget.value = ''; }} />
+                {uploadingFotos ? <RefreshCw size={14} className="animate-spin" /> : <UploadCloud size={14} className="text-[#141414]" />}
+                <span>{uploadingFotos ? 'Enviando...' : 'Enviar foto'}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPhotoSelector(!showPhotoSelector)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[#5F5F5A] bg-white border border-[#E5E5E2] hover:bg-[#F4F4F2] transition"
+              >
+                <Camera size={14} className="text-[#141414] " /> Presets / URL
+              </button>
             </div>
 
             {showPhotoSelector && (
-              <div className="bg-white border border-[#E5E5E2] p-4 rounded-xl space-y-4 transition duration-150 mt-3">
-                <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Presets de Imagem</span>
+              <div className="bg-white border border-[#E5E5E2] p-4 rounded-xl space-y-4 transition duration-150 mt-2">
+                <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Adicionar preset</span>
                 <div className="grid grid-cols-4 gap-2">
                   {CAR_IMAGES.map((img) => (
                     <button
                       key={img.url}
                       type="button"
-                      onClick={() => {
-                        setFotoUrl(img.url);
-                        setShowPhotoSelector(false);
-                      }}
-                      className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition ${
-                        fotoUrl === img.url ? 'border-[#141414]' : 'border-transparent'
-                      }`}
+                      onClick={() => addFoto(img.url)}
+                      className="relative aspect-[4/3] rounded-lg overflow-hidden border-2 border-transparent hover:border-[#141414] transition"
                     >
                       <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="border-t border-[#EBEBE8] pt-3 space-y-2">
-                  <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">URL do Veículo</span>
+                  <span className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Adicionar por URL</span>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -824,13 +876,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        if (customUrl.trim()) {
-                          setFotoUrl(customUrl.trim());
-                          setCustomUrl('');
-                          setShowPhotoSelector(false);
-                        }
-                      }}
+                      onClick={() => { if (customUrl.trim()) { addFoto(customUrl.trim()); setCustomUrl(''); } }}
                       className="px-4 py-2.5 bg-[#141414] hover:bg-[#2A2A26] text-white rounded-xl text-xs font-bold transition"
                     >
                       Ok
@@ -899,6 +945,36 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                   <p className="font-semibold">{log.text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Compartilhar com o cliente */}
+          <div className="space-y-2 bg-[#141414] p-4 rounded-2xl">
+            <span className="block text-[10px] font-black text-[#C1F11D] uppercase tracking-wider">Link para o cliente</span>
+            <p className="text-[11px] text-white/50 font-medium leading-relaxed">Um único link responsivo — abre no celular (WhatsApp) ou no PC, se adaptando à tela.</p>
+            <div className="flex gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = `${window.location.origin}?p=${reserva.id}`;
+                  if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => showToast('Link copiado!', 'success')).catch(() => showToast(link, 'info'));
+                  else showToast(link, 'info');
+                }}
+                className="flex-1 bg-white/10 hover:bg-white/15 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition"
+              >
+                <Copy size={13} /> Copiar link
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const link = `${window.location.origin}?p=${reserva.id}`;
+                  const msg = encodeURIComponent(`Olá! Segue a proposta do ${reserva.title}: ${link}`);
+                  window.open(`https://wa.me/?text=${msg}`, '_blank');
+                }}
+                className="flex-1 bg-[#C1F11D] hover:brightness-105 text-[#141414] text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition"
+              >
+                <MessageCircle size={13} /> WhatsApp
+              </button>
             </div>
           </div>
         </div>
@@ -5528,10 +5604,79 @@ function AgendarVisitaSheet({ open, onClose, tituloVeiculo, slotInfo, telefone, 
   );
 }
 
+// --- PÁGINA PÚBLICA DA PROPOSTA (link compartilhável: ?p=<id>) ---
+function PublicPropostaView({ id, showToast }) {
+  const [loading, setLoading] = useState(true);
+  const [reserva, setReserva] = useState<any>(null);
+  const [loja, setLoja] = useState<any>(null);
+  const [erro, setErro] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!isSupabaseConfigured) { setErro(true); return; }
+        const { data: p } = await supabase.from('propostas').select('*').eq('id', id).maybeSingle();
+        if (!p) { setErro(true); return; }
+        const { data: l } = await supabase.from('lojas').select('nome,telefone,email').eq('id', p.loja_id).maybeSingle();
+        let vendName = '';
+        if (p.vendedor_id) {
+          const { data: v } = await supabase.from('vendedores').select('nome').eq('id', p.vendedor_id).maybeSingle();
+          vendName = v?.nome || '';
+        }
+        setReserva({
+          id: p.id, title: p.title, anoText: p.ano, corText: p.cor, motorText: p.motor, combustivel: p.motor,
+          cambio: p.cambio, km: p.km, opcionais: p.opcionais || '',
+          fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
+          sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
+          expiracao: p.expiracao, duration: String(p.expiracao),
+          status: p.status, clienteNome: p.cliente_nome || 'Cliente',
+          fotos: (p.fotos || []).join(','), vendedores: vendName,
+          created: new Date(p.created_at).toLocaleString('pt-BR'),
+          elapsedSeconds: 0, laudoAprovado: true, logs: [],
+        });
+        setLoja(l || { nome: 'Showroom', telefone: '' });
+      } catch { setErro(true); }
+      finally { setLoading(false); }
+    })();
+  }, [id]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#F4F4F2] text-[#8A8A85] font-bold gap-2"><RefreshCw className="animate-spin" size={18} /> Carregando proposta...</div>;
+  }
+  if (erro || !reserva) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F4F4F2] text-center px-6">
+        <div className="w-14 h-14 bg-[#141414] rounded-2xl flex items-center justify-center mb-4"><Car size={28} className="text-[#C1F11D]" /></div>
+        <p className="text-xl font-extrabold text-[#141414]">Proposta não encontrada</p>
+        <p className="text-sm text-[#8A8A85] mt-2 max-w-xs">O link pode ter expirado ou está incorreto. Peça um novo link ao vendedor.</p>
+      </div>
+    );
+  }
+
+  return (
+    <MobileClientView
+      reservation={reserva}
+      navigateTo={() => {}}
+      showToast={showToast}
+      recentReservations={[reserva]}
+      setRecentReservations={() => {}}
+      setReservasUsadas={() => {}}
+      reservasUsadas={0}
+      totalReservasPlano={999}
+      empresaLogada={loja}
+      setEmpresaLogada={() => {}}
+      previewOrigin={'home'}
+      publicarProposta={undefined}
+      publicMode={true}
+    />
+  );
+}
+
 // --- NEW: MOBILE CLIENT VIEW (PREMIUM SMARTPHONE SIMULATOR) ---
 function MobileClientView({
   publicarProposta,
-  reservation, 
+  publicMode = false,
+  reservation,
   navigateTo, 
   showToast, 
   recentReservations = [], 
@@ -5661,12 +5806,14 @@ function MobileClientView({
 
   return (
     <div className="min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4">
-      <button 
-        onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)} 
-        className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
-      >
-        <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Painel'}
-      </button>
+      {!publicMode && (
+        <button
+          onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)}
+          className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
+        >
+          <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Painel'}
+        </button>
+      )}
 
       {isPrePublish && (
         <div className="absolute top-6 right-6 bg-white border border-[#E5E5E2] p-5 rounded-2xl flex flex-col justify-between items-center gap-3 z-20 w-64">
