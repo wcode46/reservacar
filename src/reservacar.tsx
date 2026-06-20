@@ -4096,6 +4096,16 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
     return `${p1} ${p2}`.trim();
   };
 
+  // Tempo restante legível: 5h 56m / 7m 04s / 12s (evita "356m 41s")
+  const formatTempoRestante = (segundos: number) => {
+    const h = Math.floor(segundos / 3600);
+    const m = Math.floor((segundos % 3600) / 60);
+    const s = segundos % 60;
+    if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m`;
+    if (m > 0) return `${m}m ${s.toString().padStart(2, '0')}s`;
+    return `${s}s`;
+  };
+
 
   // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas
   useEffect(() => {
@@ -4262,13 +4272,37 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
   return (
     <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto">
+      {/* Faixa de reserva ativa — só mobile, no topo, com as cores do design system */}
+      {urgenteReserva && tempoRestanteSegundos > 0 && (
+        <div className="lg:hidden mb-5">
+          <div className="flex items-center gap-3 rounded-2xl bg-[#141414] px-4 py-3">
+            <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <Clock size={17} className="text-[#C1F11D]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                  {tempoRestanteSegundos < 300 ? 'Expira em instantes' : 'Reserva ativa'}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-white truncate mt-0.5">
+                {obterNomeSimplificado(urgenteReserva.title)}
+                <span className="text-white/65 font-semibold"> expira em </span>
+                <span className={tempoRestanteSegundos < 300 ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header estilo Meridian Overview */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 text-left">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
           <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real · {reservasDisponiveis} créditos livres</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3">
           {urgenteReserva && tempoRestanteSegundos > 0 && (
             <div className={`w-full sm:w-auto px-4 py-2 rounded-full flex items-center justify-center gap-2 text-xs transition-all duration-300 border ${
               tempoRestanteSegundos < 300
@@ -4276,13 +4310,69 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 : 'bg-white border-[#E5E5E2] text-[#5F5F5A]'
             }`}>
               <span className={`w-2 h-2 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
-              <span className="font-bold">{obterNomeSimplificado(urgenteReserva.title)} expira em {Math.floor(tempoRestanteSegundos / 60)}m {tempoRestanteSegundos % 60}s</span>
+              <span className="font-bold">{obterNomeSimplificado(urgenteReserva.title)} expira em {formatTempoRestante(tempoRestanteSegundos)}</span>
             </div>
           )}
           <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
             <UploadCloud size={15} /> Exportar
           </button>
           <button onClick={() => navigateTo('dashboard')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer whitespace-nowrap">
+            <Plus size={15} className="text-[#C1F11D]" /> Nova proposta
+          </button>
+        </div>
+      </div>
+
+      {/* Bloco mobile: uso do plano + placeholder + ações (espelha o layout do app no celular) */}
+      <div className="lg:hidden space-y-4 mb-8">
+        {/* Uso do plano */}
+        <div className="bg-white border border-[#E5E5E2] rounded-3xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-bold text-[#8A8A85] uppercase tracking-widest">Uso do plano</span>
+            <span className="text-xs font-black text-[#141414] font-mono">{reservasUsadas}/{totalReservasPlano}</span>
+          </div>
+          <div className="w-full bg-[#EBEBE8] h-2 rounded-full overflow-hidden">
+            <div
+              className="bg-[#141414] h-full rounded-full transition-[width] duration-700 ease-out"
+              style={{ width: `${Math.min(100, Math.max(0, (reservasUsadas / totalReservasPlano) * 100))}%` }}
+            ></div>
+          </div>
+          <div className="flex items-center justify-between gap-3 mt-3">
+            <span className="text-xs font-semibold text-[#6F6F6A] flex items-center gap-1.5">
+              <LinkIcon size={13} className="text-[#B9B9B4] shrink-0" />
+              {Math.max(0, reservasDisponiveis)} {Math.max(0, reservasDisponiveis) === 1 ? 'link disponível' : 'links disponíveis'}
+            </span>
+            {reservasDisponiveis <= 2 && (
+              <button
+                onClick={() => navigateTo('configuracoes')}
+                className="text-[10px] font-black uppercase tracking-wider text-[#141414] bg-[#C1F11D] px-3 py-1.5 rounded-full active:scale-95 transition cursor-pointer"
+              >
+                Fazer upgrade
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Placeholder (conteúdo a definir) */}
+        <div className="rounded-3xl border-2 border-dashed border-[#E5E5E2] bg-[#F4F4F2] min-h-[200px] flex flex-col items-center justify-center text-center px-6 gap-2.5">
+          <span className="w-12 h-12 rounded-2xl bg-white border border-[#E5E5E2] flex items-center justify-center">
+            <BarChart2 size={20} className="text-[#B9B9B4]" />
+          </span>
+          <p className="text-sm font-bold text-[#6F6F6A]">Espaço reservado</p>
+          <p className="text-xs text-[#B9B9B4] font-medium max-w-[210px] leading-relaxed">Em breve um novo widget vai aparecer aqui.</p>
+        </div>
+
+        {/* Ações */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => showToast('Relatório exportado (demo).', 'success')}
+            className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] text-[#2A2A26] text-sm font-bold px-4 py-3 rounded-2xl active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#141414]/15 cursor-pointer"
+          >
+            <UploadCloud size={15} /> Exportar
+          </button>
+          <button
+            onClick={() => navigateTo('dashboard')}
+            className="flex-1 flex items-center justify-center gap-2 bg-[#141414] text-white text-sm font-bold px-4 py-3 rounded-2xl active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#141414]/25 cursor-pointer"
+          >
             <Plus size={15} className="text-[#C1F11D]" /> Nova proposta
           </button>
         </div>
