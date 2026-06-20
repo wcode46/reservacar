@@ -4231,8 +4231,10 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
   // Ranking de vendedores calculados dinamicamente
   const rankingVendedores = useMemo(() => {
-    const nomes = ['Roberto Oliveira', 'Carla Silva', 'Marcos Souza'];
-    const dados = nomes.map(nome => {
+    const nomes = (empresaLogada?.vendedores || [])
+      .map((v: any) => v?.nome)
+      .filter((nome: any) => typeof nome === 'string' && nome.trim().length > 0);
+    const dados = nomes.map((nome: string) => {
       const reservasDoVendedor = recentReservations.filter((r: any) => r.vendedores === nome || (r.vendedores && r.vendedores.includes(nome)));
       const total = reservasDoVendedor.length;
       const pagas = reservasDoVendedor.filter((r: any) => r.status === 'Completed' || r.paidSignal).length;
@@ -4240,7 +4242,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       return { nome, total, pagas, conversao };
     });
     return dados.sort((a, b) => b.conversao - a.conversao);
-  }, [recentReservations]);
+  }, [recentReservations, empresaLogada]);
 
   // Simulator helpers
   const handleSimulatePayment = (resId, clientName) => {
@@ -4810,23 +4812,36 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <h3 className="font-bold text-[#2A2A26] text-sm mb-1">Ranking de Vendedores</h3>
             <p className="text-[10px] text-[#B9B9B4] font-medium mb-4">Conversão real baseada em propostas</p>
             
-            <div className="space-y-4">
-              {rankingVendedores.map((vend) => (
-                <div key={vend.nome} className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
-                    <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+            {rankingVendedores.length > 0 ? (
+              <div className="space-y-4">
+                {rankingVendedores.map((vend) => (
+                  <div key={vend.nome} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
+                      <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+                    </div>
+                    {/* Barra de Progresso Horizontal do Vendedor */}
+                    <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
+                      <div
+                        className="bg-[#141414] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${vend.conversao}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  {/* Barra de Progresso Horizontal do Vendedor */}
-                  <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
-                    <div 
-                      className="bg-[#141414] h-full rounded-full transition-all duration-500"
-                      style={{ width: `${vend.conversao}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-center gap-2 py-6">
+                <Users size={20} className="text-[#B9B9B4]" />
+                <p className="text-xs font-semibold text-[#6F6F6A]">Nenhum vendedor cadastrado</p>
+                <button
+                  onClick={() => navigateTo('vendedores')}
+                  className="text-[11px] font-bold text-[#141414] bg-[#C1F11D]/25 hover:bg-[#C1F11D]/40 px-3 py-1.5 rounded-full transition cursor-pointer"
+                >
+                  Adicionar vendedor
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Card Auxiliar: Velocidade Média de Vendas */}
