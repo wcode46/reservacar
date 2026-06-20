@@ -4353,16 +4353,21 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </div>
         </div>
 
-        {/* Placeholder com veículo em destaque (gradiente lima do design system) */}
+        {/* Veículos cadastrados: contador por cima do carro (gradiente lima do design system) */}
         <div
-          className="rounded-3xl overflow-hidden min-h-[200px] flex items-center justify-center px-6 py-5 border border-[#E5E5E2]"
+          className="rounded-3xl overflow-hidden min-h-[200px] flex items-center justify-end px-6 py-5 border border-[#E5E5E2] relative"
           style={{ background: 'radial-gradient(120% 120% at 50% 0%, #d8f750 0%, #eafbb0 42%, #ffffff 100%)' }}
         >
+          {/* Contador de unidades (propostas cadastradas) */}
+          <div className="absolute top-5 left-5 z-10 text-left">
+            <span className="block text-[11px] font-black uppercase tracking-[0.2em] text-[#141414]/75">Und</span>
+            <span className="block text-6xl font-extrabold text-[#141414] leading-none tracking-tight tabular-nums mt-0.5">{totalCriadasAcumulado}</span>
+          </div>
           <img
             src="/img/placeholder-car.png"
             alt="Volvo EX30 — veículo em destaque"
             loading="lazy"
-            className="w-[82%] max-w-[300px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)]"
+            className="w-[72%] max-w-[270px] object-contain drop-shadow-[0_18px_24px_rgba(20,20,20,0.18)]"
           />
         </div>
 
