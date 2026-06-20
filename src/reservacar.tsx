@@ -4266,21 +4266,21 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
           <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real · {reservasDisponiveis} créditos livres</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {urgenteReserva && tempoRestanteSegundos > 0 && (
-            <div className={`px-4 py-2 rounded-full flex items-center gap-2 text-xs transition-all duration-300 border ${
+            <div className={`w-full sm:w-auto px-4 py-2 rounded-full flex items-center justify-center gap-2 text-xs transition-all duration-300 border ${
               tempoRestanteSegundos < 300
                 ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold'
                 : 'bg-white border-[#E5E5E2] text-[#5F5F5A]'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
               <span className="font-bold">{obterNomeSimplificado(urgenteReserva.title)} expira em {Math.floor(tempoRestanteSegundos / 60)}m {tempoRestanteSegundos % 60}s</span>
             </div>
           )}
-          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex items-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
+          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
             <UploadCloud size={15} /> Exportar
           </button>
-          <button onClick={() => navigateTo('dashboard')} className="flex items-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
+          <button onClick={() => navigateTo('dashboard')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer whitespace-nowrap">
             <Plus size={15} className="text-[#C1F11D]" /> Nova proposta
           </button>
         </div>
@@ -4606,10 +4606,10 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-t border-[#EBEBE8] pt-4">
                       <div className="flex items-center gap-4">
                         {res.fotos && (
-                          <img 
-                            src={res.fotos} 
-                            alt={res.title} 
-                            className="w-14 h-14 rounded-2xl object-cover border border-[#E5E5E2] shrink-0 animate-fade-in-down" 
+                          <img
+                            src={String(res.fotos).split(',')[0].trim()}
+                            alt={res.title}
+                            className="w-14 h-14 rounded-2xl object-cover border border-[#E5E5E2] shrink-0 animate-fade-in-down"
                           />
                         )}
                         <div>
