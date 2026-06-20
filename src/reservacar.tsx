@@ -1134,10 +1134,13 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
             <span className="text-[10px] font-black text-[#8A8A85] uppercase tracking-wider">Uso do Plano</span>
             <span className="text-[11px] font-black text-[#141414]">{reservasUsadas}/{totalReservasPlano}</span>
           </div>
-          <div className="w-full bg-[#EBEBE8] h-2.5 rounded-full overflow-hidden border border-[#E5E5E2]">
-            <div className="bg-[#141414] h-full transition-all duration-[800ms] ease-out-expo origin-left transform" style={{ width: `${Math.min(100, (reservasUsadas / totalReservasPlano) * 100)}%` }}></div>
+          <div className="w-full bg-[#EBEBE8] h-2 rounded-full overflow-hidden">
+            <div className="bg-[#141414] h-full rounded-full transition-[width] duration-[800ms] ease-out-expo" style={{ width: `${Math.min(100, Math.max(0, (reservasUsadas / totalReservasPlano) * 100))}%` }}></div>
           </div>
-          <p className="text-[10px] text-[#B9B9B4] mt-2 font-bold uppercase tracking-wide">{linksDisponiveis} links disponíveis</p>
+          <p className="text-xs text-[#6F6F6A] mt-2 font-semibold flex items-center gap-1.5">
+            <LinkIcon size={13} className="text-[#B9B9B4] shrink-0" />
+            {Math.max(0, linksDisponiveis)} {Math.max(0, linksDisponiveis) === 1 ? 'link disponível' : 'links disponíveis'}
+          </p>
           {currentUserRole === 'owner' && (
             <button onClick={() => handleNavigate('plano')} className="w-full mt-3.5 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#141414] bg-[#C1F11D]/20 hover:bg-[#C1F11D]/35 transition duration-150 cursor-pointer">
               <ArrowUp size={14} className="stroke-[2.5px]" />
