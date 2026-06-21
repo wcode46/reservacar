@@ -5104,34 +5104,45 @@ function PreviewView({
 
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
 
+  const publishingRef = useRef(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const handlePublish = async () => {
+    if (publishingRef.current) return; // evita publicação dupla (duplo clique / reentrância)
     if (reservasUsadas >= totalReservasPlano) {
       showToast('Limite de links do plano atingido pela concessionária.', 'error');
       return;
     }
-    if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
-    setReservasUsadas((prev: any) => prev + 1);
+    publishingRef.current = true;
+    setIsPublishing(true);
+    try {
+      if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
+      setReservasUsadas((prev: any) => prev + 1);
 
-    // Incrementa linksGerados do vendedor associado à proposta
-    if (setEmpresaLogada && reservation?.vendedores) {
-      setEmpresaLogada((prevEmpresa: any) => {
-        const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
-          if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
-            return {
-              ...v,
-              linksGerados: (v.linksGerados || 0) + 1
-            };
-          }
-          return v;
+      // Incrementa linksGerados do vendedor associado à proposta
+      if (setEmpresaLogada && reservation?.vendedores) {
+        setEmpresaLogada((prevEmpresa: any) => {
+          const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+            if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
+              return {
+                ...v,
+                linksGerados: (v.linksGerados || 0) + 1
+              };
+            }
+            return v;
+          });
+          return { ...prevEmpresa, vendedores: vendedoresAtualizados };
         });
-        return { ...prevEmpresa, vendedores: vendedoresAtualizados };
-      });
-    }
+      }
 
-    showToast('Link de reserva criado e publicado com sucesso!', 'success');
-    navigateTo('dashboard');
+      showToast('Link de reserva criado e publicado com sucesso!', 'success');
+      navigateTo('dashboard');
+    } catch {
+      publishingRef.current = false;
+      setIsPublishing(false);
+      showToast('Não foi possível publicar a proposta. Tente novamente.', 'error');
+    }
   };
-  
+
   useEffect(() => {
     if (timeLeft <= 0) return;
     const intervalId = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
@@ -5186,11 +5197,12 @@ function PreviewView({
             >
               Editar Cadastro
             </button>
-            <button 
+            <button
               onClick={handlePublish}
-              className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-5 py-3 rounded-xl transition"
+              disabled={isPublishing}
+              className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-5 py-3 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Confirmar e Publicar Proposta
+              {isPublishing ? 'Publicando...' : 'Confirmar e Publicar Proposta'}
             </button>
           </div>
         </div>
@@ -5909,32 +5921,43 @@ function MobileClientView({
 
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
 
+  const publishingRef = useRef(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const handlePublish = async () => {
+    if (publishingRef.current) return; // evita publicação dupla (duplo clique / reentrância)
     if (reservasUsadas >= totalReservasPlano) {
       showToast('Limite de links do plano atingido pela concessionária.', 'error');
       return;
     }
-    if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
-    setReservasUsadas((prev: any) => prev + 1);
+    publishingRef.current = true;
+    setIsPublishing(true);
+    try {
+      if (publicarProposta) { await publicarProposta(reservation); } else { setRecentReservations([reservation, ...recentReservations]); }
+      setReservasUsadas((prev: any) => prev + 1);
 
-    // Incrementa linksGerados do vendedor associado à proposta
-    if (setEmpresaLogada && reservation?.vendedores) {
-      setEmpresaLogada((prevEmpresa: any) => {
-        const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
-          if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
-            return {
-              ...v,
-              linksGerados: (v.linksGerados || 0) + 1
-            };
-          }
-          return v;
+      // Incrementa linksGerados do vendedor associado à proposta
+      if (setEmpresaLogada && reservation?.vendedores) {
+        setEmpresaLogada((prevEmpresa: any) => {
+          const vendedoresAtualizados = prevEmpresa.vendedores.map((v: any) => {
+            if (v.nome.trim().toLowerCase() === reservation.vendedores.trim().toLowerCase()) {
+              return {
+                ...v,
+                linksGerados: (v.linksGerados || 0) + 1
+              };
+            }
+            return v;
+          });
+          return { ...prevEmpresa, vendedores: vendedoresAtualizados };
         });
-        return { ...prevEmpresa, vendedores: vendedoresAtualizados };
-      });
-    }
+      }
 
-    showToast('Link de reserva criado e publicado com sucesso!', 'success');
-    navigateTo('dashboard');
+      showToast('Link de reserva criado e publicado com sucesso!', 'success');
+      navigateTo('dashboard');
+    } catch {
+      publishingRef.current = false;
+      setIsPublishing(false);
+      showToast('Não foi possível publicar a proposta. Tente novamente.', 'error');
+    }
   };
 
   useEffect(() => {
@@ -5969,11 +5992,12 @@ function MobileClientView({
             <h4 className="font-extrabold text-xs text-[#141414]">Visualização Mobile</h4>
             <p className="text-[10px] text-[#8A8A85] mt-1 font-semibold leading-relaxed">Confirme a proposta abaixo para salvá-la no painel.</p>
           </div>
-          <button 
+          <button
             onClick={handlePublish}
-            className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-[11px] py-3 rounded-xl transition text-center"
+            disabled={isPublishing}
+            className="w-full bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-[11px] py-3 rounded-xl transition text-center disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Confirmar e Publicar
+            {isPublishing ? 'Publicando...' : 'Confirmar e Publicar'}
           </button>
         </div>
       )}
