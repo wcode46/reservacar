@@ -5960,6 +5960,88 @@ function MobileClientView({
   const economiaPct = Math.round((1 - (data.valorVenda / data.fipeValue)) * 100) || 6;
   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
 
+  // Linha do tempo da proposta — derivada do andamento real (sem eventos mock).
+  const timelineEvents = useMemo(() => {
+    const evts: any[] = [];
+    const economia = Math.max(0, (Number(data.fipeValue) || 0) - (Number(data.valorVenda) || 0));
+    const temFotosReais = !!data.fotos && photosArray.length > 0;
+    const isPaid = data.status === 'Completed' || data.paidSignal;
+
+    // Reserva efetuada — sempre (a proposta foi gerada)
+    evts.push({
+      key: 'reserva',
+      title: 'Reserva Efetuada',
+      desc: 'O link exclusivo do veículo foi gerado e enviado para o cliente.',
+      done: true,
+    });
+
+    // Atualização da Tabela FIPE — quando há FIPE
+    if (Number(data.fipeValue) > 0) {
+      evts.push({
+        key: 'fipe',
+        title: 'Atualização da Tabela FIPE',
+        desc: economia > 0
+          ? `Tabela FIPE oficial carregada: preço exclusivo com ${formatCurrency(economia)} de desconto.`
+          : 'Tabela FIPE oficial carregada e validada para esta proposta.',
+        done: true,
+      });
+    }
+
+    // Fotos adicionadas — quando o lojista anexou fotos reais
+    if (temFotosReais) {
+      evts.push({
+        key: 'fotos',
+        title: 'Fotos do Veículo Adicionadas',
+        desc: `${photosArray.length} ${photosArray.length === 1 ? 'foto real do veículo foi anexada' : 'fotos reais do veículo foram anexadas'} à proposta.`,
+        done: true,
+      });
+    }
+
+    // Pix gerado — quando há sinal definido
+    if (Number(data.sinal) > 0) {
+      evts.push({
+        key: 'pix',
+        title: 'Sinal via Pix Gerado',
+        desc: `Pagamento do sinal de ${formatCurrency(Number(data.sinal))} disponibilizado para garantir a reserva.`,
+        done: true,
+      });
+    }
+
+    // Visita agendada — quando o cliente escolhe um horário
+    if (slotInfo) {
+      evts.push({
+        key: 'visita',
+        title: 'Visita Agendada',
+        desc: `Horário reservado para ${slotInfo.diaLabel} às ${slotInfo.hora} — o carro fica separado para você.`,
+        done: true,
+      });
+    }
+
+    // Estado atual / próximo passo
+    if (isPaid) {
+      evts.push({
+        key: 'confirmada',
+        title: 'Reserva Confirmada',
+        desc: 'Sinal pago via Pix — veículo reservado exclusivamente para o cliente.',
+        done: true,
+      });
+    } else {
+      evts.push({
+        key: 'aguardando',
+        title: 'Aguardando Pagamento do Sinal',
+        desc: 'Assim que o Pix do sinal for confirmado, o veículo fica reservado só para você.',
+        done: false,
+      });
+    }
+
+    return evts;
+  }, [data.fipeValue, data.valorVenda, data.sinal, data.fotos, data.status, data.paidSignal, photosArray.length, slotInfo]);
+
+  // Altura da linha de progresso (preto) até o último evento concluído.
+  const timelineLinePct = timelineEvents.length > 1
+    ? Math.round((timelineEvents.reduce((acc, e, i) => (e.done ? i : acc), 0) / (timelineEvents.length - 1)) * 100)
+    : 100;
+
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
 
   const publishingRef = useRef(false);
@@ -6370,86 +6452,39 @@ function MobileClientView({
                 <div className="relative pl-6 ml-2 space-y-8">
                   {/* Linha vertical cinza estática traseira */}
                   <div className="absolute left-[3px] top-2 bottom-2 w-0.5 bg-[#EBEBE8]"></div>
-                  {/* Linha vertical azul animada frontal */}
-                  <div 
+                  {/* Linha vertical preta animada — progresso até o último evento concluído */}
+                  <div
                     className="absolute left-[3px] top-2 w-0.5 bg-[#141414] transition-all duration-[1200ms] ease-out origin-top"
-                    style={{ 
-                      height: animateTimeline ? '78%' : '0%' 
-                    }}
+                    style={{ height: animateTimeline ? `${timelineLinePct}%` : '0%' }}
                   ></div>
 
-                  {/* 1. Vitrine Ativada */}
-                  <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
-                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                    }`} style={{ transitionDelay: '100ms' }}></div>
-                    
-                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
-                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
-                    }`} style={{ transitionDelay: '200ms' }}>
-                      <div>
-                        <h4 className="text-xs font-black text-[#141414]">Vitrine Ativada</h4>
-                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
-                          O link exclusivo do veículo foi gerado e enviado para o cliente.
-                        </p>
-                      </div>
-                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+0min</span>
-                    </div>
-                  </div>
+                  {timelineEvents.map((evt, index) => (
+                    <div key={evt.key} className="relative">
+                      <div
+                        className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full border-2 border-white transition-all duration-500 transform ${evt.done ? 'bg-[#141414]' : 'bg-[#E5E5E2]'} ${animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+                        style={{ transitionDelay: `${100 + index * 250}ms` }}
+                      ></div>
 
-                  {/* 2. Tabela FIPE */}
-                  <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
-                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                    }`} style={{ transitionDelay: '400ms' }}></div>
-                    
-                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
-                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
-                    }`} style={{ transitionDelay: '500ms' }}>
-                      <div>
-                        <h4 className="text-xs font-black text-[#141414]">Atualização da Tabela FIPE</h4>
-                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
-                          Tabela FIPE oficial carregada: Preço exclusivo tem margem de R$ 5.000,00 de desconto!
-                        </p>
+                      <div
+                        className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'}`}
+                        style={{ transitionDelay: `${200 + index * 250}ms` }}
+                      >
+                        <div>
+                          <h4 className={`text-xs font-black ${evt.done ? 'text-[#141414]' : 'text-[#B9B9B4] italic'}`}>{evt.title}</h4>
+                          <p className={`text-[10.5px] font-semibold mt-1 leading-relaxed ${evt.done ? 'text-[#8A8A85]' : 'text-[#B9B9B4]'}`}>
+                            {evt.desc}
+                          </p>
+                        </div>
+                        {evt.done ? (
+                          <span className="text-[9px] font-black text-[#141414] bg-[#C1F11D]/30 px-2 py-0.5 rounded uppercase tracking-wider shrink-0 flex items-center gap-1">
+                            <Check size={9} strokeWidth={3.5} /> Feito
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">Pendente</span>
+                        )}
                       </div>
-                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+30min</span>
                     </div>
-                  </div>
-
-                  {/* 3. Vídeo */}
-                  <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#141414] border-2 border-white transition-all duration-500 transform ${
-                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                    }`} style={{ transitionDelay: '700ms' }}></div>
-                    
-                    <div className={`flex justify-between items-start gap-2 transition-all duration-500 transform ${
-                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
-                    }`} style={{ transitionDelay: '800ms' }}>
-                      <div>
-                        <h4 className="text-xs font-black text-[#141414]">Tour de Vídeo Adicionado</h4>
-                        <p className="text-[10.5px] text-[#8A8A85] font-semibold mt-1 leading-relaxed">
-                          Vídeo completo do laudo estrutural e partida a frio foi disponibilizado.
-                        </p>
-                      </div>
-                      <span className="text-[9px] font-black text-[#8A8A85] bg-[#EBEBE8] px-2 py-0.5 rounded uppercase tracking-wider shrink-0">T+60min</span>
-                    </div>
-                  </div>
-
-                  {/* 4. Eventos Futuros */}
-                  <div className="relative">
-                    <div className={`absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-[#E5E5E2] border-2 border-white transition-all duration-500 transform ${
-                      animateTimeline ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                    }`} style={{ transitionDelay: '1000ms' }}></div>
-                    
-                    <div className={`transition-all duration-500 transform ${
-                      animateTimeline ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
-                    }`} style={{ transitionDelay: '1100ms' }}>
-                      <h4 className="text-xs font-bold text-[#B9B9B4] italic">Eventos Futuros Agendados pelo Lojista...</h4>
-                      <p className="text-[10.5px] text-[#B9B9B4] font-medium mt-1 leading-relaxed italic font-semibold">
-                        Automatizações complementares estão escalonadas baseadas no seu tempo ativo.
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
