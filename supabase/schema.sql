@@ -107,6 +107,31 @@ create policy "dono le views da sua loja"  on public.proposta_views for select t
 -- Habilita Realtime:
 alter publication supabase_realtime add table public.proposta_views;
 
+-- ---------- Eventos de atividade da proposta (Realtime) ----------
+-- Tabela única de eventos (view | visita | foto). Substitui o papel do
+-- proposta_views no código: o cliente anônimo registra a visita, o lojista
+-- recebe via Realtime e o feed "Atividade" também carrega o histórico (72h).
+create table if not exists public.proposta_eventos (
+  id          uuid primary key default gen_random_uuid(),
+  loja_id     uuid not null references public.lojas(id) on delete cascade,
+  proposta_id uuid references public.propostas(id) on delete cascade,
+  tipo        text not null check (tipo in ('view','visita','foto')),
+  titulo      text,
+  descricao   text,
+  meta        jsonb,
+  created_at  timestamptz not null default now()
+);
+create index if not exists idx_prop_eventos_loja_created
+  on public.proposta_eventos (loja_id, created_at desc);
+alter table public.proposta_eventos enable row level security;
+create policy "qualquer um registra evento"
+  on public.proposta_eventos for insert to public with check (true);
+create policy "dono le eventos da sua loja"
+  on public.proposta_eventos for select to public
+  using (exists (select 1 from public.lojas l
+                 where l.id = proposta_eventos.loja_id and l.owner_id = auth.uid()));
+alter publication supabase_realtime add table public.proposta_eventos;
+
 -- ---------- Storage (fotos dos veículos) ----------
 -- Rode também (ou crie pelo painel: Storage > New bucket > "veiculos", público):
 --   insert into storage.buckets (id, name, public) values ('veiculos','veiculos', true)

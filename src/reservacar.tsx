@@ -17,6 +17,28 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
+// Eventos de atividade (proposta_eventos) — label por tipo e mapeamento para o feed.
+const LABEL_EVENTO: Record<string, string> = {
+  view: 'VISUALIZAÇÃO', visita: 'VISITA AGENDADA', foto: 'FOTOS ATUALIZADAS',
+};
+const tempoRelativoEvento = (iso: string): string => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'Agora';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'ontem' : `há ${d} dias`;
+};
+const mapEventoToItem = (row: any, time?: string) => ({
+  id: `evt-${row.id}`,
+  type: row.tipo,
+  label: LABEL_EVENTO[row.tipo] || 'ATIVIDADE',
+  text: row.descricao || `${row.titulo || 'Uma proposta'}.`,
+  time: time ?? 'Agora',
+});
+
 const formatCPF = (v: string) => {
   v = v.replace(/\D/g, "");
   if (v.length > 11) v = v.substring(0, 11);
@@ -281,8 +303,8 @@ export default function App() {
     }
   ]);
 
-  // Eventos de visualização recebidos ao vivo (Supabase Realtime) quando o cliente abre o link.
-  const [viewEvents, setViewEvents] = useState<any[]>([]);
+  // Eventos de atividade (Supabase Realtime + histórico 72h): view, visita, foto.
+  const [eventosRealtime, setEventosRealtime] = useState<any[]>([]);
 
   // Feed de atividade gerado a partir das reservas reais (sem mock): cada proposta
   // vira um evento de acordo com seu estado atual — sinal pago (PIX), prestes a
@@ -314,8 +336,8 @@ export default function App() {
         time: r.created || 'Agora',
       };
     });
-    return [...viewEvents, ...derivadas].slice(0, 15);
-  }, [recentReservations, viewEvents]);
+    return [...eventosRealtime, ...derivadas].slice(0, 15);
+  }, [recentReservations, eventosRealtime]);
 
   // Resultados da busca mobile (mesma lógica do Topbar desktop).
   const mobileSearchResults = useMemo(() => {
@@ -384,7 +406,7 @@ export default function App() {
   const mapPropostaToUI = (p: any, vendedores: any[] = []) => {
     const vendName = (vendedores.find((v: any) => v.id === p.vendedor_id) || {}).nome || '';
     return {
-      id: p.id, title: p.title,
+      id: p.id, loja_id: p.loja_id, title: p.title,
       anoText: p.ano, corText: p.cor, motorText: p.motor, cambio: p.cambio, km: p.km,
       combustivel: p.motor, opcionais: p.opcionais || '',
       fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
@@ -444,28 +466,56 @@ export default function App() {
     else setTotalReservasPlano(30); // Plus
   }, [empresaLogada?.planoAtivo, empresaLogada?.plano]);
 
-  // Realtime: quando um cliente abre o link público de uma proposta da loja,
-  // o lojista recebe a notificação "VISUALIZAÇÃO" na hora (sem refresh).
+  // Realtime: o lojista recebe na hora (sem refresh) cada evento da sua loja —
+  // visualização do link, visita agendada pelo cliente e fotos adicionadas.
   useEffect(() => {
     const lojaId = empresaLogada?.id;
     if (!isSupabaseConfigured || !lojaId) return;
     const channel = supabase
-      .channel(`views-${lojaId}`)
+      .channel(`eventos-${lojaId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'proposta_views', filter: `loja_id=eq.${lojaId}` },
+        { event: 'INSERT', schema: 'public', table: 'proposta_eventos', filter: `loja_id=eq.${lojaId}` },
         (payload: any) => {
           const row = payload?.new || {};
-          const titulo = row.proposta_title || 'Uma proposta';
-          setViewEvents((prev: any) => [
-            { id: `view-${row.id}`, type: 'view', label: 'VISUALIZAÇÃO', text: `${titulo} foi aberta pelo cliente agora.`, time: 'Agora' },
-            ...prev,
-          ].slice(0, 6));
-          showToast(`Cliente abriu a proposta: ${titulo}`, 'info');
+          const item = mapEventoToItem(row, 'Agora');
+          setEventosRealtime((prev: any) => (
+            prev.some((e: any) => e.id === item.id) ? prev : [item, ...prev].slice(0, 30)
+          ));
+          showToast(`${item.label}: ${item.text}`, 'info');
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
+  }, [empresaLogada?.id]);
+
+  // Histórico do feed de atividade: ao abrir o painel, carrega os eventos das
+  // últimas 72h (sobrevive a refresh / outro dispositivo). Os eventos ao vivo
+  // são prepended por cima (com dedupe por id).
+  useEffect(() => {
+    const lojaId = empresaLogada?.id;
+    if (!isSupabaseConfigured || !lojaId) return;
+    let cancelado = false;
+    (async () => {
+      const desde = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+      const { data } = await supabase
+        .from('proposta_eventos')
+        .select('*')
+        .eq('loja_id', lojaId)
+        .gte('created_at', desde)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (!cancelado && data) {
+        const historico = data.map((row: any) => mapEventoToItem(row, tempoRelativoEvento(row.created_at)));
+        // Mescla preservando eventos ao vivo que tenham chegado antes do fetch resolver.
+        setEventosRealtime((prev: any) => {
+          const idsHist = new Set(historico.map((e: any) => e.id));
+          const aoVivo = prev.filter((e: any) => !idsHist.has(e.id));
+          return [...aoVivo, ...historico].slice(0, 30);
+        });
+      }
+    })();
+    return () => { cancelado = true; };
   }, [empresaLogada?.id]);
 
   const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
@@ -921,6 +971,8 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
     }
 
     const fotosStr = fotos.join(',');
+    const fotosOriginais = String(reserva.fotos || '').split(',').map(s => s.trim()).filter(Boolean);
+    const fotosAdicionadas = fotos.length - fotosOriginais.length;
     if (fotosStr !== (reserva.fotos || '')) {
       novosLogs.push({
         time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
@@ -931,6 +983,15 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
     // Persiste no banco quando a proposta veio do Supabase (id é uuid)
     if (isSupabaseConfigured && reserva.id && String(reserva.id).includes('-')) {
       supabase.from('propostas').update({ fotos, sinal: signalToSave, status }).eq('id', reserva.id).then(() => {});
+      // Evento de atividade (Realtime) quando fotos foram ADICIONADAS via gerenciamento.
+      if (fotosAdicionadas > 0 && reserva.loja_id) {
+        supabase.from('proposta_eventos').insert({
+          loja_id: reserva.loja_id, proposta_id: reserva.id, tipo: 'foto',
+          titulo: reserva.title,
+          descricao: `${fotosAdicionadas} ${fotosAdicionadas === 1 ? 'foto adicionada' : 'fotos adicionadas'} a ${reserva.title} — galeria com ${fotos.length}.`,
+          meta: { qtd: fotosAdicionadas, total: fotos.length },
+        }).then(() => {}, () => {});
+      }
     }
 
     onSave({
@@ -5630,6 +5691,8 @@ function PreviewView({
         open={showAgendarSheet}
         onClose={() => setShowAgendarSheet(false)}
         tituloVeiculo={data.title}
+        propostaId={data.id}
+        lojaId={data.loja_id}
         slotInfo={slotInfo}
         telefone={empresaLogada?.telefone}
         onConfirmado={handleVisitaConfirmada}
@@ -5858,17 +5921,44 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
   );
 }
 
-function AgendarVisitaSheet({ open, onClose, tituloVeiculo, slotInfo, telefone, onConfirmado, onPix }) {
+function AgendarVisitaSheet({ open, onClose, tituloVeiculo, propostaId, lojaId, slotInfo, telefone, onConfirmado, onPix }) {
   const [nome, setNome] = useState('');
   const [zap, setZap] = useState('');
   const [sucesso, setSucesso] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const enviandoRef = useRef(false);
 
-  useEffect(() => { if (open) setSucesso(false); }, [open]);
+  useEffect(() => { if (open) { setSucesso(false); setEnviando(false); enviandoRef.current = false; } }, [open]);
 
   if (!open || !slotInfo) return null;
 
-  const confirmar = () => {
+  const confirmar = async () => {
     if (!nome.trim() || zap.replace(/\D/g, '').length < 10) return;
+    if (enviandoRef.current) return; // evita confirmação dupla
+    enviandoRef.current = true;
+    setEnviando(true);
+
+    // Persiste a visita + dispara o evento de atividade (Realtime). Best-effort:
+    // qualquer falha não pode quebrar a confirmação para o cliente.
+    try {
+      if (isSupabaseConfigured && lojaId && propostaId) {
+        const d = slotInfo.dia instanceof Date ? slotInfo.dia : new Date();
+        const diaISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const whatsapp = zap.replace(/\D/g, '');
+        await supabase.from('visitas').insert({
+          proposta_id: propostaId, cliente_nome: nome.trim(), whatsapp,
+          dia: diaISO, hora: slotInfo.hora, status: 'agendada',
+        });
+        await supabase.from('proposta_eventos').insert({
+          loja_id: lojaId, proposta_id: propostaId, tipo: 'visita',
+          titulo: nome.trim(),
+          descricao: `${nome.trim()} agendou visita para ${slotInfo.diaLabel} às ${slotInfo.hora} — ${tituloVeiculo}.`,
+          meta: { dia: diaISO, hora: slotInfo.hora },
+        });
+      }
+    } catch { /* best-effort */ }
+
+    setEnviando(false);
     setSucesso(true);
     onConfirmado(nome.trim(), slotInfo);
   };
@@ -5918,8 +6008,8 @@ function AgendarVisitaSheet({ open, onClose, tituloVeiculo, slotInfo, telefone, 
               className="w-full bg-[#F4F4F2] border-2 border-transparent focus:border-[#C1F11D] rounded-[20px] px-4 py-3.5 text-[15px] font-semibold text-[#141414] outline-none mb-2.5 transition-colors placeholder:text-[#B9B9B4]"
             />
 
-            <button onClick={confirmar} className="w-full bg-[#C1F11D] text-[#141414] rounded-full py-4 text-base font-extrabold mt-1 active:scale-[0.98] transition-transform cursor-pointer">
-              Confirmar minha visita
+            <button onClick={confirmar} disabled={enviando} className="w-full bg-[#C1F11D] text-[#141414] rounded-full py-4 text-base font-extrabold mt-1 active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+              {enviando ? 'Confirmando...' : 'Confirmar minha visita'}
             </button>
           </>
         ) : (
@@ -5975,7 +6065,7 @@ function PublicPropostaView({ id, showToast }) {
           vendName = v?.nome || '';
         }
         setReserva({
-          id: p.id, title: p.title, anoText: p.ano, corText: p.cor, motorText: p.motor, combustivel: p.motor,
+          id: p.id, loja_id: p.loja_id, title: p.title, anoText: p.ano, corText: p.cor, motorText: p.motor, combustivel: p.motor,
           cambio: p.cambio, km: p.km, opcionais: p.opcionais || '',
           fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
           sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
@@ -5990,8 +6080,9 @@ function PublicPropostaView({ id, showToast }) {
         // Registra a abertura do link (notifica o lojista em tempo real via Realtime).
         if (!viewLoggedRef.current) {
           viewLoggedRef.current = true;
-          supabase.from('proposta_views').insert({
-            proposta_id: p.id, loja_id: p.loja_id, proposta_title: p.title,
+          supabase.from('proposta_eventos').insert({
+            proposta_id: p.id, loja_id: p.loja_id, tipo: 'view',
+            titulo: p.title, descricao: `${p.title} foi aberta pelo cliente agora.`,
           }).then(() => {}, () => {});
         }
       } catch { setErro(true); }
@@ -6714,6 +6805,8 @@ function MobileClientView({
         open={showAgendarSheet}
         onClose={() => setShowAgendarSheet(false)}
         tituloVeiculo={data.title}
+        propostaId={data.id}
+        lojaId={data.loja_id}
         slotInfo={slotInfo}
         telefone={empresaLogada?.telefone}
         onConfirmado={handleVisitaConfirmada}
