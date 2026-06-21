@@ -214,13 +214,7 @@ export default function App() {
     try { localStorage.setItem('sidebarCollapsed', v ? '1' : '0'); } catch {}
   };
   
-  // Real-time live notifications (makes the dashboard dynamic!)
-  const [liveNotifications, setLiveNotifications] = useState<any[]>([
-    { id: 1, type: 'pix', label: 'PIX RECEBIDO', color: 'text-[#141414]', text: 'Sinal de R$ 5.000 pago por Rafael Mendes — BMW 320i.', time: 'Há 4 min' },
-    { id: 2, type: 'view', label: 'VISUALIZAÇÃO', color: 'text-[#141414]', text: 'Carlos S. abriu a proposta da Audi RS4 — terceira visita.', time: 'Agora' },
-    { id: 3, type: 'urgente', label: 'URGÊNCIA', color: 'text-amber-700', text: 'Link da Mercedes C200 expira em menos de 5 min.', time: 'Agora' },
-    { id: 4, type: 'create', label: 'NOVA PROPOSTA', color: 'text-[#141414]', text: 'Carla Silva gerou um link para JAC iEV 20.', time: 'Há 12 min' },
-  ]);
+  // Notificações reais — derivadas do estado das reservas (ver useMemo abaixo, após recentReservations).
 
   // Initial Seed for Reservations (idêntico aos prints!)
   const [recentReservations, setRecentReservations] = useState<any[]>([
@@ -282,6 +276,37 @@ export default function App() {
       ]
     }
   ]);
+
+  // Feed de atividade gerado a partir das reservas reais (sem mock): cada proposta
+  // vira um evento de acordo com seu estado atual — sinal pago (PIX), prestes a
+  // expirar (urgência) ou recém-criada (nova proposta).
+  const liveNotifications = useMemo(() => {
+    return recentReservations.slice(0, 12).map((r: any) => {
+      const remaining = (Number(r.expiracao) || 0) * 60 - (r.elapsedSeconds || 0);
+      const isPaid = r.status === 'Completed' || r.paidSignal;
+      const nomeCliente = r.clienteNome && !['Não informado', 'Cliente'].includes(r.clienteNome) ? r.clienteNome : '';
+      const vendedor = r.vendedores ? String(r.vendedores).split(',')[0].trim() : '';
+      if (isPaid) {
+        return {
+          id: `pix-${r.id}`, type: 'pix', label: 'PIX RECEBIDO',
+          text: `Sinal de ${formatCurrency(Number(r.sinal || r.signal) || 0)} ${nomeCliente ? `pago por ${nomeCliente}` : 'pago'} — ${r.title}.`,
+          time: r.created || 'Agora',
+        };
+      }
+      if (r.status === 'Active' && remaining > 0 && remaining < 300) {
+        return {
+          id: `urg-${r.id}`, type: 'urgente', label: 'URGÊNCIA',
+          text: `Link ${nomeCliente ? `de ${nomeCliente} ` : ''}para ${r.title} expira em menos de 5 min.`,
+          time: 'Agora',
+        };
+      }
+      return {
+        id: `new-${r.id}`, type: 'create', label: 'NOVA PROPOSTA',
+        text: `${vendedor || 'A equipe'} gerou um link para ${r.title}${nomeCliente ? ` (cliente ${nomeCliente})` : ''}.`,
+        time: r.created || 'Agora',
+      };
+    });
+  }, [recentReservations]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage({ text: msg, type });
@@ -399,29 +424,7 @@ export default function App() {
     else setTotalReservasPlano(30); // Plus
   }, [empresaLogada?.planoAtivo, empresaLogada?.plano]);
 
-  // Automated notification generator to simulate real traffic
-  useEffect(() => {
-    const intervals = [
-      "Cliente Patricia M. está negociando a BMW 320i.",
-      "Vendedor Roberto enviou um link de proposta via WhatsApp.",
-      "Cliente na Mooca está visualizando os opcionais do Audi RS4.",
-      "Alerta de Urgência: Link da Mercedes C200 expira em menos de 5 min!",
-      "Uma nova proposta está sendo montada por Marcos Souza."
-    ];
-    
-    const intervalId = setInterval(() => {
-      const randMsg = intervals[Math.floor(Math.random() * intervals.length)];
-      setLiveNotifications(prev => [
-        { id: Date.now(), type: 'info', text: randMsg, time: 'Agora' },
-        ...prev.slice(0, 4)
-      ]);
-      showToast(randMsg, 'info');
-    }, 45000); // Trigger every 45s
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const isLoggedRoute = ['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
+  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
 
   // Link público da proposta para o cliente (?p=<id>) — renderiza só a proposta, sem app.
   const publicPropostaId = useMemo(() => new URLSearchParams(window.location.search).get('p'), []);
