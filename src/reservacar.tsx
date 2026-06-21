@@ -6,7 +6,7 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera, PanelsTopLeft,
+  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, ChevronUp, Camera, PanelsTopLeft,
   LayoutGrid, LayoutList
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
@@ -7028,6 +7028,29 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   const [sinal, setSinal] = useState(empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : '');
   const [expiracao, setExpiracao] = useState(60);
 
+  const formatExpiracaoInput = (minutos: number): string => {
+    const h = Math.floor(minutos / 60);
+    const m = minutos % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  const parseExpiracaoInput = (raw: string): number => {
+    const cleaned = raw.replace(/[^\d:]/g, '');
+    if (cleaned.includes(':')) {
+      const [h, m] = cleaned.split(':');
+      return (parseInt(h || '0', 10) * 60) + parseInt(m || '0', 10);
+    }
+    return parseInt(cleaned || '0', 10);
+  };
+
+  const [expiracaoText, setExpiracaoText] = useState(formatExpiracaoInput(60));
+
+  const stepExpiracao = (delta: number) => {
+    const next = Math.min(360, Math.max(15, expiracao + delta));
+    setExpiracao(next);
+    setExpiracaoText(formatExpiracaoInput(next));
+  };
+
   useEffect(() => {
     if (vehicleData.sinal) {
       setSinal(String(vehicleData.sinal));
@@ -7036,17 +7059,16 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     }
     if (vehicleData.expiracaoMinutos) {
       setExpiracao(vehicleData.expiracaoMinutos);
+      setExpiracaoText(formatExpiracaoInput(vehicleData.expiracaoMinutos));
     }
   }, [vehicleData.sinal, vehicleData.expiracaoMinutos, empresaLogada?.valorMinimoSinal]);
 
   const formatExpiracaoLabel = (minutos: number): string => {
-    if (minutos < 60) return `${minutos} minutos`;
+    if (minutos < 60) return `${minutos}min`;
     const horas = Math.floor(minutos / 60);
     const minsRestantes = minutos % 60;
-    if (minsRestantes === 0) {
-      return horas === 1 ? '1 hora' : `${horas} horas`;
-    }
-    return `${horas} ${horas === 1 ? 'hora' : 'horas'} e ${minsRestantes} minutos`;
+    if (minsRestantes === 0) return `${horas}h`;
+    return `${horas}h ${minsRestantes}min`;
   };
 
   const opcionaisPool = [
@@ -7407,12 +7429,17 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className={labelClass}>Quilometragem (KM)</label>
-                      <input 
-                        type="text" 
-                        name="km" 
-                        value={vehicleData.km} 
-                        onChange={handleInputChange} 
-                        className={inputClass} 
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        name="km"
+                        value={vehicleData.km}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '');
+                          const formatted = digits ? Number(digits).toLocaleString('pt-BR') : '';
+                          setVehicleData(prev => ({ ...prev, km: formatted }));
+                        }}
+                        className={inputClass}
                         placeholder="Ex: 45.000"
                       />
                     </div>
@@ -7440,16 +7467,17 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     </div>
                     <div>
                       <label className={labelClass}>Preço de Venda (R$)</label>
-                      <input 
-                        type="text" 
-                        name="price" 
-                        value={vehicleData.price} 
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        name="price"
+                        value={vehicleData.price ? formatCurrency(Number(vehicleData.price)) : ''}
                         onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, '');
                           setVehicleData(prev => ({ ...prev, price: val }));
-                        }} 
-                        className={inputClass} 
-                        placeholder="Ex: 85000"
+                        }}
+                        className={inputClass}
+                        placeholder="Ex: R$ 85.000,00"
                       />
                     </div>
                   </div>
@@ -7457,44 +7485,63 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className={labelClass}>Valor do sinal (R$) *</label>
-                      <input 
-                        type="text" 
-                        name="sinal" 
-                        value={sinal} 
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        name="sinal"
+                        value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''}
                         onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, '');
                           setSinal(val);
                           setVehicleData(prev => ({ ...prev, sinal: val }));
-                        }} 
-                        className={inputClass} 
-                        placeholder="Ex: 1500"
+                        }}
+                        className={inputClass}
+                        placeholder="Ex: 1.500"
                       />
                     </div>
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className={labelClass}>Expiração da reserva *</label>
-                        <span className="text-[10px] font-black text-[#141414] bg-[#C1F11D]/20 px-2 py-0.5 rounded-md">
+                      <div className="flex justify-between items-center gap-2 mb-2 h-4">
+                        <label className={`${labelClass} mb-0 whitespace-nowrap`}>Expiração da reserva *</label>
+                        <span className="text-[10px] font-black text-[#141414] bg-[#C1F11D]/20 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 leading-none">
                           {formatExpiracaoLabel(expiracao)}
                         </span>
                       </div>
-                      <div className="relative pt-2">
-                        <input 
-                          type="range" 
-                          min="15" 
-                          max="360" 
-                          step="15" 
-                          value={expiracao} 
-                          onChange={(e) => setExpiracao(Number(e.target.value))} 
-                          className="w-full h-2 bg-[#E5E5E2] rounded-lg appearance-none cursor-pointer accent-[#141414] focus:outline-none"
+                      <div className="relative">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={expiracaoText}
+                          onChange={(e) => setExpiracaoText(e.target.value)}
+                          onBlur={() => {
+                            const mins = Math.min(360, Math.max(15, parseExpiracaoInput(expiracaoText) || 15));
+                            setExpiracao(mins);
+                            setExpiracaoText(formatExpiracaoInput(mins));
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'ArrowUp') { e.preventDefault(); stepExpiracao(15); }
+                            else if (e.key === 'ArrowDown') { e.preventDefault(); stepExpiracao(-15); }
+                            else if (e.key === 'Enter') { e.currentTarget.blur(); }
+                          }}
+                          className={`${inputClass} pr-12 font-mono tracking-wide`}
+                          placeholder="01:00"
                         />
-                        <div className="flex justify-between text-[9px] text-[#B9B9B4] font-bold px-1 mt-2 select-none">
-                          <span>15m</span>
-                          <span>1h</span>
-                          <span>2h</span>
-                          <span>3h</span>
-                          <span>4h</span>
-                          <span>5h</span>
-                          <span>6h</span>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-px">
+                          <button
+                            type="button"
+                            onClick={() => stepExpiracao(15)}
+                            aria-label="Aumentar tempo de expiração"
+                            className="flex items-center justify-center w-7 h-[18px] rounded-md text-[#8A8A85] hover:text-[#141414] hover:bg-[#E5E5E2] transition"
+                          >
+                            <ChevronUp size={14} strokeWidth={2.5} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => stepExpiracao(-15)}
+                            aria-label="Diminuir tempo de expiração"
+                            className="flex items-center justify-center w-7 h-[18px] rounded-md text-[#8A8A85] hover:text-[#141414] hover:bg-[#E5E5E2] transition"
+                          >
+                            <ChevronDown size={14} strokeWidth={2.5} />
+                          </button>
                         </div>
                       </div>
                     </div>
