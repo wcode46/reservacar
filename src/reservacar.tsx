@@ -206,6 +206,7 @@ export default function App() {
   const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null);
   const [reservaParaGerenciar, setReservaParaGerenciar] = useState<any>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobileNotifOpen, setMobileNotifOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(() => {
     try { return localStorage.getItem('sidebarCollapsed') === '1'; } catch { return false; }
   });
@@ -497,7 +498,48 @@ export default function App() {
             <Menu size={24} />
           </button>
           <span className="font-extrabold text-[#141414] tracking-tight text-lg">Reservacar</span>
-          <div className="w-8"></div>
+          <button
+            onClick={() => setMobileNotifOpen(v => !v)}
+            className="relative p-2 text-[#6F6F6A] hover:text-[#141414] transition"
+            aria-label="Notificações"
+          >
+            <Bell size={22} />
+            {liveNotifications.length > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{liveNotifications.length}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Painel de notificações (mobile) */}
+      {isLoggedRoute && mobileNotifOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setMobileNotifOpen(false)}></div>
+          <div className="absolute top-16 left-0 right-0 bg-white shadow-xl max-h-[72vh] overflow-y-auto rounded-b-3xl">
+            <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-white border-b border-[#EBEBE8] z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-extrabold text-[#141414]">Atividade</span>
+                <span className="text-[10px] font-bold text-[#8A8A85] uppercase tracking-wider">últimas 72h</span>
+              </div>
+              <button onClick={() => setMobileNotifOpen(false)} className="text-[#8A8A85] hover:text-[#141414] transition p-1" aria-label="Fechar">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-3 space-y-2">
+              {liveNotifications.length === 0 ? (
+                <p className="text-xs text-[#8A8A85] font-medium px-3 py-8 text-center">Nenhuma atividade ainda. Crie uma reserva para começar.</p>
+              ) : liveNotifications.map((n: any) => (
+                <div key={n.id} className="flex gap-2.5 px-3 py-3 rounded-2xl bg-[#F4F4F2] border border-[#E5E5E2]">
+                  <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.type === 'urgente' ? 'bg-amber-500' : n.type === 'pix' ? 'bg-[#1E9E5A]' : 'bg-[#141414]'}`}></span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-[#8A8A85] uppercase tracking-wide">{n.label}</p>
+                    <p className="text-xs font-semibold text-[#2A2A26] leading-snug mt-0.5">{n.text}</p>
+                    <p className="text-[10px] text-[#B9B9B4] font-medium mt-1">{n.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
