@@ -4617,12 +4617,61 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
-      {/* Estrutura Bento de Duas Colunas (Principal + Lateral) */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 text-left">
-        {/* Coluna da Esquerda ( lg:col-span-3 ) */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Card do Gráfico de Tendências (CSS Puro) */}
-          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl flex flex-col justify-between min-h-[320px]">
+      {/* Ranking de Vendedores + Velocidade Média (lado a lado, sem rail lateral) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 text-left">
+        {/* Card de Ranking de Vendedores */}
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
+          <h3 className="font-bold text-[#2A2A26] text-sm mb-1">Ranking de Vendedores</h3>
+          <p className="text-[10px] text-[#B9B9B4] font-medium mb-4">Conversão real baseada em propostas</p>
+
+          {rankingVendedores.length > 0 ? (
+            <div className="space-y-4">
+              {rankingVendedores.map((vend) => (
+                <div key={vend.nome} className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
+                    <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+                  </div>
+                  <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
+                    <div
+                      className="bg-[#141414] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${vend.conversao}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center gap-2 py-6">
+              <Users size={20} className="text-[#B9B9B4]" />
+              <p className="text-xs font-semibold text-[#6F6F6A]">Nenhum vendedor cadastrado</p>
+              <button
+                onClick={() => navigateTo('vendedores')}
+                className="text-[11px] font-bold text-[#141414] bg-[#C1F11D]/25 hover:bg-[#C1F11D]/40 px-3 py-1.5 rounded-full transition cursor-pointer"
+              >
+                Adicionar vendedor
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Card Auxiliar: Velocidade Média de Vendas */}
+        <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[#2A2A26] text-sm">Velocidade Média</h3>
+            <Clock size={16} className="text-[#141414] shrink-0" />
+          </div>
+          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{velocidadeMediaText}</span>
+          <p className="text-[10px] text-[#B9B9B4] font-medium leading-relaxed">
+            Tempo médio de fechamento medido entre a ativação do link e a confirmação do sinal.
+          </p>
+        </div>
+      </div>
+
+      {/* Lista de reservas (largura total) */}
+      <div className="space-y-6 text-left">
+          {/* Gráfico de receita removido (vazio); bloco oculto preservado */}
+          <div className="hidden">
             <div>
               <h3 className="font-bold text-[#2A2A26] text-sm">Tendência de Receita Semanal</h3>
               <p className="text-[10px] text-[#B9B9B4] font-medium">Sinais pagos distribuídos proporcionalmente nos dias da semana</p>
@@ -4971,58 +5020,6 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           </div>
         </div>
 
-        {/* Coluna da Direita ( lg:col-span-1 - Ranking e Plano) */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Card de Ranking de Vendedores (Category Performance do Dashboard-4) */}
-          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
-            <h3 className="font-bold text-[#2A2A26] text-sm mb-1">Ranking de Vendedores</h3>
-            <p className="text-[10px] text-[#B9B9B4] font-medium mb-4">Conversão real baseada em propostas</p>
-            
-            {rankingVendedores.length > 0 ? (
-              <div className="space-y-4">
-                {rankingVendedores.map((vend) => (
-                  <div key={vend.nome} className="space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
-                      <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
-                    </div>
-                    {/* Barra de Progresso Horizontal do Vendedor */}
-                    <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
-                      <div
-                        className="bg-[#141414] h-full rounded-full transition-all duration-500"
-                        style={{ width: `${vend.conversao}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center gap-2 py-6">
-                <Users size={20} className="text-[#B9B9B4]" />
-                <p className="text-xs font-semibold text-[#6F6F6A]">Nenhum vendedor cadastrado</p>
-                <button
-                  onClick={() => navigateTo('vendedores')}
-                  className="text-[11px] font-bold text-[#141414] bg-[#C1F11D]/25 hover:bg-[#C1F11D]/40 px-3 py-1.5 rounded-full transition cursor-pointer"
-                >
-                  Adicionar vendedor
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Card Auxiliar: Velocidade Média de Vendas */}
-          <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl text-left">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-[#2A2A26] text-sm">Velocidade Média</h3>
-              <Clock size={16} className="text-[#141414] shrink-0" />
-            </div>
-            <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{velocidadeMediaText}</span>
-            <p className="text-[10px] text-[#B9B9B4] font-medium leading-relaxed">
-              Tempo médio de fechamento medido entre a ativação do link e a confirmação do sinal.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
