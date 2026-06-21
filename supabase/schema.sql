@@ -90,6 +90,23 @@ create policy "dono gere vendedores"  on public.vendedores for all
 create policy "dono gere propostas"   on public.propostas  for all
   using (exists (select 1 from public.lojas l where l.id = loja_id and l.owner_id = auth.uid()));
 
+-- ---------- Visualizações do link público (Realtime) ----------
+-- O cliente abre ?p=<id> -> registra uma view; o lojista recebe via Realtime.
+create table if not exists public.proposta_views (
+  id uuid primary key default gen_random_uuid(),
+  proposta_id uuid not null references public.propostas(id) on delete cascade,
+  loja_id uuid not null references public.lojas(id) on delete cascade,
+  proposta_title text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_proposta_views_loja on public.proposta_views(loja_id);
+alter table public.proposta_views enable row level security;
+create policy "qualquer um registra view" on public.proposta_views for insert to public with check (true);
+create policy "dono le views da sua loja"  on public.proposta_views for select to public
+  using (exists (select 1 from public.lojas l where l.id = proposta_views.loja_id and l.owner_id = auth.uid()));
+-- Habilita Realtime:
+alter publication supabase_realtime add table public.proposta_views;
+
 -- ---------- Storage (fotos dos veículos) ----------
 -- Rode também (ou crie pelo painel: Storage > New bucket > "veiculos", público):
 --   insert into storage.buckets (id, name, public) values ('veiculos','veiculos', true)

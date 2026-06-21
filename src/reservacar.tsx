@@ -277,11 +277,15 @@ export default function App() {
     }
   ]);
 
+  // Eventos de visualização recebidos ao vivo (Supabase Realtime) quando o cliente abre o link.
+  const [viewEvents, setViewEvents] = useState<any[]>([]);
+
   // Feed de atividade gerado a partir das reservas reais (sem mock): cada proposta
   // vira um evento de acordo com seu estado atual — sinal pago (PIX), prestes a
-  // expirar (urgência) ou recém-criada (nova proposta).
+  // expirar (urgência) ou recém-criada (nova proposta). No topo entram as
+  // visualizações ao vivo recebidas via Realtime.
   const liveNotifications = useMemo(() => {
-    return recentReservations.slice(0, 12).map((r: any) => {
+    const derivadas = recentReservations.slice(0, 12).map((r: any) => {
       const remaining = (Number(r.expiracao) || 0) * 60 - (r.elapsedSeconds || 0);
       const isPaid = r.status === 'Completed' || r.paidSignal;
       const nomeCliente = r.clienteNome && !['Não informado', 'Cliente'].includes(r.clienteNome) ? r.clienteNome : '';
@@ -306,7 +310,8 @@ export default function App() {
         time: r.created || 'Agora',
       };
     });
-  }, [recentReservations]);
+    return [...viewEvents, ...derivadas].slice(0, 15);
+  }, [recentReservations, viewEvents]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage({ text: msg, type });
@@ -423,6 +428,30 @@ export default function App() {
     else if (plano === 'Premium') setTotalReservasPlano(50);
     else setTotalReservasPlano(30); // Plus
   }, [empresaLogada?.planoAtivo, empresaLogada?.plano]);
+
+  // Realtime: quando um cliente abre o link público de uma proposta da loja,
+  // o lojista recebe a notificação "VISUALIZAÇÃO" na hora (sem refresh).
+  useEffect(() => {
+    const lojaId = empresaLogada?.id;
+    if (!isSupabaseConfigured || !lojaId) return;
+    const channel = supabase
+      .channel(`views-${lojaId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'proposta_views', filter: `loja_id=eq.${lojaId}` },
+        (payload: any) => {
+          const row = payload?.new || {};
+          const titulo = row.proposta_title || 'Uma proposta';
+          setViewEvents((prev: any) => [
+            { id: `view-${row.id}`, type: 'view', label: 'VISUALIZAÇÃO', text: `${titulo} foi aberta pelo cliente agora.`, time: 'Agora' },
+            ...prev,
+          ].slice(0, 6));
+          showToast(`Cliente abriu a proposta: ${titulo}`, 'info');
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [empresaLogada?.id]);
 
   const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
 
@@ -5761,6 +5790,7 @@ function PublicPropostaView({ id, showToast }) {
   const [reserva, setReserva] = useState<any>(null);
   const [loja, setLoja] = useState<any>(null);
   const [erro, setErro] = useState(false);
+  const viewLoggedRef = useRef(false);
   const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
   useEffect(() => {
@@ -5795,6 +5825,14 @@ function PublicPropostaView({ id, showToast }) {
           elapsedSeconds: 0, laudoAprovado: true, logs: [],
         });
         setLoja(l || { nome: 'Showroom', telefone: '' });
+
+        // Registra a abertura do link (notifica o lojista em tempo real via Realtime).
+        if (!viewLoggedRef.current) {
+          viewLoggedRef.current = true;
+          supabase.from('proposta_views').insert({
+            proposta_id: p.id, loja_id: p.loja_id, proposta_title: p.title,
+          }).then(() => {}, () => {});
+        }
       } catch { setErro(true); }
       finally { setLoading(false); }
     })();
