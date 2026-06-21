@@ -207,6 +207,8 @@ export default function App() {
   const [reservaParaGerenciar, setReservaParaGerenciar] = useState<any>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileNotifOpen, setMobileNotifOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsedState] = useState<boolean>(() => {
     try { return localStorage.getItem('sidebarCollapsed') === '1'; } catch { return false; }
   });
@@ -313,6 +315,17 @@ export default function App() {
     });
     return [...viewEvents, ...derivadas].slice(0, 15);
   }, [recentReservations, viewEvents]);
+
+  // Resultados da busca mobile (mesma lógica do Topbar desktop).
+  const mobileSearchResults = useMemo(() => {
+    const q = mobileSearchQuery.trim().toLowerCase();
+    if (!q) return { propostas: [], vendedores: [] };
+    const propostas = recentReservations.filter((r: any) =>
+      [r.title, r.clienteNome, r.vendedores].filter(Boolean).some((s: string) => s.toLowerCase().includes(q))
+    ).slice(0, 8);
+    const vendedores = (empresaLogada?.vendedores || []).filter((v: any) => (v.nome || '').toLowerCase().includes(q)).slice(0, 6);
+    return { propostas, vendedores };
+  }, [mobileSearchQuery, recentReservations, empresaLogada]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage({ text: msg, type });
@@ -497,17 +510,96 @@ export default function App() {
           >
             <Menu size={24} />
           </button>
-          <span className="font-extrabold text-[#141414] tracking-tight text-lg">Reservacar</span>
-          <button
-            onClick={() => setMobileNotifOpen(v => !v)}
-            className="relative p-2 text-[#6F6F6A] hover:text-[#141414] transition"
-            aria-label="Notificações"
-          >
-            <Bell size={22} />
-            {liveNotifications.length > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{liveNotifications.length}</span>
+          <span className="font-extrabold text-[#141414] tracking-tight text-lg absolute left-1/2 -translate-x-1/2">Reservacar</span>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => { setMobileSearchOpen(true); setMobileSearchQuery(''); }}
+              className="p-2 text-[#6F6F6A] hover:text-[#141414] transition"
+              aria-label="Buscar"
+            >
+              <Search size={21} />
+            </button>
+            <button
+              onClick={() => setMobileNotifOpen(v => !v)}
+              className="relative p-2 text-[#6F6F6A] hover:text-[#141414] transition"
+              aria-label="Notificações"
+            >
+              <Bell size={22} />
+              {liveNotifications.length > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{liveNotifications.length}</span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Overlay de busca (mobile) */}
+      {isLoggedRoute && mobileSearchOpen && (
+        <div className="lg:hidden fixed inset-0 z-[60] bg-white flex flex-col">
+          <div className="flex items-center gap-2 px-3 h-16 border-b border-[#E5E5E2] shrink-0">
+            <button onClick={() => { setMobileSearchOpen(false); setMobileSearchQuery(''); }} className="p-2 text-[#6F6F6A] hover:text-[#141414] transition shrink-0" aria-label="Voltar">
+              <ChevronLeft size={22} />
+            </button>
+            <div className="flex items-center gap-2 bg-[#F4F4F2] rounded-full px-4 h-11 flex-1 border border-transparent focus-within:border-[#D9D9D5] transition">
+              <Search size={16} className="text-[#8A8A85] shrink-0" />
+              <input
+                autoFocus
+                value={mobileSearchQuery}
+                onChange={(e) => setMobileSearchQuery(e.target.value)}
+                placeholder="Buscar propostas, vendedores..."
+                className="flex-1 bg-transparent text-sm font-medium text-[#141414] outline-none placeholder:text-[#B9B9B4]"
+              />
+              {mobileSearchQuery && (
+                <button onClick={() => setMobileSearchQuery('')} className="text-[#B9B9B4] hover:text-[#6F6F6A] shrink-0" aria-label="Limpar"><X size={16} /></button>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3">
+            {!mobileSearchQuery.trim() ? (
+              <p className="text-xs text-[#8A8A85] font-medium px-3 py-10 text-center">Busque por propostas (carro, cliente ou vendedor) e vendedores da loja.</p>
+            ) : (mobileSearchResults.propostas.length === 0 && mobileSearchResults.vendedores.length === 0) ? (
+              <p className="text-xs text-[#8A8A85] font-medium px-3 py-10 text-center">Nenhum resultado para "{mobileSearchQuery}".</p>
+            ) : (
+              <>
+                {mobileSearchResults.propostas.length > 0 && (
+                  <div className="mb-2">
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest px-3 py-1.5 block">Propostas</span>
+                    {mobileSearchResults.propostas.map((r: any) => (
+                      <button
+                        key={r.id}
+                        onClick={() => { setActiveReservation && setActiveReservation(r); navigateTo('preview'); setMobileSearchOpen(false); setMobileSearchQuery(''); }}
+                        className="w-full text-left flex items-center justify-between gap-3 px-3 py-3 rounded-2xl hover:bg-[#F4F4F2] active:bg-[#EBEBE8] transition"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-[#141414] truncate">{r.title}</p>
+                          <p className="text-[11px] text-[#8A8A85] font-medium truncate">{r.vendedores || 'Sem vendedor'} · {r.clienteNome || 'Sem cliente'}</p>
+                        </div>
+                        <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || r.signal || 0)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {mobileSearchResults.vendedores.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-black text-[#B9B9B4] uppercase tracking-widest px-3 py-1.5 block">Vendedores</span>
+                    {mobileSearchResults.vendedores.map((v: any) => (
+                      <button
+                        key={v.id}
+                        onClick={() => { navigateTo('vendedores'); setMobileSearchOpen(false); setMobileSearchQuery(''); }}
+                        className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-[#F4F4F2] active:bg-[#EBEBE8] transition"
+                      >
+                        <span className="w-8 h-8 rounded-full bg-[#141414] text-white text-[10px] font-bold flex items-center justify-center shrink-0">{(v.nome || '').split(' ').map((s: string) => s[0]).slice(0, 2).join('')}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-[#141414] truncate">{v.nome}</p>
+                          <p className="text-[11px] text-[#8A8A85] font-medium truncate">{v.cargo || 'Vendedor'}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
-          </button>
+          </div>
         </div>
       )}
 
