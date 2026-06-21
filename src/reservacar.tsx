@@ -5035,7 +5035,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Gerador de Reservas</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Gere páginas exclusivas personalizadas para cada lead.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Todas as reservas ativas da sua loja.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
