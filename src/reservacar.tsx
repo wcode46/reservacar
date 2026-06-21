@@ -6,7 +6,8 @@ import {
   Bell, Send, Check, Copy, Sparkles, RefreshCw, Smartphone, Laptop, AlertCircle,
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
-  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera, PanelsTopLeft
+  ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, Camera, PanelsTopLeft,
+  LayoutGrid, LayoutList
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
@@ -4298,6 +4299,14 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   // Estados de Filtro e Ordenação
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'aguardando' | 'urgentes' | 'confirmados'>('todos');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  // Layout dos KPIs no mobile: empilhado (1 por linha, default) ou grade (2 por linha).
+  const [kpiLayout, setKpiLayout] = useState<'stack' | 'grid'>(() => {
+    try { return (localStorage.getItem('kpiLayout') as 'stack' | 'grid') || 'stack'; } catch { return 'stack'; }
+  });
+  const changeKpiLayout = (v: 'stack' | 'grid') => {
+    setKpiLayout(v);
+    try { localStorage.setItem('kpiLayout', v); } catch {}
+  };
 
   // Cálculos 100% dinâmicos baseados no estado real das reservas
   const totalResgatesAtivos = recentReservations.filter(r => r.status === 'Active').length;
@@ -4556,8 +4565,29 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         </div>
       </div>
 
+      {/* Toggle de visualização dos KPIs (só mobile): empilhado ou grade */}
+      <div className="lg:hidden flex items-center justify-end gap-1 mb-3">
+        <span className="text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider mr-1">Exibir</span>
+        <button
+          onClick={() => changeKpiLayout('stack')}
+          aria-label="Empilhado (1 por linha)"
+          aria-pressed={kpiLayout === 'stack'}
+          className={`p-2 rounded-lg border transition ${kpiLayout === 'stack' ? 'bg-[#141414] border-[#141414] text-[#C1F11D]' : 'bg-white border-[#E5E5E2] text-[#8A8A85] hover:text-[#141414]'}`}
+        >
+          <LayoutList size={16} />
+        </button>
+        <button
+          onClick={() => changeKpiLayout('grid')}
+          aria-label="Grade (2 por linha)"
+          aria-pressed={kpiLayout === 'grid'}
+          className={`p-2 rounded-lg border transition ${kpiLayout === 'grid' ? 'bg-[#141414] border-[#141414] text-[#C1F11D]' : 'bg-white border-[#E5E5E2] text-[#8A8A85] hover:text-[#141414]'}`}
+        >
+          <LayoutGrid size={16} />
+        </button>
+      </div>
+
       {/* Grid Bento de KPIs (Estilo Dashboard-4 Commerce) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left">
+      <div className={`grid gap-4 mb-8 text-left lg:grid-cols-4 ${kpiLayout === 'grid' ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {/* Card 1: Receita Real */}
         <div className="bg-white border border-[#E5E5E2] p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
