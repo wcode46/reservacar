@@ -4047,7 +4047,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Olá, Marcos</h1>
-            <p className="text-[#8A8A85] text-sm mt-1 font-medium">
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">
               {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
             </p>
           </div>
@@ -4447,7 +4447,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 text-left">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Atividade comercial em tempo real</p>
         </div>
         <div className="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3">
           {urgenteReserva && tempoRestanteSegundos > 0 && (
@@ -5035,7 +5035,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Gerador de Reservas</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Gere páginas exclusivas personalizadas para cada lead.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Gere páginas exclusivas personalizadas para cada lead.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -8537,7 +8537,7 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
         {!embedded && (
           <div className="mb-8 text-left">
             <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Configurações do Lojista</h2>
-            <p className="text-[#8A8A85] text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
           </div>
         )}
 
@@ -8895,7 +8895,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
             <ArrowLeft size={14} /> Voltar para Configurações
           </button>
           <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Checkout de Assinatura SaaS</h2>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -9255,7 +9255,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Equipe de Vendedores</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -9638,7 +9638,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
           <h1 className="text-3xl font-bold text-[#141414] tracking-tight flex items-center gap-2">
             <FileText size={28} className="text-[#141414]" /> Relatório de Reservas
           </h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
         </div>
       </div>
 
