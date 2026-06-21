@@ -1017,7 +1017,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner', collapsed = false }) {
   const operacoesItems = [
     { id: 'sales-stats', label: 'Painel de loja', icon: BarChart2 },
-    { id: 'dashboard', label: 'Nova proposta', icon: LinkIcon },
+    { id: 'dashboard', label: 'Reservas', icon: LinkIcon },
   ];
 
   const gestaoItems = [
@@ -1264,7 +1264,7 @@ function MiniSpark({ trend = 'up' }: { trend?: 'up' | 'down' }) {
 
 // --- TOPBAR GLOBAL (app do lojista, estilo Meridian) ---
 const ROUTE_LABELS: any = {
-  hub: 'Painel de loja', 'sales-stats': 'Painel de loja', dashboard: 'Nova proposta',
+  hub: 'Painel de loja', 'sales-stats': 'Painel de loja', dashboard: 'Reservas',
   vendedores: 'Vendedores', relatorios: 'Relatórios', configuracoes: 'Configurações',
   plano: 'Configurações', 'checkout-plano': 'Configurações', 'cadastrar-reserva': 'Nova proposta',
 };
