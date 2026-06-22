@@ -912,7 +912,11 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
   const [customUrl, setCustomUrl] = useState('');
   const [uploadingFotos, setUploadingFotos] = useState(false);
 
-  const addFoto = (url: string) => { if (url && fotos.length < 8) setFotos(prev => [...prev, url]); };
+  const addFoto = (url: string) => {
+    if (!url) return;
+    if (fotos.length >= 8) { showToast('Limite de 8 fotos atingido. Remova uma para adicionar outra.', 'info'); return; }
+    setFotos(prev => [...prev, url]);
+  };
   const removeFoto = (i: number) => setFotos(prev => prev.filter((_, idx) => idx !== i));
   const uploadFotosModal = async (fileList: FileList | null) => {
     const arquivos = Array.from(fileList || []);
@@ -5945,16 +5949,25 @@ function AgendarVisitaSheet({ open, onClose, tituloVeiculo, propostaId, lojaId, 
         const d = slotInfo.dia instanceof Date ? slotInfo.dia : new Date();
         const diaISO = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const whatsapp = zap.replace(/\D/g, '');
-        await supabase.from('visitas').insert({
-          proposta_id: propostaId, cliente_nome: nome.trim(), whatsapp,
-          dia: diaISO, hora: slotInfo.hora, status: 'agendada',
-        });
-        await supabase.from('proposta_eventos').insert({
-          loja_id: lojaId, proposta_id: propostaId, tipo: 'visita',
-          titulo: nome.trim(),
-          descricao: `${nome.trim()} agendou visita para ${slotInfo.diaLabel} às ${slotInfo.hora} — ${tituloVeiculo}.`,
-          meta: { dia: diaISO, hora: slotInfo.hora },
-        });
+        // Dedupe: não recria visita/evento se a mesma visita já foi agendada
+        // (ex.: reabrir o sheet e confirmar de novo o mesmo horário).
+        const { data: existente } = await supabase.from('visitas')
+          .select('id')
+          .eq('proposta_id', propostaId).eq('dia', diaISO)
+          .eq('hora', slotInfo.hora).eq('whatsapp', whatsapp)
+          .limit(1);
+        if (!existente || existente.length === 0) {
+          await supabase.from('visitas').insert({
+            proposta_id: propostaId, cliente_nome: nome.trim(), whatsapp,
+            dia: diaISO, hora: slotInfo.hora, status: 'agendada',
+          });
+          await supabase.from('proposta_eventos').insert({
+            loja_id: lojaId, proposta_id: propostaId, tipo: 'visita',
+            titulo: nome.trim(),
+            descricao: `${nome.trim()} agendou visita para ${slotInfo.diaLabel} às ${slotInfo.hora} — ${tituloVeiculo}.`,
+            meta: { dia: diaISO, hora: slotInfo.hora },
+          });
+        }
       }
     } catch { /* best-effort */ }
 
