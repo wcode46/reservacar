@@ -8,6 +8,7 @@
   --animate-draw-line: draw-line 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-area: fade-in-area 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-pulse-ring: pulse-ring 2s infinite ease-in-out;
+  --animate-ticker-in: ticker-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* inDrive design language: lime sobre preto/branco */
   --color-brand-primary: #141414;
@@ -59,6 +60,15 @@
       opacity: 0.8;
     }
   }
+
+  @keyframes ticker-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker-in { animation: none !important; }
 }
 
 .chart-line {

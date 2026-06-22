@@ -4341,6 +4341,30 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
     return `${s}s`;
   };
 
+  // Ticker de atividade: a faixa do topo (desktop e mobile) cicla a reserva
+  // ativa + as últimas notificações do sino, deslizando da direita p/ esquerda.
+  // Quando só há 1 item, fica estático (sem slide), mantendo o dot piscando.
+  const tickerItems: any[] = [];
+  if (urgenteReserva && tempoRestanteSegundos > 0) {
+    tickerItems.push({ key: 'reserva', tipo: 'reserva', urgent: tempoRestanteSegundos < 300 });
+  }
+  (liveNotifications || []).slice(0, 6).forEach((n: any) => {
+    tickerItems.push({ key: n.id, tipo: n.type, label: n.label, text: n.text, urgent: n.type === 'urgente' });
+  });
+  const [tickerIdx, setTickerIdx] = useState(0);
+  useEffect(() => {
+    if (tickerItems.length <= 1) { setTickerIdx(0); return; }
+    const t = setInterval(() => setTickerIdx((i) => (i + 1) % tickerItems.length), 4000);
+    return () => clearInterval(t);
+  }, [tickerItems.length]);
+  const tIdx = tickerItems.length ? tickerIdx % tickerItems.length : 0;
+  const tItem = tickerItems[tIdx];
+  const tAnim = tickerItems.length > 1 ? 'animate-ticker-in' : '';
+  const tNome = urgenteReserva ? obterNomeSimplificado(urgenteReserva.title) : '';
+  const tLabel = tItem
+    ? (tItem.tipo === 'reserva' ? (tItem.urgent ? 'Expira em instantes' : 'Reserva ativa') : tItem.label)
+    : '';
+
 
   // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas
   useEffect(() => {
@@ -4524,14 +4548,18 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Atividade comercial em tempo real</p>
         </div>
         <div className="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3">
-          {urgenteReserva && tempoRestanteSegundos > 0 && (
+          {tItem && (
             <div className={`w-full sm:w-auto px-4 py-2 rounded-full flex items-center justify-center gap-2 text-xs transition-all duration-300 border ${
-              tempoRestanteSegundos < 300
+              tItem.urgent
                 ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold'
                 : 'bg-white border-[#E5E5E2] text-[#5F5F5A]'
             }`}>
-              <span className={`w-2 h-2 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
-              <span className="font-bold">{obterNomeSimplificado(urgenteReserva.title)} expira em {formatTempoRestante(tempoRestanteSegundos)}</span>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${tItem.urgent ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
+              <span key={tIdx} className={`font-bold max-w-[460px] truncate ${tAnim}`}>
+                {tItem.tipo === 'reserva'
+                  ? `${tNome} expira em ${formatTempoRestante(tempoRestanteSegundos)}`
+                  : tItem.text}
+              </span>
             </div>
           )}
           <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
@@ -4546,23 +4574,27 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       {/* Bloco mobile: reserva ativa + uso do plano + placeholder + ações (espelha o layout do app no celular) */}
       <div className="lg:hidden space-y-4 mb-8">
         {/* Faixa de reserva ativa — abaixo do título, com as cores do design system */}
-        {urgenteReserva && tempoRestanteSegundos > 0 && (
+        {tItem && (
           <div className="flex items-center gap-3 rounded-2xl bg-[#141414] px-4 py-3">
             <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
               <Clock size={17} className="text-[#C1F11D]" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tempoRestanteSegundos < 300 ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                  {tempoRestanteSegundos < 300 ? 'Expira em instantes' : 'Reserva ativa'}
-                </span>
+              <div key={tIdx} className={tAnim}>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tItem.urgent ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{tLabel}</span>
+                </div>
+                {tItem.tipo === 'reserva' ? (
+                  <p className="text-sm font-bold text-white truncate mt-0.5">
+                    {tNome}
+                    <span className="text-white/65 font-semibold"> expira em </span>
+                    <span className={tItem.urgent ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-white truncate mt-0.5">{tItem.text}</p>
+                )}
               </div>
-              <p className="text-sm font-bold text-white truncate mt-0.5">
-                {obterNomeSimplificado(urgenteReserva.title)}
-                <span className="text-white/65 font-semibold"> expira em </span>
-                <span className={tempoRestanteSegundos < 300 ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
-              </p>
             </div>
           </div>
         )}
