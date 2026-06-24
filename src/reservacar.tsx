@@ -1751,26 +1751,30 @@ function Navbar({ currentRoute, navigateTo }) {
             )}
             {['hub', 'sales-stats', 'dashboard', 'assinar', 'configuracoes', 'checkout-plano', 'cadastrar-reserva'].includes(currentRoute) && (
               <>
-                <button 
-                  onClick={() => navigateTo('configuracoes')}
-                  className={`p-2.5 rounded-xl transition flex items-center justify-center mr-2 border ${
-                    currentRoute === 'configuracoes'
-                      ? 'bg-[#C1F11D]/20 text-[#141414] border-[#C1F11D]/30'
-                      : 'text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2] border-transparent'
-                  }`}
-                  title="Configurações"
-                >
-                  <Settings size={18} />
-                </button>
-                <button 
-                  onClick={() => navigateTo('sales-stats')}
-                  className={`text-sm font-semibold transition mr-4 py-2 ${
-                    currentRoute === 'hub' ? 'text-[#141414] font-bold' : 'text-[#6F6F6A] hover:text-[#141414]'
-                  }`}
-                >
-                  Painel Principal
-                </button>
-                <button 
+                {!['cadastrar-reserva', 'assinar'].includes(currentRoute) && (
+                  <>
+                    <button
+                      onClick={() => navigateTo('configuracoes')}
+                      className={`p-2.5 rounded-xl transition flex items-center justify-center mr-2 border ${
+                        currentRoute === 'configuracoes'
+                          ? 'bg-[#C1F11D]/20 text-[#141414] border-[#C1F11D]/30'
+                          : 'text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2] border-transparent'
+                      }`}
+                      title="Configurações"
+                    >
+                      <Settings size={18} />
+                    </button>
+                    <button
+                      onClick={() => navigateTo('sales-stats')}
+                      className={`text-sm font-semibold transition mr-4 py-2 ${
+                        currentRoute === 'hub' ? 'text-[#141414] font-bold' : 'text-[#6F6F6A] hover:text-[#141414]'
+                      }`}
+                    >
+                      Painel Principal
+                    </button>
+                  </>
+                )}
+                <button
                   onClick={() => navigateTo('home')}
                   className="text-sm font-semibold bg-white hover:bg-[#F4F4F2] px-5 py-2.5 rounded-xl text-[#2A2A26] transition border border-[#E5E5E2]"
                 >
