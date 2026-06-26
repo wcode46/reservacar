@@ -8211,7 +8211,9 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
     );
   }
 
-  const inputCls = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-4 py-3.5 text-sm font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
+  // text-base (16px) evita o zoom automático do Safari iOS ao focar inputs
+  // dentro do container fixed (que causava a página "travar" deslocada de lado).
+  const inputCls = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-4 py-3.5 text-base font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
   const selectCls = inputCls + " appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.1em] cursor-pointer";
   const labelCls = "block text-[11px] font-black uppercase tracking-wider text-[#8A8A85] mb-2";
   const chevronBg = { backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23141414' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` };
@@ -8397,8 +8399,8 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const valid = isScreenValid(screen.key);
 
   return (
-    <div className="fixed inset-0 z-[70] bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
-      <div className="w-full max-w-md mx-auto h-full flex flex-col px-6 lg:max-w-xl lg:h-auto lg:px-12 lg:py-10 lg:bg-white lg:border lg:border-[#E5E5E2] lg:rounded-[28px] lg:shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)]">
+    <div className="fixed inset-0 z-[70] overflow-x-hidden bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
+      <div className="w-full max-w-md mx-auto h-full flex flex-col overflow-x-hidden px-6 lg:max-w-xl lg:h-auto lg:px-12 lg:py-10 lg:bg-white lg:border lg:border-[#E5E5E2] lg:rounded-[28px] lg:shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)]">
         {/* Topo: indicador de 3 fases + barra + título */}
         <div className="pt-6 lg:pt-0">
           <div className="flex items-center gap-2 mb-3 text-sm">
@@ -8426,7 +8428,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
         </div>
 
         {/* Meio: conteúdo animado por tela (rola se necessário) */}
-        <div className="flex-1 overflow-y-auto py-6 lg:flex-none lg:min-h-[160px]">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 lg:flex-none lg:min-h-[160px]">
           <div key={idx} className="animate-rapida-step">
             {renderScreen()}
           </div>
