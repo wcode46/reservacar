@@ -7577,7 +7577,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                 <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
 
                 <div className="space-y-6">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className={labelClass}>Quilometragem (KM)</label>
                       <input
