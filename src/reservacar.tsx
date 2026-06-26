@@ -7,7 +7,7 @@ import {
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
   ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, ChevronUp, Camera, PanelsTopLeft,
-  LayoutGrid, LayoutList
+  LayoutGrid, LayoutList, Zap
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
@@ -527,7 +527,7 @@ export default function App() {
     return () => { cancelado = true; };
   }, [empresaLogada?.id]);
 
-  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'vendedores', 'relatorios'].includes(currentRoute);
+  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'reserva-rapida', 'vendedores', 'relatorios'].includes(currentRoute);
 
   // Link público da proposta para o cliente (?p=<id>) — renderiza só a proposta, sem app.
   const publicPropostaId = useMemo(() => new URLSearchParams(window.location.search).get('p'), []);
@@ -859,6 +859,17 @@ export default function App() {
         {currentRoute === 'cadastrar-reserva' && (
           <CadastroReservaClienteView 
             navigateTo={navigateTo} 
+            showToast={showToast}
+            setActiveReservation={setActiveReservation}
+            empresaLogada={empresaLogada}
+            totalReservasPlano={totalReservasPlano}
+            reservasUsadas={reservasUsadas}
+          />
+        )}
+
+        {currentRoute === 'reserva-rapida' && (
+          <ReservaRapidaView
+            navigateTo={navigateTo}
             showToast={showToast}
             setActiveReservation={setActiveReservation}
             empresaLogada={empresaLogada}
@@ -1259,6 +1270,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
   const operacoesItems = [
     { id: 'sales-stats', label: 'Painel de loja', icon: BarChart2 },
     { id: 'dashboard', label: 'Reservas', icon: LinkIcon },
+    { id: 'reserva-rapida', label: 'Reserva Rápida', icon: Zap },
   ];
 
   const gestaoItems = [
@@ -7954,6 +7966,359 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             )}
           </div>
 
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- NEW COMPONENT: RESERVA RÁPIDA (fluxo "story" — uma info por tela) ---
+// Reaproveita 100% do fluxo/back-end: coleta os mesmos campos do wizard atual,
+// monta o mesmo objeto e entrega para a tela de preview (que publica no Supabase).
+function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0 }) {
+  const CORES = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Verde', 'Amarelo', 'Bege', 'Marrom', 'Vinho'];
+  const CAMBIOS = ['Automático', 'Manual'];
+  const COMBUSTIVEIS = ['Flex', 'Gasolina', 'Diesel', 'Elétrico', 'Híbrido', 'Álcool'];
+
+  const STEPS = [
+    { block: 'Veículo', q: 'Qual a marca do veículo?', sub: 'Buscamos o valor FIPE automaticamente.' },
+    { block: 'Veículo', q: 'Qual o modelo?', sub: 'Selecione entre os modelos da marca.' },
+    { block: 'Veículo', q: 'Qual o ano e versão?', sub: 'Isso carrega o preço FIPE de referência.' },
+    { block: 'Veículo', q: 'Qual a quilometragem?', sub: 'Quanto o veículo já rodou (km).' },
+    { block: 'Veículo', q: 'Qual a cor?', sub: 'Cor predominante do veículo.' },
+    { block: 'Veículo', q: 'Qual o câmbio?', sub: 'Tipo de transmissão.' },
+    { block: 'Veículo', q: 'Qual o combustível?', sub: 'Sugerido pela FIPE — ajuste se precisar.' },
+    { block: 'Valores', q: 'Qual o preço de venda?', sub: 'Valor anunciado ao cliente (máx. R$ 100 mi).' },
+    { block: 'Valores', q: 'Qual o valor do sinal?', sub: 'Quanto o cliente paga via Pix para reservar.' },
+    { block: 'Valores', q: 'Tempo de expiração?', sub: 'Quanto a reserva fica de pé (HH:MM).' },
+    { block: 'Cliente', q: 'Nome do cliente?', sub: 'Para quem é esta reserva.' },
+    { block: 'Cliente', q: 'CPF do cliente?', sub: 'Identificação do cliente.' },
+    { block: 'Cliente', q: 'WhatsApp do cliente?', sub: 'Para onde enviar o link da proposta.' },
+    { block: 'Cliente', q: 'Quem é o atendente?', sub: 'Vendedor responsável pela reserva.' },
+  ];
+  const TOTAL = STEPS.length;
+
+  const [step, setStep] = useState(1);
+  const [marcas, setMarcas] = useState<any[]>([]);
+  const [modelos, setModelos] = useState<any[]>([]);
+  const [anos, setAnos] = useState<any[]>([]);
+  const [selectedMarca, setSelectedMarca] = useState('');
+  const [selectedModelo, setSelectedModelo] = useState('');
+  const [selectedAno, setSelectedAno] = useState('');
+  const [isModelosLoading, setIsModelosLoading] = useState(false);
+  const [isAnosLoading, setIsAnosLoading] = useState(false);
+  const [isPrecoLoading, setIsPrecoLoading] = useState(false);
+
+  const [vehicleData, setVehicleData] = useState<any>({
+    brand: '', model: '', version: '', year: '', color: 'Branco', fuel: 'Flex',
+    transmission: 'Automático', km: '', price: '', fipePrice: 0,
+    fullName: '', cpf: '', phone: '', atendente: '',
+    selectedOpcionais: ['Ar Condicionado', 'Direção Elétrica', 'Freio ABS', 'Central Multimídia'],
+    description: 'Veículo em excelente estado de conservação, único dono e com todas as revisões periódicas em dia.',
+    photos: [],
+  });
+  const [sinal, setSinal] = useState(empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : '');
+  const [expiracao, setExpiracao] = useState(60);
+
+  const fmtExp = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const [expiracaoText, setExpiracaoText] = useState(fmtExp(60));
+  const parseExp = (raw: string) => {
+    const c = raw.replace(/[^\d:]/g, '');
+    if (c.includes(':')) { const [h, m] = c.split(':'); return (parseInt(h || '0', 10) * 60) + parseInt(m || '0', 10); }
+    return parseInt(c || '0', 10);
+  };
+  const stepExp = (delta: number) => { const n = Math.min(360, Math.max(15, expiracao + delta)); setExpiracao(n); setExpiracaoText(fmtExp(n)); };
+  const fmtExpLabel = (m: number) => { if (m < 60) return `${m}min`; const h = Math.floor(m / 60); const r = m % 60; return r === 0 ? `${h}h` : `${h}h ${r}min`; };
+
+  const maskMilhar = (raw: string) => { const d = raw.replace(/\D/g, ''); return d ? Number(d).toLocaleString('pt-BR') : ''; };
+  const maskCPF = (raw: string) => {
+    const d = raw.replace(/\D/g, '').slice(0, 11);
+    return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  };
+  const maskPhone = (raw: string) => {
+    const d = raw.replace(/\D/g, '').slice(0, 11);
+    if (d.length === 0) return '';
+    if (d.length <= 2) return `(${d}`;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  // Carrega marcas FIPE no mount
+  useEffect(() => {
+    fetch('https://parallelum.com.br/fipe/api/v1/carros/marcas')
+      .then(res => res.json())
+      .then(data => { if (data && data.length > 0) setMarcas(data); })
+      .catch(() => setMarcas(typeof MOCK_BRANDS !== 'undefined' ? MOCK_BRANDS : []));
+  }, []);
+
+  const onMarca = (id: string) => {
+    setSelectedMarca(id); setModelos([]); setSelectedModelo(''); setAnos([]); setSelectedAno('');
+    if (!id) return;
+    const brandName = marcas.find(m => m.codigo == id)?.nome || id;
+    setVehicleData(prev => ({ ...prev, brand: brandName }));
+    setIsModelosLoading(true);
+    fetch(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${id}/modelos`)
+      .then(res => res.json())
+      .then(data => { if (data && data.modelos) setModelos(data.modelos); setIsModelosLoading(false); })
+      .catch(() => { setModelos((typeof MOCK_MODELS !== 'undefined' && MOCK_MODELS[brandName]) || []); setIsModelosLoading(false); });
+  };
+
+  const onModelo = (id: string) => {
+    setSelectedModelo(id); setAnos([]); setSelectedAno('');
+    if (!id) return;
+    const modelName = modelos.find(m => m.codigo == id)?.nome || id;
+    setVehicleData(prev => ({ ...prev, model: modelName }));
+    setIsAnosLoading(true);
+    fetch(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${selectedMarca}/modelos/${id}/anos`)
+      .then(res => res.json())
+      .then(data => { if (data && data.length > 0) setAnos(data); setIsAnosLoading(false); })
+      .catch(() => { setAnos(typeof MOCK_YEARS !== 'undefined' ? MOCK_YEARS : []); setIsAnosLoading(false); });
+  };
+
+  const onAno = (id: string) => {
+    setSelectedAno(id);
+    if (!id) return;
+    setIsPrecoLoading(true);
+    fetch(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${selectedMarca}/modelos/${selectedModelo}/anos/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          const raw = data.Valor.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+          const num = parseFloat(raw);
+          setVehicleData(prev => ({ ...prev, version: data.AnoModelo + ' ' + data.Combustivel, year: String(data.AnoModelo), fuel: data.Combustivel, fipePrice: num, price: String(num) }));
+        }
+        setIsPrecoLoading(false);
+      })
+      .catch(() => { setIsPrecoLoading(false); });
+  };
+
+  const isStepValid = (s: number): boolean => {
+    switch (s) {
+      case 1: return !!selectedMarca;
+      case 2: return !!selectedModelo;
+      case 3: return !!selectedAno && !isPrecoLoading && Number(vehicleData.fipePrice) > 0;
+      case 4: return String(vehicleData.km).replace(/\D/g, '').length > 0;
+      case 5: return !!vehicleData.color;
+      case 6: return !!vehicleData.transmission;
+      case 7: return !!vehicleData.fuel;
+      case 8: return Number(vehicleData.price) > 0;
+      case 9: return Number(sinal) > 0;
+      case 10: return expiracao >= 15;
+      case 11: return vehicleData.fullName.trim().length >= 3;
+      case 12: return vehicleData.cpf.replace(/\D/g, '').length === 11;
+      case 13: return vehicleData.phone.replace(/\D/g, '').length === 11;
+      case 14: return !!vehicleData.atendente;
+      default: return false;
+    }
+  };
+
+  const finalizar = () => {
+    const now = new Date();
+    const stamp = now.toLocaleTimeString('pt-BR') + ' de ' + now.toLocaleDateString('pt-BR');
+    const compiledReservation = {
+      id: Date.now(),
+      title: `${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim(),
+      created: now.toLocaleString('pt-BR'),
+      duration: String(expiracao),
+      expiracao: Number(expiracao),
+      signal: Number(sinal || 0),
+      sinal: Number(sinal || 0),
+      marcaText: vehicleData.brand,
+      modeloText: vehicleData.model,
+      anoText: vehicleData.year,
+      corText: vehicleData.color,
+      motorText: vehicleData.fuel,
+      fipeValue: clampPrice(vehicleData.fipePrice),
+      valorVenda: clampPrice(parseFloat(vehicleData.price) || vehicleData.fipePrice),
+      km: vehicleData.km,
+      cambio: vehicleData.transmission,
+      combustivel: vehicleData.fuel,
+      opcionais: vehicleData.selectedOpcionais.join(', '),
+      fotos: vehicleData.photos.length > 0 ? vehicleData.photos.join(',') : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
+      vendedores: vehicleData.atendente,
+      clienteNome: vehicleData.fullName,
+      laudoAprovado: true,
+      status: 'Active',
+      elapsedSeconds: 0,
+      logs: [
+        { time: stamp, text: `Proposta criada por ${vehicleData.atendente} (Reserva Rápida)` },
+        { time: stamp, text: `Link de sinal de R$ ${Number(sinal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ativado` },
+      ],
+    };
+    setActiveReservation(compiledReservation);
+    navigateTo('preview');
+  };
+
+  const avancar = () => {
+    if (!isStepValid(step)) return;
+    if (step < TOTAL) setStep(step + 1);
+    else finalizar();
+  };
+  const voltar = () => { if (step > 1) setStep(step - 1); else navigateTo('dashboard'); };
+
+  // Limite de plano
+  if (reservasUsadas >= totalReservasPlano) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-[#F4F4F2] flex items-center justify-center p-6">
+        <div className="bg-white border border-[#E5E5E2] rounded-3xl p-8 max-w-sm text-center shadow-sm">
+          <h2 className="text-xl font-black text-[#141414] mb-2">Limite de propostas atingido</h2>
+          <p className="text-[#8A8A85] text-xs mb-6 font-medium">Seu plano permite até {totalReservasPlano} propostas ativas. Faça upgrade para continuar.</p>
+          <button onClick={() => navigateTo('configuracoes')} className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white font-bold py-3.5 rounded-xl transition text-sm">Fazer upgrade</button>
+          <button onClick={() => navigateTo('dashboard')} className="w-full mt-2 text-[#8A8A85] font-bold py-2 text-xs">Voltar</button>
+        </div>
+      </div>
+    );
+  }
+
+  const inputCls = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-5 py-4 text-base font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
+  const selectCls = inputCls + " appearance-none bg-no-repeat bg-[right_1.25rem_center] bg-[length:1.1em] cursor-pointer";
+  const chevronBg = { backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23141414' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` };
+  const chip = (active: boolean) => `px-5 py-3 rounded-2xl text-sm font-bold border-2 transition ${active ? 'bg-[#141414] text-white border-[#141414]' : 'bg-white text-[#141414] border-[#E5E5E2] hover:border-[#141414]'}`;
+
+  const renderInput = () => {
+    switch (step) {
+      case 1:
+        return (
+          <select autoFocus className={selectCls} style={chevronBg} value={selectedMarca} onChange={e => onMarca(e.target.value)}>
+            <option value="">Selecione a marca...</option>
+            {marcas.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
+          </select>
+        );
+      case 2:
+        return (
+          <select autoFocus className={selectCls} style={chevronBg} value={selectedModelo} onChange={e => onModelo(e.target.value)} disabled={isModelosLoading || modelos.length === 0}>
+            <option value="">{isModelosLoading ? 'Carregando modelos...' : 'Selecione o modelo...'}</option>
+            {modelos.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
+          </select>
+        );
+      case 3:
+        return (
+          <div className="space-y-3">
+            <select autoFocus className={selectCls} style={chevronBg} value={selectedAno} onChange={e => onAno(e.target.value)} disabled={isAnosLoading || anos.length === 0}>
+              <option value="">{isAnosLoading ? 'Carregando anos...' : 'Selecione o ano/versão...'}</option>
+              {anos.map((a, i) => <option key={a.codigo || i} value={a.codigo}>{a.nome}</option>)}
+            </select>
+            {isPrecoLoading && <p className="text-xs text-[#8A8A85] font-semibold">Buscando preço FIPE...</p>}
+            {!isPrecoLoading && Number(vehicleData.fipePrice) > 0 && (
+              <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg">FIPE: {formatCurrency(vehicleData.fipePrice)}</p>
+            )}
+          </div>
+        );
+      case 4:
+        return (
+          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 45.000"
+            value={vehicleData.km} onChange={e => setVehicleData(prev => ({ ...prev, km: maskMilhar(e.target.value) }))} />
+        );
+      case 5:
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {CORES.map(c => <button key={c} type="button" className={chip(vehicleData.color === c)} onClick={() => setVehicleData(prev => ({ ...prev, color: c }))}>{c}</button>)}
+          </div>
+        );
+      case 6:
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {CAMBIOS.map(c => <button key={c} type="button" className={chip(vehicleData.transmission === c)} onClick={() => setVehicleData(prev => ({ ...prev, transmission: c }))}>{c}</button>)}
+          </div>
+        );
+      case 7:
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {COMBUSTIVEIS.map(c => <button key={c} type="button" className={chip(vehicleData.fuel === c)} onClick={() => setVehicleData(prev => ({ ...prev, fuel: c }))}>{c}</button>)}
+          </div>
+        );
+      case 8:
+        return (
+          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: R$ 85.000,00"
+            value={vehicleData.price ? formatCurrency(Number(vehicleData.price)) : ''}
+            onChange={e => { const d = e.target.value.replace(/\D/g, ''); setVehicleData(prev => ({ ...prev, price: d ? String(clampPrice(Number(d))) : '' })); }} />
+        );
+      case 9:
+        return (
+          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 1.500"
+            value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''}
+            onChange={e => setSinal(e.target.value.replace(/\D/g, ''))} />
+        );
+      case 10:
+        return (
+          <div className="space-y-3">
+            <div className="relative">
+              <input type="text" inputMode="numeric" className={`${inputCls} font-mono tracking-wide pr-14`} placeholder="01:00"
+                value={expiracaoText} onChange={e => setExpiracaoText(e.target.value)}
+                onBlur={() => { const m = Math.min(360, Math.max(15, parseExp(expiracaoText) || 15)); setExpiracao(m); setExpiracaoText(fmtExp(m)); }}
+                onKeyDown={e => { if (e.key === 'ArrowUp') { e.preventDefault(); stepExp(15); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepExp(-15); } }} />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                <button type="button" onClick={() => stepExp(15)} aria-label="Aumentar" className="w-8 h-5 rounded-md flex items-center justify-center text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2]"><ChevronUp size={16} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => stepExp(-15)} aria-label="Diminuir" className="w-8 h-5 rounded-md flex items-center justify-center text-[#8A8A85] hover:text-[#141414] hover:bg-[#F4F4F2]"><ChevronDown size={16} strokeWidth={2.5} /></button>
+              </div>
+            </div>
+            <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg">A reserva fica de pé por {fmtExpLabel(expiracao)}</p>
+          </div>
+        );
+      case 11:
+        return <input autoFocus type="text" className={inputCls} placeholder="Nome completo do cliente"
+          value={vehicleData.fullName} onChange={e => setVehicleData(prev => ({ ...prev, fullName: e.target.value }))} />;
+      case 12:
+        return <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="000.000.000-00"
+          value={vehicleData.cpf} onChange={e => setVehicleData(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} />;
+      case 13:
+        return <input autoFocus type="tel" className={inputCls} placeholder="(99) 99999-9999"
+          value={vehicleData.phone} onChange={e => setVehicleData(prev => ({ ...prev, phone: maskPhone(e.target.value) }))} />;
+      case 14:
+        return (
+          <select autoFocus className={selectCls} style={chevronBg} value={vehicleData.atendente} onChange={e => setVehicleData(prev => ({ ...prev, atendente: e.target.value }))}>
+            <option value="">Selecione o vendedor...</option>
+            {(empresaLogada?.vendedores || []).map((v: any, i: number) => <option key={v.id || i} value={v.nome}>{v.nome}{v.cargo ? ` (${v.cargo})` : ''}</option>)}
+          </select>
+        );
+      default: return null;
+    }
+  };
+
+  const meta = STEPS[step - 1];
+  const progress = (step / TOTAL) * 100;
+  const isLast = step === TOTAL;
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-[#F4F4F2] text-[#141414] flex flex-col">
+      <div className="w-full max-w-md mx-auto h-full flex flex-col px-6">
+        {/* Topo: progresso + navegação */}
+        <div className="pt-8 space-y-4">
+          <div className="h-1.5 w-full bg-[#E5E5E2] rounded-full overflow-hidden">
+            <div className="h-full bg-[#C1F11D] rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="flex items-center justify-between h-5">
+            <button onClick={voltar} className="text-[11px] uppercase tracking-widest text-[#8A8A85] font-bold hover:text-[#141414] transition flex items-center gap-1">
+              <ArrowLeft size={13} /> Voltar
+            </button>
+            <button onClick={() => navigateTo('dashboard')} aria-label="Fechar" className="text-[#8A8A85] hover:text-[#141414] transition"><X size={18} /></button>
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-[#8A8A85] font-black flex items-center gap-1.5">
+              <Zap size={12} className="text-[#141414]" /> {meta.block} · {step}/{TOTAL}
+            </span>
+            <h2 className="text-2xl font-black tracking-tight leading-tight text-[#141414]">{meta.q}</h2>
+            <p className="text-xs text-[#8A8A85] font-medium">{meta.sub}</p>
+          </div>
+        </div>
+
+        {/* Meio: input animado por passo */}
+        <div className="flex-1 flex flex-col justify-center">
+          <div key={step} className="animate-rapida-step">
+            {renderInput()}
+          </div>
+        </div>
+
+        {/* Base: ação */}
+        <div className="pb-8 pt-2">
+          <button
+            onClick={avancar}
+            disabled={!isStepValid(step)}
+            className="w-full py-4 rounded-2xl text-sm font-black uppercase tracking-wider transition bg-[#141414] text-white hover:bg-[#2A2A26] disabled:bg-[#E5E5E2] disabled:text-[#B9B9B4] disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLast ? <>Visualizar e publicar <ChevronRight size={16} /></> : <>Continuar <ChevronRight size={16} /></>}
+          </button>
         </div>
       </div>
     </div>
