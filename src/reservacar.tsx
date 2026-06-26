@@ -7974,33 +7974,32 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   );
 }
 
-// --- NEW COMPONENT: RESERVA RÁPIDA (fluxo "story" — uma info por tela) ---
-// Reaproveita 100% do fluxo/back-end: coleta os mesmos campos do wizard atual,
-// monta o mesmo objeto e entrega para a tela de preview (que publica no Supabase).
+// --- NEW COMPONENT: RESERVA RÁPIDA (fluxo em 3 fases, uma info por tela) ---
+// Reaproveita 100% do fluxo/back-end: coleta os campos, monta o mesmo objeto
+// e entrega para a tela de preview (que publica no Supabase).
 function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0 }) {
-  const CORES = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Verde', 'Amarelo', 'Bege', 'Marrom', 'Vinho'];
+  const CORES = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Verde', 'Amarelo', 'Bege', 'Marrom', 'Laranja'];
   const CAMBIOS = ['Automático', 'Manual'];
-  const COMBUSTIVEIS = ['Flex', 'Gasolina', 'Diesel', 'Elétrico', 'Híbrido', 'Álcool'];
+  const OPCIONAIS_POOL = ['Computador de Bordo', 'Ar Condicionado', 'Ar Quente', 'Banco do Motorista com Ajuste de Altura', 'Banco em Couro', 'Travas Elétricas', 'Vidros Elétricos', 'Direção Elétrica', 'Rodas de Liga Leve', 'Teto Solar', 'Air Bag', 'Alarme', 'Desembaçador Traseiro', 'Freio ABS', 'Central Multimídia', 'Sensores de Estacionamento'];
 
-  const STEPS = [
-    { block: 'Veículo', q: 'Qual a marca do veículo?', sub: 'Buscamos o valor FIPE automaticamente.' },
-    { block: 'Veículo', q: 'Qual o modelo?', sub: 'Selecione entre os modelos da marca.' },
-    { block: 'Veículo', q: 'Qual o ano e versão?', sub: 'Isso carrega o preço FIPE de referência.' },
-    { block: 'Veículo', q: 'Qual a quilometragem?', sub: 'Quanto o veículo já rodou (km).' },
-    { block: 'Veículo', q: 'Qual a cor?', sub: 'Cor predominante do veículo.' },
-    { block: 'Veículo', q: 'Qual o câmbio?', sub: 'Tipo de transmissão.' },
-    { block: 'Veículo', q: 'Qual o combustível?', sub: 'Sugerido pela FIPE — ajuste se precisar.' },
-    { block: 'Valores', q: 'Qual o preço de venda?', sub: 'Valor anunciado ao cliente (máx. R$ 100 mi).' },
-    { block: 'Valores', q: 'Qual o valor do sinal?', sub: 'Quanto o cliente paga via Pix para reservar.' },
-    { block: 'Valores', q: 'Tempo de expiração?', sub: 'Quanto a reserva fica de pé (HH:MM).' },
-    { block: 'Cliente', q: 'Nome do cliente?', sub: 'Para quem é esta reserva.' },
-    { block: 'Cliente', q: 'CPF do cliente?', sub: 'Identificação do cliente.' },
-    { block: 'Cliente', q: 'WhatsApp do cliente?', sub: 'Para onde enviar o link da proposta.' },
-    { block: 'Cliente', q: 'Quem é o atendente?', sub: 'Vendedor responsável pela reserva.' },
+  const PHASES = ['Dados do veículo', 'Detalhes da reserva', 'Dados do contato'];
+
+  // Telas em ordem; cada uma pertence a uma fase (1..3).
+  const SCREENS = [
+    { phase: 1, key: 'veiculo', q: 'Preencha os dados do veículo', sub: 'Buscamos o valor FIPE automaticamente.' },
+    { phase: 2, key: 'km', q: 'Quilometragem do veículo', sub: 'Campo obrigatório' },
+    { phase: 2, key: 'preco', q: 'Informe o preço de venda', sub: 'Campo obrigatório' },
+    { phase: 2, key: 'cor', q: 'Qual a cor?', sub: 'Cor predominante do veículo' },
+    { phase: 2, key: 'opcionais', q: 'Opcionais', sub: 'Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.' },
+    { phase: 2, key: 'cambio', q: 'Qual o câmbio?', sub: 'Tipo de transmissão' },
+    { phase: 2, key: 'fotos', q: 'Adicione fotos do veículo', sub: 'Boas fotos aumentam as chances de reserva em até 70%.' },
+    { phase: 2, key: 'sinal', q: 'Qual o valor do sinal?', sub: 'Quanto o cliente paga via Pix para reservar.' },
+    { phase: 2, key: 'expiracao', q: 'Tempo de expiração', sub: 'Quanto a reserva fica de pé (HH:MM).' },
+    { phase: 3, key: 'lead', q: 'Lead de venda', sub: 'Informe os dados do lead para quem você enviará este link de reserva e sinal.' },
   ];
-  const TOTAL = STEPS.length;
+  const TOTAL = SCREENS.length;
 
-  const [step, setStep] = useState(1);
+  const [idx, setIdx] = useState(0);
   const [marcas, setMarcas] = useState<any[]>([]);
   const [modelos, setModelos] = useState<any[]>([]);
   const [anos, setAnos] = useState<any[]>([]);
@@ -8010,11 +8009,12 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const [isModelosLoading, setIsModelosLoading] = useState(false);
   const [isAnosLoading, setIsAnosLoading] = useState(false);
   const [isPrecoLoading, setIsPrecoLoading] = useState(false);
+  const [uploadingFotos, setUploadingFotos] = useState(false);
 
   const [vehicleData, setVehicleData] = useState<any>({
     brand: '', model: '', version: '', year: '', color: 'Branco', fuel: 'Flex',
-    transmission: 'Automático', km: '', price: '', fipePrice: 0,
-    fullName: '', cpf: '', phone: '', atendente: '',
+    transmission: 'Automático', km: '', price: '', fipePrice: 0, blindado: false,
+    fullName: '', cpf: '', phone: '', email: '', cep: '', atendente: '',
     selectedOpcionais: ['Ar Condicionado', 'Direção Elétrica', 'Freio ABS', 'Central Multimídia'],
     description: 'Veículo em excelente estado de conservação, único dono e com todas as revisões periódicas em dia.',
     photos: [],
@@ -8037,6 +8037,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
     const d = raw.replace(/\D/g, '').slice(0, 11);
     return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   };
+  const maskCEP = (raw: string) => { const d = raw.replace(/\D/g, '').slice(0, 8); return d.replace(/(\d{5})(\d)/, '$1-$2'); };
   const maskPhone = (raw: string) => {
     const d = raw.replace(/\D/g, '').slice(0, 11);
     if (d.length === 0) return '';
@@ -8095,22 +8096,57 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
       .catch(() => { setIsPrecoLoading(false); });
   };
 
-  const isStepValid = (s: number): boolean => {
-    switch (s) {
-      case 1: return !!selectedMarca;
-      case 2: return !!selectedModelo;
-      case 3: return !!selectedAno && !isPrecoLoading && Number(vehicleData.fipePrice) > 0;
-      case 4: return String(vehicleData.km).replace(/\D/g, '').length > 0;
-      case 5: return !!vehicleData.color;
-      case 6: return !!vehicleData.transmission;
-      case 7: return !!vehicleData.fuel;
-      case 8: return Number(vehicleData.price) > 0;
-      case 9: return Number(sinal) > 0;
-      case 10: return expiracao >= 15;
-      case 11: return vehicleData.fullName.trim().length >= 3;
-      case 12: return vehicleData.cpf.replace(/\D/g, '').length === 11;
-      case 13: return vehicleData.phone.replace(/\D/g, '').length === 11;
-      case 14: return !!vehicleData.atendente;
+  const toggleOpcional = (opc: string) => setVehicleData(prev => ({
+    ...prev,
+    selectedOpcionais: prev.selectedOpcionais.includes(opc) ? prev.selectedOpcionais.filter((o: string) => o !== opc) : [...prev.selectedOpcionais, opc],
+  }));
+
+  // Upload de fotos (copiado do fluxo normal: Supabase Storage, bucket "veiculos")
+  const uploadFotos = async (fileList: FileList | null) => {
+    const arquivos = Array.from(fileList || []);
+    if (arquivos.length === 0) return;
+    if (!isSupabaseConfigured) { showToast('Supabase não configurado (preencha o .env e reinicie o dev).', 'error'); return; }
+    const espaco = 8 - vehicleData.photos.length;
+    if (espaco <= 0) { showToast('Limite de 8 fotos atingido.', 'info'); return; }
+    setUploadingFotos(true);
+    try {
+      const novasUrls: string[] = [];
+      for (const file of arquivos.slice(0, espaco)) {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `propostas/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage.from('veiculos').upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        const { data } = supabase.storage.from('veiculos').getPublicUrl(path);
+        novasUrls.push(data.publicUrl);
+      }
+      setVehicleData((prev: any) => ({ ...prev, photos: [...prev.photos, ...novasUrls] }));
+      showToast(`${novasUrls.length} foto(s) enviada(s) com sucesso!`, 'success');
+    } catch (e: any) {
+      showToast('Erro ao enviar foto: ' + (e?.message || 'tente novamente'), 'error');
+    } finally { setUploadingFotos(false); }
+  };
+  const addPresetPhoto = (url: string) => {
+    if (vehicleData.photos.length >= 8) { showToast('Limite de 8 fotos atingido.', 'info'); return; }
+    setVehicleData((prev: any) => ({ ...prev, photos: [...prev.photos, url] }));
+    showToast('Foto adicionada com sucesso!', 'success');
+  };
+  const removePhoto = (i: number) => setVehicleData((prev: any) => ({ ...prev, photos: prev.photos.filter((_: any, j: number) => j !== i) }));
+
+  const screen = SCREENS[idx];
+  const currentPhase = screen.phase;
+
+  const isScreenValid = (key: string): boolean => {
+    switch (key) {
+      case 'veiculo': return !!selectedMarca && !!selectedModelo && !!selectedAno && !isPrecoLoading && Number(vehicleData.fipePrice) > 0;
+      case 'km': return String(vehicleData.km).replace(/\D/g, '').length > 0;
+      case 'preco': return Number(vehicleData.price) > 0;
+      case 'cor': return !!vehicleData.color;
+      case 'opcionais': return true;
+      case 'cambio': return !!vehicleData.transmission;
+      case 'fotos': return true;
+      case 'sinal': return Number(sinal) > 0;
+      case 'expiracao': return expiracao >= 15;
+      case 'lead': return vehicleData.fullName.trim().length >= 3 && vehicleData.cpf.replace(/\D/g, '').length === 11 && vehicleData.phone.replace(/\D/g, '').length === 11 && !!vehicleData.atendente;
       default: return false;
     }
   };
@@ -8118,6 +8154,8 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const finalizar = () => {
     const now = new Date();
     const stamp = now.toLocaleTimeString('pt-BR') + ' de ' + now.toLocaleDateString('pt-BR');
+    const opcionais = vehicleData.blindado && !vehicleData.selectedOpcionais.includes('Blindado')
+      ? ['Blindado', ...vehicleData.selectedOpcionais] : vehicleData.selectedOpcionais;
     const compiledReservation = {
       id: Date.now(),
       title: `${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim(),
@@ -8136,7 +8174,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
       km: vehicleData.km,
       cambio: vehicleData.transmission,
       combustivel: vehicleData.fuel,
-      opcionais: vehicleData.selectedOpcionais.join(', '),
+      opcionais: opcionais.join(', '),
       fotos: vehicleData.photos.length > 0 ? vehicleData.photos.join(',') : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
       vendedores: vehicleData.atendente,
       clienteNome: vehicleData.fullName,
@@ -8153,11 +8191,11 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   };
 
   const avancar = () => {
-    if (!isStepValid(step)) return;
-    if (step < TOTAL) setStep(step + 1);
+    if (!isScreenValid(screen.key)) return;
+    if (idx < TOTAL - 1) setIdx(idx + 1);
     else finalizar();
   };
-  const voltar = () => { if (step > 1) setStep(step - 1); else navigateTo('dashboard'); };
+  const voltar = () => { if (idx > 0) setIdx(idx - 1); else navigateTo('dashboard'); };
 
   // Limite de plano
   if (reservasUsadas >= totalReservasPlano) {
@@ -8173,76 +8211,136 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
     );
   }
 
-  const inputCls = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-5 py-4 text-base font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
-  const selectCls = inputCls + " appearance-none bg-no-repeat bg-[right_1.25rem_center] bg-[length:1.1em] cursor-pointer";
+  const inputCls = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-4 py-3.5 text-sm font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
+  const selectCls = inputCls + " appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.1em] cursor-pointer";
+  const labelCls = "block text-[11px] font-black uppercase tracking-wider text-[#8A8A85] mb-2";
   const chevronBg = { backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23141414' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` };
-  const chip = (active: boolean) => `px-5 py-3 rounded-2xl text-sm font-bold border-2 transition ${active ? 'bg-[#141414] text-white border-[#141414]' : 'bg-white text-[#141414] border-[#E5E5E2] hover:border-[#141414]'}`;
+  const chip = (active: boolean) => `px-4 py-3 rounded-2xl text-sm font-bold border-2 transition text-center ${active ? 'bg-[#141414] text-white border-[#141414]' : 'bg-white text-[#141414] border-[#E5E5E2] hover:border-[#141414]'}`;
+  const presetBtn = "bg-white border border-[#D9D9D5] hover:border-[#141414] text-[10px] font-black px-3 py-1.5 rounded-xl text-[#5F5F5A] transition";
 
-  const renderInput = () => {
-    switch (step) {
-      case 1:
+  const renderScreen = () => {
+    switch (screen.key) {
+      case 'veiculo':
         return (
-          <select autoFocus className={selectCls} style={chevronBg} value={selectedMarca} onChange={e => onMarca(e.target.value)}>
-            <option value="">Selecione a marca...</option>
-            {marcas.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
-          </select>
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>Marca *</label>
+              <select autoFocus className={selectCls} style={chevronBg} value={selectedMarca} onChange={e => onMarca(e.target.value)}>
+                <option value="">Selecione uma marca...</option>
+                {marcas.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Modelo *</label>
+              <select className={selectCls} style={chevronBg} value={selectedModelo} onChange={e => onModelo(e.target.value)} disabled={isModelosLoading || modelos.length === 0}>
+                <option value="">{isModelosLoading ? 'Carregando modelos...' : 'Escolha um modelo'}</option>
+                {modelos.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Ano / Versão *</label>
+              <select className={selectCls} style={chevronBg} value={selectedAno} onChange={e => onAno(e.target.value)} disabled={isAnosLoading || anos.length === 0}>
+                <option value="">{isAnosLoading ? 'Carregando versões...' : 'Escolha uma versão'}</option>
+                {anos.map((a, i) => <option key={a.codigo || i} value={a.codigo}>{a.nome}</option>)}
+              </select>
+              {isPrecoLoading && <p className="text-xs text-[#8A8A85] font-semibold mt-2">Buscando preço FIPE...</p>}
+              {!isPrecoLoading && Number(vehicleData.fipePrice) > 0 && (
+                <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg mt-2">FIPE {formatCurrency(vehicleData.fipePrice)}</p>
+              )}
+            </div>
+            <label className="flex items-center gap-2.5 pt-1 cursor-pointer select-none">
+              <input type="checkbox" checked={vehicleData.blindado} onChange={e => setVehicleData(prev => ({ ...prev, blindado: e.target.checked }))} className="w-4 h-4 accent-[#141414] rounded" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#8A8A85]">Blindado</span>
+            </label>
+          </div>
         );
-      case 2:
+      case 'km':
         return (
-          <select autoFocus className={selectCls} style={chevronBg} value={selectedModelo} onChange={e => onModelo(e.target.value)} disabled={isModelosLoading || modelos.length === 0}>
-            <option value="">{isModelosLoading ? 'Carregando modelos...' : 'Selecione o modelo...'}</option>
-            {modelos.map((m, i) => <option key={m.codigo || i} value={m.codigo}>{m.nome}</option>)}
-          </select>
+          <div className="flex items-baseline gap-3 border-b-2 border-[#E5E5E2] focus-within:border-[#141414] pb-3 transition-colors">
+            <input autoFocus type="text" inputMode="numeric" placeholder="0" value={vehicleData.km}
+              onChange={e => setVehicleData(prev => ({ ...prev, km: maskMilhar(e.target.value) }))}
+              className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+            <span className="text-xl font-bold text-[#8A8A85] shrink-0">km</span>
+          </div>
         );
-      case 3:
+      case 'preco':
         return (
-          <div className="space-y-3">
-            <select autoFocus className={selectCls} style={chevronBg} value={selectedAno} onChange={e => onAno(e.target.value)} disabled={isAnosLoading || anos.length === 0}>
-              <option value="">{isAnosLoading ? 'Carregando anos...' : 'Selecione o ano/versão...'}</option>
-              {anos.map((a, i) => <option key={a.codigo || i} value={a.codigo}>{a.nome}</option>)}
-            </select>
-            {isPrecoLoading && <p className="text-xs text-[#8A8A85] font-semibold">Buscando preço FIPE...</p>}
-            {!isPrecoLoading && Number(vehicleData.fipePrice) > 0 && (
-              <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg">FIPE: {formatCurrency(vehicleData.fipePrice)}</p>
+          <div>
+            <div className="flex items-baseline gap-2 border-b-2 border-[#E5E5E2] focus-within:border-[#141414] pb-3 transition-colors">
+              <span className="text-3xl font-black text-[#141414] shrink-0">R$</span>
+              <input autoFocus type="text" inputMode="numeric" placeholder="0" value={vehicleData.price ? Number(vehicleData.price).toLocaleString('pt-BR') : ''}
+                onChange={e => { const d = e.target.value.replace(/\D/g, ''); setVehicleData(prev => ({ ...prev, price: d ? String(clampPrice(Number(d))) : '' })); }}
+                className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+              <span className="text-xl font-bold text-[#8A8A85] shrink-0">,00</span>
+            </div>
+            {Number(vehicleData.fipePrice) > 0 && (
+              <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg mt-4">FIPE {formatCurrency(vehicleData.fipePrice)}</p>
             )}
           </div>
         );
-      case 4:
+      case 'cor':
         return (
-          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 45.000"
-            value={vehicleData.km} onChange={e => setVehicleData(prev => ({ ...prev, km: maskMilhar(e.target.value) }))} />
-        );
-      case 5:
-        return (
-          <div className="flex flex-wrap gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             {CORES.map(c => <button key={c} type="button" className={chip(vehicleData.color === c)} onClick={() => setVehicleData(prev => ({ ...prev, color: c }))}>{c}</button>)}
           </div>
         );
-      case 6:
+      case 'opcionais':
         return (
           <div className="flex flex-wrap gap-2.5">
+            {OPCIONAIS_POOL.map(opc => {
+              const on = vehicleData.selectedOpcionais.includes(opc);
+              return (
+                <button key={opc} type="button" onClick={() => toggleOpcional(opc)}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition flex items-center gap-1.5 ${on ? 'bg-[#141414] border-[#141414] text-white' : 'bg-white border-[#E5E5E2] text-[#141414] hover:border-[#141414]'}`}>
+                  <span>{opc}</span><span>{on ? '✓' : '+'}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      case 'cambio':
+        return (
+          <div className="grid grid-cols-2 gap-2.5">
             {CAMBIOS.map(c => <button key={c} type="button" className={chip(vehicleData.transmission === c)} onClick={() => setVehicleData(prev => ({ ...prev, transmission: c }))}>{c}</button>)}
           </div>
         );
-      case 7:
+      case 'fotos':
         return (
-          <div className="flex flex-wrap gap-2.5">
-            {COMBUSTIVEIS.map(c => <button key={c} type="button" className={chip(vehicleData.fuel === c)} onClick={() => setVehicleData(prev => ({ ...prev, fuel: c }))}>{c}</button>)}
+          <div>
+            <label className={`border-2 border-dashed rounded-3xl p-6 transition flex flex-col items-center ${uploadingFotos ? 'border-[#C1F11D] bg-[#C1F11D]/10 cursor-wait' : 'border-[#D9D9D5] hover:border-[#141414] bg-[#F4F4F2] cursor-pointer'}`}>
+              <input type="file" accept="image/*" multiple className="hidden" disabled={uploadingFotos} onChange={e => { uploadFotos(e.target.files); e.currentTarget.value = ''; }} />
+              {uploadingFotos ? <RefreshCw className="text-[#141414] mb-2 animate-spin" size={28} /> : <UploadCloud className="text-[#B9B9B4] mb-2" size={28} />}
+              <span className="font-bold text-xs text-[#2A2A26]">{uploadingFotos ? 'Enviando fotos...' : 'Carregar fotos do veículo'}</span>
+              <span className="text-[10px] text-[#B9B9B4] mt-1">Clique para selecionar · PNG, JPG, JPEG</span>
+            </label>
+            <div className="mt-3 text-center">
+              <span className="text-[10px] text-[#B9B9B4] font-semibold uppercase tracking-wider">ou use um preset rápido</span>
+              <div className="mt-2 flex flex-wrap gap-2 justify-center">
+                <button type="button" className={presetBtn} onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80')}>+ Frente +</button>
+                <button type="button" className={presetBtn} onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80')}>+ Traseira +</button>
+                <button type="button" className={presetBtn} onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80')}>+ Interior +</button>
+                <button type="button" className={presetBtn} onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80')}>+ Lateral +</button>
+                <button type="button" className={presetBtn} onClick={() => addPresetPhoto('https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80')}>+ Frente Extra +</button>
+              </div>
+            </div>
+            {vehicleData.photos.length > 0 && (
+              <div className="grid grid-cols-4 gap-2.5 mt-5">
+                {vehicleData.photos.map((url: string, i: number) => (
+                  <div key={i} className="relative h-16 rounded-xl overflow-hidden border border-[#E5E5E2]">
+                    <img src={url} className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition"><X size={10} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
-      case 8:
-        return (
-          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: R$ 85.000,00"
-            value={vehicleData.price ? formatCurrency(Number(vehicleData.price)) : ''}
-            onChange={e => { const d = e.target.value.replace(/\D/g, ''); setVehicleData(prev => ({ ...prev, price: d ? String(clampPrice(Number(d))) : '' })); }} />
-        );
-      case 9:
+      case 'sinal':
         return (
           <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 1.500"
-            value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''}
-            onChange={e => setSinal(e.target.value.replace(/\D/g, ''))} />
+            value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''} onChange={e => setSinal(e.target.value.replace(/\D/g, ''))} />
         );
-      case 10:
+      case 'expiracao':
         return (
           <div className="space-y-3">
             <div className="relative">
@@ -8258,68 +8356,93 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
             <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg">A reserva fica de pé por {fmtExpLabel(expiracao)}</p>
           </div>
         );
-      case 11:
-        return <input autoFocus type="text" className={inputCls} placeholder="Nome completo do cliente"
-          value={vehicleData.fullName} onChange={e => setVehicleData(prev => ({ ...prev, fullName: e.target.value }))} />;
-      case 12:
-        return <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="000.000.000-00"
-          value={vehicleData.cpf} onChange={e => setVehicleData(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} />;
-      case 13:
-        return <input autoFocus type="tel" className={inputCls} placeholder="(99) 99999-9999"
-          value={vehicleData.phone} onChange={e => setVehicleData(prev => ({ ...prev, phone: maskPhone(e.target.value) }))} />;
-      case 14:
+      case 'lead':
         return (
-          <select autoFocus className={selectCls} style={chevronBg} value={vehicleData.atendente} onChange={e => setVehicleData(prev => ({ ...prev, atendente: e.target.value }))}>
-            <option value="">Selecione o vendedor...</option>
-            {(empresaLogada?.vendedores || []).map((v: any, i: number) => <option key={v.id || i} value={v.nome}>{v.nome}{v.cargo ? ` (${v.cargo})` : ''}</option>)}
-          </select>
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>Nome do lead *</label>
+              <input autoFocus type="text" className={inputCls} placeholder="Ex: Allan Salgado" value={vehicleData.fullName} onChange={e => setVehicleData(prev => ({ ...prev, fullName: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>CPF do lead *</label>
+              <input type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 370.875.668-14" value={vehicleData.cpf} onChange={e => setVehicleData(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} />
+            </div>
+            <div>
+              <label className={labelCls}>WhatsApp do lead *</label>
+              <input type="tel" className={inputCls} placeholder="Ex: (11) 96840-3485" value={vehicleData.phone} onChange={e => setVehicleData(prev => ({ ...prev, phone: maskPhone(e.target.value) }))} />
+            </div>
+            <div>
+              <label className={labelCls}>E-mail do lead</label>
+              <input type="email" className={inputCls} placeholder="Ex: wollace@gmail.com" value={vehicleData.email} onChange={e => setVehicleData(prev => ({ ...prev, email: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>CEP do lead</label>
+              <input type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 02522-000" value={vehicleData.cep} onChange={e => setVehicleData(prev => ({ ...prev, cep: maskCEP(e.target.value) }))} />
+            </div>
+            <div>
+              <label className={labelCls}>Atendente dedicado *</label>
+              <select className={selectCls} style={chevronBg} value={vehicleData.atendente} onChange={e => setVehicleData(prev => ({ ...prev, atendente: e.target.value }))}>
+                <option value="">Selecione o vendedor...</option>
+                {(empresaLogada?.vendedores || []).map((v: any, i: number) => <option key={v.id || i} value={v.nome}>{v.nome}{v.cargo ? ` (${v.cargo})` : ''}</option>)}
+              </select>
+            </div>
+          </div>
         );
       default: return null;
     }
   };
 
-  const meta = STEPS[step - 1];
-  const progress = (step / TOTAL) * 100;
-  const isLast = step === TOTAL;
+  const progress = ((idx + 1) / TOTAL) * 100;
+  const isLast = idx === TOTAL - 1;
+  const valid = isScreenValid(screen.key);
 
   return (
     <div className="fixed inset-0 z-[70] bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
       <div className="w-full max-w-md mx-auto h-full flex flex-col px-6 lg:max-w-xl lg:h-auto lg:px-12 lg:py-10 lg:bg-white lg:border lg:border-[#E5E5E2] lg:rounded-[28px] lg:shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)]">
-        {/* Topo: progresso + navegação */}
-        <div className="pt-8 space-y-4 lg:pt-0">
+        {/* Topo: indicador de 3 fases + barra + título */}
+        <div className="pt-6 lg:pt-0">
+          <div className="flex items-center gap-2 mb-3 text-sm">
+            {PHASES.map((label, i) => {
+              const p = i + 1;
+              const done = currentPhase > p;
+              const active = currentPhase === p;
+              return (
+                <React.Fragment key={p}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 transition-colors ${done || active ? 'bg-[#141414] text-white' : 'bg-[#E5E5E2] text-[#8A8A85]'}`}>
+                    {done ? '✓' : p}
+                  </span>
+                  {active && <span className="font-bold text-[#141414] mr-auto truncate">{label}</span>}
+                </React.Fragment>
+              );
+            })}
+          </div>
           <div className="h-1.5 w-full bg-[#E5E5E2] rounded-full overflow-hidden">
             <div className="h-full bg-[#C1F11D] rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${progress}%` }} />
           </div>
-          <div className="flex items-center justify-between h-5">
-            <button onClick={voltar} className="text-[11px] uppercase tracking-widest text-[#8A8A85] font-bold hover:text-[#141414] transition flex items-center gap-1">
-              <ArrowLeft size={13} /> Voltar
-            </button>
-            <button onClick={() => navigateTo('dashboard')} aria-label="Fechar" className="text-[#8A8A85] hover:text-[#141414] transition"><X size={18} /></button>
-          </div>
-          <div className="space-y-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-[#8A8A85] font-black flex items-center gap-1.5">
-              <Zap size={12} className="text-[#141414]" /> {meta.block} · {step}/{TOTAL}
-            </span>
-            <h2 className="text-2xl font-black tracking-tight leading-tight text-[#141414]">{meta.q}</h2>
-            <p className="text-xs text-[#8A8A85] font-medium">{meta.sub}</p>
+          <div className="mt-6 space-y-1">
+            <h2 className="text-2xl font-black tracking-tight leading-tight text-[#141414]">{screen.q}</h2>
+            <p className="text-xs text-[#8A8A85] font-medium">{screen.sub}</p>
           </div>
         </div>
 
-        {/* Meio: input animado por passo */}
-        <div className="flex-1 flex flex-col justify-center lg:flex-none lg:min-h-[120px] lg:py-8">
-          <div key={step} className="animate-rapida-step">
-            {renderInput()}
+        {/* Meio: conteúdo animado por tela (rola se necessário) */}
+        <div className="flex-1 overflow-y-auto py-6 lg:flex-none lg:min-h-[160px]">
+          <div key={idx} className="animate-rapida-step">
+            {renderScreen()}
           </div>
         </div>
 
-        {/* Base: ação */}
-        <div className="pb-8 pt-2 lg:pb-0 lg:pt-4">
+        {/* Base fixa: Voltar + Continuar com estados */}
+        <div className="shrink-0 pb-8 pt-3 border-t border-[#E5E5E2] flex items-center justify-between gap-3 bg-[#F4F4F2] lg:bg-transparent lg:pb-0">
+          <button onClick={voltar} className="flex items-center gap-1 text-[11px] uppercase tracking-widest text-[#8A8A85] font-bold hover:text-[#141414] transition shrink-0">
+            <ArrowLeft size={14} /> Voltar
+          </button>
           <button
             onClick={avancar}
-            disabled={!isStepValid(step)}
-            className="w-full py-4 rounded-2xl text-sm font-black uppercase tracking-wider transition bg-[#141414] text-white hover:bg-[#2A2A26] disabled:bg-[#E5E5E2] disabled:text-[#B9B9B4] disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={!valid}
+            className="px-7 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition bg-[#141414] text-white hover:bg-[#2A2A26] disabled:bg-[#E5E5E2] disabled:text-[#B9B9B4] disabled:cursor-not-allowed flex items-center gap-1.5 shrink-0 whitespace-nowrap"
           >
-            {isLast ? <>Visualizar e publicar <ChevronRight size={16} /></> : <>Continuar <ChevronRight size={16} /></>}
+            {isLast ? 'Visualizar Reserva' : 'Continuar'} <ChevronRight size={14} />
           </button>
         </div>
       </div>
