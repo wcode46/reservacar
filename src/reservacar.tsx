@@ -7480,8 +7480,9 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     navigateTo('preview');
   };
 
-  const inputClass = "w-full bg-[#F4F4F2] border-2 border-[#E5E5E2] rounded-xl px-4 py-3.5 text-sm font-bold text-[#2A2A26] outline-none focus:border-black transition";
-  const labelClass = "block text-xs font-bold uppercase tracking-wider text-[#8A8A85] mb-2";
+  // Estilo visual alinhado ao fluxo "Reserva Rápida" (mantendo a diagramação atual).
+  const inputClass = "w-full bg-white border-2 border-[#E5E5E2] rounded-2xl px-5 py-4 text-base font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium";
+  const labelClass = "block text-[10px] font-black uppercase tracking-widest text-[#8A8A85] mb-2";
 
   return (
     <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-28 pb-20 px-4 md:px-8">
@@ -7509,7 +7510,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   </span>
                   <span className="font-bold text-[10px] text-[#6F6F6A] hidden md:inline">{s.label}</span>
                 </div>
-                <div className={`h-1 w-full rounded-full ${step >= s.num ? 'bg-[#141414]' : 'bg-[#E5E5E2]'}`}></div>
+                <div className={`h-1 w-full rounded-full transition-colors ${step >= s.num ? 'bg-[#C1F11D]' : 'bg-[#E5E5E2]'}`}></div>
               </div>
             ))}
           </div>
@@ -7523,7 +7524,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
             </div>
           )}
 
-          <div>
+          <div key={step} className="animate-rapida-step">
             {/* STEP 1: BUSCA FIPE */}
             {step === 1 && (
               <div className="max-w-xl mx-auto w-full text-center py-4">
@@ -7740,10 +7741,10 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         key={idx}
                         type="button"
                         onClick={() => handleToggleOpcional(opc)}
-                        className={`px-4 py-2.5 rounded-full text-xs font-bold border-2 transition-all flex items-center gap-1.5 ${
-                          isSelected 
-                            ? 'bg-[#2A2A26] border-[#2A2A26] text-white' 
-                            : 'bg-white border-[#E5E5E2] text-[#6F6F6A] hover:border-[#B9B9B4] hover:bg-[#F4F4F2]'
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-[#141414] border-[#141414] text-white'
+                            : 'bg-white border-[#E5E5E2] text-[#141414] hover:border-[#141414]'
                         }`}
                       >
                         <span>{opc}</span>
@@ -7760,7 +7761,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     value={newOpcional}
                     onChange={(e) => setNewOpcional(e.target.value)}
                     placeholder="Ex: Teto solar panorâmico"
-                    className="max-w-xs bg-white border border-[#E5E5E2] rounded-xl px-4 py-2.5 text-xs font-bold text-[#2A2A26] outline-none focus:border-[#141414] transition"
+                    className="max-w-xs bg-white border-2 border-[#E5E5E2] rounded-2xl px-4 py-2.5 text-xs font-bold text-[#141414] outline-none focus:border-[#141414] transition placeholder:text-[#B9B9B4] placeholder:font-medium"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -7771,7 +7772,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <button
                     type="button"
                     onClick={handleAddCustomOpcional}
-                    className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] text-xs font-bold px-4 py-2.5 rounded-xl transition uppercase tracking-wider"
+                    className="bg-[#141414] hover:bg-[#2A2A26] text-white text-xs font-black px-4 py-2.5 rounded-2xl transition uppercase tracking-wider"
                   >
                     + Adicionar
                   </button>
@@ -7951,7 +7952,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   }
                   setStep(prev => prev + 1);
                 }}
-                className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#2A2A26] text-white font-black uppercase tracking-wider text-xs px-7 py-3.5 rounded-2xl flex items-center gap-1.5 transition"
               >
                 Continuar <ChevronRight size={14} />
               </button>
@@ -7959,7 +7960,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
               <button
                 type="button"
                 onClick={handlePreviewRedirect}
-                className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold text-xs px-6 py-3.5 rounded-xl flex items-center gap-1 transition"
+                className="bg-[#141414] hover:bg-[#2A2A26] text-white font-black uppercase tracking-wider text-xs px-7 py-3.5 rounded-2xl flex items-center gap-1.5 transition"
               >
                 Visualizar Link de Reserva <ChevronRight size={14} />
               </button>
