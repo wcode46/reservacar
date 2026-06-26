@@ -7488,13 +7488,13 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-20 pb-12 px-4 md:pt-28 md:pb-20 md:px-8">
       <div className="max-w-4xl mx-auto">
 
-        {/* Progress Tracker bar */}
-        <div className="mb-5 md:mb-6 md:bg-white md:rounded-2xl md:p-6 md:border md:border-[#E5E5E2] md:shadow-sm">
-          <div className="flex justify-between items-center text-xs font-bold mb-4 text-[#8A8A85] uppercase tracking-widest">
-            <span className="text-xl font-black text-black tracking-tight">Criar Proposta de Reserva</span>
-            <span>Fluxo do Cliente</span>
+        {/* Cabeçalho livre (estilo Configurações) + stepper */}
+        <div className="mb-6">
+          <div className="mb-5">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-[#141414] tracking-tight">Criar Proposta de Reserva</h1>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Fluxo do Cliente</p>
           </div>
-          
+
           <div className="grid grid-cols-5 gap-3">
             {[
               { num: 1, label: 'Tabela FIPE' },
@@ -7517,19 +7517,24 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
         </div>
 
         {/* Form Container */}
-        <div className="p-0 md:p-10 md:bg-white md:rounded-3xl md:border md:border-[#E5E5E2] md:shadow-md min-h-[460px] flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-white border border-[#E5E5E2] rounded-2xl p-6 md:p-10 shadow-sm min-h-[460px] flex flex-col justify-between relative overflow-hidden">
           {isFipeLoading && marcas.length === 0 && (
             <div className="absolute inset-0 bg-white/75 backdrop-blur-sm flex items-center justify-center gap-2 text-[#141414] font-bold z-35">
               <RefreshCw className="animate-spin" size={20} /> Carregando base FIPE...
             </div>
           )}
 
+          <div className="mb-6">
+            <span className="text-[11px] font-black uppercase text-[#8A8A85] tracking-wider">
+              {['Tabela FIPE', 'KM & Preço', 'Opcionais', 'Fotos', 'Dados de Contato'][step - 1]}
+            </span>
+            <div className="h-px bg-[#EBEBE8] mt-2"></div>
+          </div>
           <div key={step} className="animate-rapida-step">
             {/* STEP 1: BUSCA FIPE */}
             {step === 1 && (
-              <div className="max-w-xl mx-auto w-full text-center py-4">
-                <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Selecione a fipe do veiculo</h2>
-                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Consulte em tempo real as informações oficiais da FIPE para preencher seu anúncio.</p>
+              <div className="max-w-xl mx-auto w-full text-left py-1">
+                <p className="text-[#8A8A85] text-xs mb-6 font-medium">Consulte em tempo real as informações oficiais da FIPE para preencher seu anúncio.</p>
                 
                 <div className="text-left space-y-4">
                   <div>
@@ -7585,9 +7590,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
             {/* STEP 2: PREÇO / KM */}
             {step === 2 && (
-              <div className="max-w-xl mx-auto w-full py-4 text-left">
-                <h2 className="text-2xl font-black text-black mb-2 text-center tracking-tight">Qual o preço e quilometragem do veículo?</h2>
-                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
+              <div className="max-w-xl mx-auto w-full py-1 text-left">
+                <p className="text-[#8A8A85] text-xs mb-6 font-medium">Informe a quilometragem atual e compare os valores oficiais.</p>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -7729,9 +7733,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
             {/* STEP 3: OPCIONAIS */}
             {step === 3 && (
-              <div className="max-w-3xl mx-auto w-full text-center py-4">
-                <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Informe os opcionais do seu veículo</h2>
-                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.</p>
+              <div className="max-w-3xl mx-auto w-full text-left py-1">
+                <p className="text-[#8A8A85] text-xs mb-6 font-medium">Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.</p>
                 
                 <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl mx-auto">
                   {[...opcionaisPool, ...customOpcionais].map((opc, idx) => {
@@ -7782,9 +7785,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
             {/* STEP 4: FOTOS */}
             {step === 4 && (
-              <div className="max-w-2xl mx-auto w-full text-center py-4">
-                <h2 className="text-2xl font-black text-black mb-2 tracking-tight">Adicione as fotos do veículo</h2>
-                <p className="text-[#8A8A85] text-xs mb-8 font-medium">Boas fotos aumentam as chances de reserva em até 70%.</p>
+              <div className="max-w-2xl mx-auto w-full text-left py-1">
+                <p className="text-[#8A8A85] text-xs mb-6 font-medium">Boas fotos aumentam as chances de reserva em até 70%.</p>
                 
                 <label className={`border-2 border-dashed rounded-3xl p-6 transition flex flex-col items-center ${uploadingFotos ? 'border-[#C1F11D] bg-[#C1F11D]/10 cursor-wait' : 'border-[#D9D9D5] hover:border-black bg-[#F4F4F2] cursor-pointer'}`}>
                   <input type="file" accept="image/*" multiple className="hidden" disabled={uploadingFotos} onChange={(e) => { uploadFotos(e.target.files); e.currentTarget.value = ''; }} />
@@ -7857,9 +7859,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
             {/* STEP 5: DADOS DO LEAD */}
             {step === 5 && (
-              <div className="max-w-xl mx-auto w-full text-left py-4">
-                <h2 className="text-2xl font-black text-black mb-2 text-center tracking-tight">Dados do Lead</h2>
-                <p className="text-[#8A8A85] text-xs mb-8 text-center font-medium">Informe os dados do lead para quem você enviará este link de reserva e sinal.</p>
+              <div className="max-w-xl mx-auto w-full text-left py-1">
+                <p className="text-[#8A8A85] text-xs mb-6 font-medium">Informe os dados do lead para quem você enviará este link de reserva e sinal.</p>
                 
                 <div className="space-y-4">
                   <div>
