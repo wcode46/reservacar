@@ -17,6 +17,15 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
+// Teto de valor de um veículo: R$ 100 milhões. Evita preços absurdos no cadastro
+// e estouro de layout no preview/link.
+const MAX_VEHICLE_PRICE = 100_000_000;
+const clampPrice = (value) => {
+  const n = Number(value) || 0;
+  if (n < 0) return 0;
+  return n > MAX_VEHICLE_PRICE ? MAX_VEHICLE_PRICE : n;
+};
+
 // Eventos de atividade (proposta_eventos) — label por tipo e mapeamento para o feed.
 const LABEL_EVENTO: Record<string, string> = {
   view: 'VISUALIZAÇÃO', visita: 'VISITA AGENDADA', foto: 'FOTOS ATUALIZADAS',
@@ -409,7 +418,7 @@ export default function App() {
       id: p.id, loja_id: p.loja_id, title: p.title,
       anoText: p.ano, corText: p.cor, motorText: p.motor, cambio: p.cambio, km: p.km,
       combustivel: p.motor, opcionais: p.opcionais || '',
-      fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
+      fipeValue: clampPrice(p.fipe_value), valorVenda: clampPrice(p.valor_venda),
       sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
       expiracao: p.expiracao, duration: String(p.expiracao),
       status: p.status, clienteNome: p.cliente_nome || 'Não informado',
@@ -6116,7 +6125,7 @@ function PublicPropostaView({ id, showToast }) {
         setReserva({
           id: p.id, loja_id: p.loja_id, title: p.title, anoText: p.ano, corText: p.cor, motorText: p.motor, combustivel: p.motor,
           cambio: p.cambio, km: p.km, opcionais: p.opcionais || '',
-          fipeValue: Number(p.fipe_value) || 0, valorVenda: Number(p.valor_venda) || 0,
+          fipeValue: clampPrice(p.fipe_value), valorVenda: clampPrice(p.valor_venda),
           sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
           expiracao: p.expiracao, duration: String(p.expiracao),
           status: p.status, clienteNome: p.cliente_nome || 'Cliente',
@@ -7437,8 +7446,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
       anoText: vehicleData.year,
       corText: vehicleData.color,
       motorText: vehicleData.fuel,
-      fipeValue: vehicleData.fipePrice,
-      valorVenda: parseFloat(vehicleData.price) || vehicleData.fipePrice,
+      fipeValue: clampPrice(vehicleData.fipePrice),
+      valorVenda: clampPrice(parseFloat(vehicleData.price) || vehicleData.fipePrice),
       km: vehicleData.km,
       cambio: vehicleData.transmission,
       combustivel: vehicleData.fuel,
@@ -7615,7 +7624,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         name="price"
                         value={vehicleData.price ? formatCurrency(Number(vehicleData.price)) : ''}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
+                          const digits = e.target.value.replace(/\D/g, '');
+                          const val = digits ? String(clampPrice(Number(digits))) : '';
                           setVehicleData(prev => ({ ...prev, price: val }));
                         }}
                         className={inputClass}
