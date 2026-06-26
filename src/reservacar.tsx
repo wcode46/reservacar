@@ -8281,10 +8281,10 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const isLast = step === TOTAL;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-[#F4F4F2] text-[#141414] flex flex-col">
-      <div className="w-full max-w-md mx-auto h-full flex flex-col px-6">
+    <div className="fixed inset-0 z-[70] bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
+      <div className="w-full max-w-md mx-auto h-full flex flex-col px-6 lg:max-w-xl lg:h-auto lg:px-12 lg:py-10 lg:bg-white lg:border lg:border-[#E5E5E2] lg:rounded-[28px] lg:shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)]">
         {/* Topo: progresso + navegação */}
-        <div className="pt-8 space-y-4">
+        <div className="pt-8 space-y-4 lg:pt-0">
           <div className="h-1.5 w-full bg-[#E5E5E2] rounded-full overflow-hidden">
             <div className="h-full bg-[#C1F11D] rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${progress}%` }} />
           </div>
@@ -8304,14 +8304,14 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
         </div>
 
         {/* Meio: input animado por passo */}
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center lg:flex-none lg:min-h-[120px] lg:py-8">
           <div key={step} className="animate-rapida-step">
             {renderInput()}
           </div>
         </div>
 
         {/* Base: ação */}
-        <div className="pb-8 pt-2">
+        <div className="pb-8 pt-2 lg:pb-0 lg:pt-4">
           <button
             onClick={avancar}
             disabled={!isStepValid(step)}
