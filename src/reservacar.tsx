@@ -7867,7 +7867,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                     <label className={labelClass}>Nome do Lead *</label>
                     <input type="text" name="fullName" value={vehicleData.fullName} onChange={handleInputChange} className={inputClass} placeholder="Ex: Allan Salgado" required />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>CPF do Lead *</label>
                       <input type="text" name="cpf" value={vehicleData.cpf} onChange={handleInputChange} className={inputClass} placeholder="Ex: 370.875.668-14" required />
@@ -7877,7 +7877,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                       <input type="text" name="phone" value={vehicleData.phone} onChange={handleInputChange} className={inputClass} placeholder="Ex: (11) 96840-3485" required />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>E-mail do Lead *</label>
                       <input type="email" name="email" value={vehicleData.email} onChange={handleInputChange} className={inputClass} placeholder="Ex: wollace@gmail.com" required />
@@ -7961,9 +7961,9 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
               <button
                 type="button"
                 onClick={handlePreviewRedirect}
-                className="bg-[#141414] hover:bg-[#2A2A26] text-white font-black uppercase tracking-wider text-xs px-7 py-3.5 rounded-2xl flex items-center gap-1.5 transition"
+                className="bg-[#141414] hover:bg-[#2A2A26] text-white font-black uppercase tracking-wider text-xs px-7 py-3.5 rounded-2xl flex items-center gap-1.5 transition shrink-0 whitespace-nowrap"
               >
-                Visualizar Link de Reserva <ChevronRight size={14} />
+                Visualizar Reserva <ChevronRight size={14} />
               </button>
             )}
           </div>
