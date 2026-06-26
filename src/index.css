@@ -83,4 +83,13 @@ html, body {
   font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Trava mestra contra overflow horizontal: nenhum elemento que vaze a
+     largura da tela (glows, marquees, texto longo) gera rolagem lateral. */
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
 }
