@@ -7485,11 +7485,11 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   const labelClass = "block text-[10px] font-black uppercase tracking-widest text-[#8A8A85] mb-2";
 
   return (
-    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-28 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-[#F4F4F2] text-[#141414] pt-20 pb-12 px-4 md:pt-28 md:pb-20 md:px-8">
       <div className="max-w-4xl mx-auto">
-        
+
         {/* Progress Tracker bar */}
-        <div className="bg-white rounded-2xl p-6 border border-[#E5E5E2] shadow-sm mb-6">
+        <div className="mb-5 md:mb-6 md:bg-white md:rounded-2xl md:p-6 md:border md:border-[#E5E5E2] md:shadow-sm">
           <div className="flex justify-between items-center text-xs font-bold mb-4 text-[#8A8A85] uppercase tracking-widest">
             <span className="text-xl font-black text-black tracking-tight">Criar Proposta de Reserva</span>
             <span>Fluxo do Cliente</span>
@@ -7517,7 +7517,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-3xl p-6 md:p-10 border border-[#E5E5E2] shadow-md min-h-[460px] flex flex-col justify-between relative overflow-hidden">
+        <div className="p-0 md:p-10 md:bg-white md:rounded-3xl md:border md:border-[#E5E5E2] md:shadow-md min-h-[460px] flex flex-col justify-between relative overflow-hidden">
           {isFipeLoading && marcas.length === 0 && (
             <div className="absolute inset-0 bg-white/75 backdrop-blur-sm flex items-center justify-center gap-2 text-[#141414] font-bold z-35">
               <RefreshCw className="animate-spin" size={20} /> Carregando base FIPE...
