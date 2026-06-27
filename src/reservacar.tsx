@@ -8501,7 +8501,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const valid = isScreenValid(screen.key);
 
   return (
-    <div className="fixed inset-0 z-[70] overflow-x-hidden bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
+    <div className="fixed top-16 inset-x-0 bottom-0 z-30 overflow-x-hidden bg-[#F4F4F2] text-[#141414] flex flex-col lg:static lg:top-auto lg:z-auto lg:bg-transparent lg:items-center lg:justify-center lg:min-h-[80vh] lg:py-10 lg:px-8">
       <div className="w-full max-w-md mx-auto h-full flex flex-col overflow-x-hidden px-6 lg:max-w-xl lg:h-auto lg:px-12 lg:py-10 lg:bg-white lg:border lg:border-[#E5E5E2] lg:rounded-[28px] lg:shadow-[0_20px_40px_-15px_rgba(20,20,20,0.08)]">
         {/* Topo: indicador de 3 fases + barra + título */}
         <div className="pt-6 lg:pt-0">
