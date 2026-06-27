@@ -7,7 +7,7 @@ import {
   TrendingUp, DollarSign, Users, Award, ShieldAlert, UploadCloud, Info, HelpCircle, CreditCard,
   CircleDollarSign, Settings, LogOut, Menu, PlusCircle, UserPlus, Search, FileText,
   ArrowUp, TrendingDown, Eye, Star, Trophy, Sun, Plus, Key, MapPin, ChevronDown, ChevronUp, Camera, PanelsTopLeft,
-  LayoutGrid, LayoutList, Zap
+  LayoutGrid, LayoutList, Zap, CalendarClock, CalendarCheck
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
@@ -317,6 +317,9 @@ export default function App() {
   // Eventos de atividade (Supabase Realtime + histórico 72h): view, visita, foto.
   const [eventosRealtime, setEventosRealtime] = useState<any[]>([]);
 
+  // Contador de visitas agendadas (futuras) para o badge do menu "Agenda de Visitas".
+  const [visitasCount, setVisitasCount] = useState(0);
+
   // Feed de atividade gerado a partir das reservas reais (sem mock): cada proposta
   // vira um evento de acordo com seu estado atual — sinal pago (PIX), prestes a
   // expirar (urgência) ou recém-criada (nova proposta). No topo entram as
@@ -529,7 +532,26 @@ export default function App() {
     return () => { cancelado = true; };
   }, [empresaLogada?.id]);
 
-  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'reserva-rapida', 'vendedores', 'relatorios'].includes(currentRoute);
+  // Contagem de visitas agendadas (de hoje em diante) para o badge do menu.
+  // Recarrega ao trocar de loja e a cada novo evento (uma visita nova chega via Realtime).
+  useEffect(() => {
+    const lojaId = empresaLogada?.id;
+    if (!isSupabaseConfigured || !lojaId) { setVisitasCount(0); return; }
+    let cancelado = false;
+    (async () => {
+      const hojeISO = new Date().toISOString().slice(0, 10);
+      const { count } = await supabase
+        .from('visitas')
+        .select('id, propostas!inner(loja_id)', { count: 'exact', head: true })
+        .eq('propostas.loja_id', lojaId)
+        .eq('status', 'agendada')
+        .gte('dia', hojeISO);
+      if (!cancelado) setVisitasCount(count || 0);
+    })();
+    return () => { cancelado = true; };
+  }, [empresaLogada?.id, eventosRealtime.length]);
+
+  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'reserva-rapida', 'vendedores', 'relatorios', 'visitas'].includes(currentRoute);
 
   // Link público da proposta para o cliente (?p=<id>) — renderiza só a proposta, sem app.
   const publicPropostaId = useMemo(() => new URLSearchParams(window.location.search).get('p'), []);
@@ -726,6 +748,7 @@ export default function App() {
           showToast={showToast}
           currentUserRole={currentUserRole}
           collapsed={sidebarCollapsed}
+          visitasCount={visitasCount}
         />
       )}
 
@@ -873,6 +896,16 @@ export default function App() {
             reservasUsadas={reservasUsadas}
             initialDraft={draftToResume?.origin === 'cadastrar-reserva' ? draftToResume : null}
             onConsumeDraft={() => setDraftToResume(null)}
+          />
+        )}
+
+        {currentRoute === 'visitas' && (
+          <AgendaVisitasView
+            navigateTo={navigateTo}
+            showToast={showToast}
+            empresaLogada={empresaLogada}
+            recentReservations={recentReservations}
+            setActiveReservation={setActiveReservation}
           />
         )}
 
@@ -1277,10 +1310,11 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 }
 
 // --- SIDEBAR ---
-function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner', collapsed = false }) {
+function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, reservasUsadas = 0, totalReservasPlano = 30, recentReservations = [], showToast, currentUserRole = 'owner', collapsed = false, visitasCount = 0 }) {
   const operacoesItems = [
     { id: 'sales-stats', label: 'Painel de loja', icon: BarChart2 },
     { id: 'dashboard', label: 'Reservas', icon: LinkIcon },
+    { id: 'visitas', label: 'Agenda de Visitas', icon: CalendarClock },
     { id: 'reserva-rapida', label: 'Reserva Rápida', icon: Zap },
   ];
 
@@ -1303,7 +1337,8 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentRoute === item.id || (item.id === 'configuracoes' && currentRoute === 'checkout-plano');
-        const showBadge = item.id === 'sales-stats';
+        const badgeValue = item.id === 'sales-stats' ? recentReservations.length : item.id === 'visitas' ? visitasCount : 0;
+        const showBadge = badgeValue > 0;
 
         return (
           <button
@@ -1319,13 +1354,13 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
             <div className={`flex items-center ${isCol ? 'relative' : 'gap-3'}`}>
               <Icon size={18} className={isActive ? 'text-[#141414]' : 'text-[#8A8A85]'} />
               {!isCol && <span>{item.label}</span>}
-              {isCol && showBadge && recentReservations.length > 0 && (
-                <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#C1F11D] text-[#141414] text-[9px] font-bold rounded-full flex items-center justify-center">{recentReservations.length}</span>
+              {isCol && showBadge && (
+                <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#C1F11D] text-[#141414] text-[9px] font-bold rounded-full flex items-center justify-center">{badgeValue}</span>
               )}
             </div>
             {!isCol && showBadge && (
               <span className="w-5 h-5 bg-[#C1F11D] text-[#141414] text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                {recentReservations.length}
+                {badgeValue}
               </span>
             )}
           </button>
@@ -1529,6 +1564,7 @@ function MiniSpark({ trend = 'up' }: { trend?: 'up' | 'down' }) {
 // --- TOPBAR GLOBAL (app do lojista, estilo Meridian) ---
 const ROUTE_LABELS: any = {
   hub: 'Painel de loja', 'sales-stats': 'Painel de loja', dashboard: 'Reservas',
+  visitas: 'Agenda de Visitas',
   vendedores: 'Vendedores', relatorios: 'Relatórios', configuracoes: 'Configurações',
   plano: 'Configurações', 'checkout-plano': 'Configurações', 'cadastrar-reserva': 'Nova proposta',
 };
@@ -6455,7 +6491,7 @@ function MobileClientView({
   const progressPercent = (timeLeft / (data.expiracao * 60)) * 100;
 
   return (
-    <div className={publicMode ? "min-h-screen bg-white relative" : "min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4"}>
+    <div className={publicMode ? "min-h-screen w-full max-w-full overflow-x-hidden bg-white relative" : "min-h-screen bg-[#F4F4F2] py-12 flex justify-center relative items-center px-4"}>
       {!publicMode && (
         <button
           onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)}
@@ -6483,7 +6519,7 @@ function MobileClientView({
 
       {/* Container — moldura de celular (preview do lojista) ou site normal (link público) */}
       <div className={publicMode
-        ? "w-full max-w-md mx-auto min-h-screen bg-white relative flex flex-col"
+        ? "w-full max-w-md mx-auto min-h-screen overflow-x-hidden bg-white relative flex flex-col"
         : "w-[390px] h-[820px] bg-[#141414] rounded-[48px] shadow-2xl overflow-hidden relative border-[8px] border-[#2A2A26] flex flex-col scale-95 md:scale-100"}>
 
         {/* Notch dynamic simulated island (só no preview do lojista) */}
@@ -6508,7 +6544,7 @@ function MobileClientView({
         </div>
 
         {/* Conteúdo: scroll interno no preview, fluxo normal no site público */}
-        <div className={publicMode ? "pb-28 bg-white" : "flex-1 overflow-y-auto pb-24 bg-white"}>
+        <div className={publicMode ? "pb-28 bg-white overflow-x-hidden" : "flex-1 overflow-y-auto pb-24 bg-white"}>
           
           {/* Photos and Indicators (slider funcional: dots clicáveis + setas + swipe) */}
           <div
@@ -6590,7 +6626,7 @@ function MobileClientView({
               </div>
             )}
             
-            <h1 className="text-2xl font-extrabold text-[#141414] mb-1 tracking-tight leading-tight">{data.title}</h1>
+            <h1 className="text-2xl font-extrabold text-[#141414] mb-1 tracking-tight leading-tight break-words">{data.title}</h1>
             <p className="text-xs text-[#8A8A85] mb-4 font-semibold">
               {data.anoText || '2024'} • {data.km || '0 km'} • {data.corText || 'Preto'} • {data.cambio || 'Automático'}
             </p>
@@ -6865,10 +6901,10 @@ function MobileClientView({
             {slotInfo ? (
               <button
                 onClick={() => setShowAgendarSheet(true)}
-                className="flex-1 bg-[#C1F11D] text-[#141414] font-extrabold text-sm py-4 rounded-full flex items-center justify-between px-6 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+                className="flex-1 min-w-0 bg-[#C1F11D] text-[#141414] font-extrabold text-sm py-4 rounded-full flex items-center justify-between gap-2 px-6 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
               >
-                <span>Confirmar visita {slotInfo.diaLabel} às {slotInfo.hora}</span>
-                <span className="w-7 h-7 bg-[#141414]/10 rounded-full flex items-center justify-center"><ArrowRight size={15} /></span>
+                <span className="truncate">Confirmar visita {slotInfo.diaLabel} às {slotInfo.hora}</span>
+                <span className="w-7 h-7 bg-[#141414]/10 rounded-full flex items-center justify-center shrink-0"><ArrowRight size={15} /></span>
               </button>
             ) : (
               <button
@@ -8016,6 +8052,174 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 // --- NEW COMPONENT: RESERVA RÁPIDA (fluxo em 3 fases, uma info por tela) ---
 // Reaproveita 100% do fluxo/back-end: coleta os campos, monta o mesmo objeto
 // e entrega para a tela de preview (que publica no Supabase).
+// --- AGENDA DE VISITAS (leads que agendaram visita pelo link da proposta) ---
+function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReservations = [], setActiveReservation }) {
+  const [visitas, setVisitas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState<'proximas' | 'todas'>('proximas');
+
+  const hojeISO = new Date().toISOString().slice(0, 10);
+
+  const carregar = async () => {
+    const lojaId = empresaLogada?.id;
+    if (!isSupabaseConfigured || !lojaId) { setVisitas([]); setLoading(false); return; }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('visitas')
+      .select('id, proposta_id, cliente_nome, whatsapp, dia, hora, status, created_at, propostas!inner(title, loja_id)')
+      .eq('propostas.loja_id', lojaId)
+      .order('dia', { ascending: true })
+      .order('hora', { ascending: true });
+    if (!error && data) setVisitas(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, [empresaLogada?.id]);
+
+  const atualizarStatus = async (id: string, status: string) => {
+    setVisitas(prev => prev.map(v => v.id === id ? { ...v, status } : v));
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from('visitas').update({ status }).eq('id', id);
+      if (error) { showToast('Não foi possível atualizar a visita.', 'error'); carregar(); return; }
+    }
+    showToast(status === 'compareceu' ? 'Visita marcada como comparecida.' : status === 'cancelada' ? 'Visita cancelada.' : 'Visita atualizada.', 'success');
+  };
+
+  const verProposta = (propostaId: string) => {
+    const res = recentReservations.find((r: any) => r.id === propostaId);
+    if (res) { setActiveReservation(res); navigateTo('preview', 'dashboard'); }
+    else showToast('Proposta não encontrada na lista atual.', 'info');
+  };
+
+  const waLink = (whatsapp: string, nome: string, titulo: string, dia: string, hora: string) => {
+    const num = String(whatsapp || '').replace(/\D/g, '');
+    const tel = num.length <= 11 ? `55${num}` : num;
+    const msg = encodeURIComponent(`Olá ${nome}! Sobre sua visita ao ${titulo} em ${formatarDia(dia)} às ${hora}.`);
+    return `https://wa.me/${tel}?text=${msg}`;
+  };
+
+  function formatarDia(diaISO: string) {
+    const [y, m, d] = diaISO.split('-').map(Number);
+    const data = new Date(y, m - 1, d);
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1);
+    if (data.getTime() === hoje.getTime()) return 'Hoje';
+    if (data.getTime() === amanha.getTime()) return 'Amanhã';
+    return data.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+  }
+
+  const lista = filtro === 'proximas' ? visitas.filter(v => v.dia >= hojeISO && v.status !== 'cancelada') : visitas;
+
+  // Agrupa por dia preservando a ordem (já vem ordenado por dia/hora)
+  const grupos: { dia: string; itens: any[] }[] = [];
+  lista.forEach(v => {
+    const g = grupos.find(x => x.dia === v.dia);
+    if (g) g.itens.push(v); else grupos.push({ dia: v.dia, itens: [v] });
+  });
+
+  const statusPill = (s: string) => {
+    if (s === 'compareceu') return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Compareceu</span>;
+    if (s === 'cancelada') return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-600"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Cancelada</span>;
+    return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#141414]"><span className="w-1.5 h-1.5 rounded-full bg-[#C1F11D]" /> Agendada</span>;
+  };
+
+  const totalProximas = visitas.filter(v => v.dia >= hojeISO && v.status !== 'cancelada').length;
+
+  return (
+    <div className="pt-8 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
+      <div className="mb-6">
+        <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Agenda de Visitas</h1>
+        <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Leads que agendaram uma visita pelo link da reserva.</p>
+      </div>
+
+      {/* Tabs simples */}
+      <div className="flex items-center gap-7 border-b border-[#E5E5E2] mb-8 overflow-x-auto">
+        {[{ id: 'proximas', label: 'Próximas', count: totalProximas }, { id: 'todas', label: 'Todas', count: visitas.length }].map(t => {
+          const active = filtro === t.id;
+          return (
+            <button key={t.id} onClick={() => setFiltro(t.id as any)}
+              className={`relative pb-3 text-sm font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 ${active ? 'text-[#141414]' : 'text-[#8A8A85] hover:text-[#141414]'}`}>
+              {t.label}
+              {t.count > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${active ? 'bg-[#141414] text-white' : 'bg-[#E5E5E2] text-[#8A8A85]'}`}>{t.count}</span>}
+              {active && <span className="absolute -bottom-px left-0 w-full h-0.5 bg-[#C1F11D] rounded-full" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-[#8A8A85] text-sm font-semibold"><RefreshCw size={16} className="animate-spin" /> Carregando visitas...</div>
+      ) : grupos.length === 0 ? (
+        <div className="bg-white border border-[#E5E5E2] rounded-3xl py-16 px-8 text-center max-w-xl mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#F4F4F2] border border-[#E5E5E2] flex items-center justify-center mx-auto mb-5">
+            <CalendarClock className="text-[#B9B9B4]" size={26} />
+          </div>
+          <h4 className="font-extrabold text-[#141414] text-lg mb-2">Nenhuma visita agendada</h4>
+          <p className="text-xs text-[#8A8A85] leading-relaxed font-medium max-w-xs mx-auto">Quando um cliente agendar uma visita pelo link da reserva, ela aparece aqui com nome, WhatsApp e horário.</p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {grupos.map(g => (
+            <div key={g.dia}>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-black text-[#141414] uppercase tracking-widest">{formatarDia(g.dia)}</h3>
+                <span className="text-[11px] text-[#8A8A85] font-semibold font-mono">{g.itens.length} {g.itens.length === 1 ? 'visita' : 'visitas'}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {g.itens.map(v => (
+                  <div key={v.id} className="bg-white border border-[#E5E5E2] rounded-3xl p-6 flex flex-col">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      {statusPill(v.status)}
+                      <span className="text-sm font-black font-mono text-[#141414]">{v.hora}</span>
+                    </div>
+                    <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug">{v.cliente_nome}</h4>
+                    <p className="text-[11px] text-[#8A8A85] font-semibold mt-0.5 mb-3">{v.propostas?.title || 'Veículo'}</p>
+                    <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-3 rounded-2xl flex items-center justify-between gap-2 text-xs mb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">WhatsApp</span>
+                        <span className="text-xs font-bold font-mono text-[#141414]">{v.whatsapp || '—'}</span>
+                      </div>
+                      <div className="w-px h-7 bg-[#E5E5E2]" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Duração</span>
+                        <span className="text-xs font-bold font-mono text-[#2A2A26]">30min</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 mt-auto">
+                      <div className="flex gap-2">
+                        <a href={waLink(v.whatsapp, v.cliente_nome, v.propostas?.title || 'veículo', v.dia, v.hora)} target="_blank" rel="noreferrer"
+                          className="flex-1 bg-[#C1F11D] hover:brightness-105 text-[#141414] text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
+                          <MessageCircle size={13} /> WhatsApp
+                        </a>
+                        <button onClick={() => verProposta(v.proposta_id)}
+                          className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1">
+                          <Eye size={13} /> Ver proposta
+                        </button>
+                      </div>
+                      {v.status === 'agendada' && (
+                        <div className="flex gap-2">
+                          <button onClick={() => atualizarStatus(v.id, 'compareceu')}
+                            className="flex-1 bg-[#141414] hover:bg-[#2A2A26] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
+                            <CalendarCheck size={13} /> Compareceu
+                          </button>
+                          <button onClick={() => atualizarStatus(v.id, 'cancelada')}
+                            className="px-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold py-2.5 rounded-xl transition">
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0, initialDraft = null, onConsumeDraft = () => {} }) {
   const draftData = initialDraft?.draftData || null;
   // Consome o rascunho no parent (evita re-hidratar numa próxima abertura limpa).
