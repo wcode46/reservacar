@@ -210,6 +210,8 @@ export default function App() {
   const [activeReservation, setActiveReservation] = useState<any>(null); 
   const [toastMessage, setToastMessage] = useState<any>(null);
   const [previewOrigin, setPreviewOrigin] = useState('dashboard');
+  const [draftToResume, setDraftToResume] = useState<any>(null); // rascunho reaberto p/ completar
+  const [dashboardTab, setDashboardTab] = useState('ativos'); // aba ativa do painel de Reservas
   const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'employee'>('owner');
   
   // Credit Plan state management
@@ -764,8 +766,8 @@ export default function App() {
         )}
         
         {currentRoute === 'dashboard' && (
-          <DashboardView 
-            navigateTo={navigateTo} 
+          <DashboardView
+            navigateTo={navigateTo}
             setActiveReservation={setActiveReservation}
             recentReservations={recentReservations}
             setRecentReservations={setRecentReservations}
@@ -773,6 +775,9 @@ export default function App() {
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
             setReservaParaGerenciar={setReservaParaGerenciar}
+            activeTab={dashboardTab}
+            setActiveTab={setDashboardTab}
+            setDraftToResume={setDraftToResume}
           />
         )}
         
@@ -790,6 +795,8 @@ export default function App() {
             setEmpresaLogada={setEmpresaLogada}
             previewOrigin={previewOrigin}
             publicarProposta={publicarProposta}
+            setDraftToResume={setDraftToResume}
+            setDashboardTab={setDashboardTab}
           />
         )}
 
@@ -857,13 +864,15 @@ export default function App() {
         )}
 
         {currentRoute === 'cadastrar-reserva' && (
-          <CadastroReservaClienteView 
-            navigateTo={navigateTo} 
+          <CadastroReservaClienteView
+            navigateTo={navigateTo}
             showToast={showToast}
             setActiveReservation={setActiveReservation}
             empresaLogada={empresaLogada}
             totalReservasPlano={totalReservasPlano}
             reservasUsadas={reservasUsadas}
+            initialDraft={draftToResume?.origin === 'cadastrar-reserva' ? draftToResume : null}
+            onConsumeDraft={() => setDraftToResume(null)}
           />
         )}
 
@@ -875,6 +884,8 @@ export default function App() {
             empresaLogada={empresaLogada}
             totalReservasPlano={totalReservasPlano}
             reservasUsadas={reservasUsadas}
+            initialDraft={draftToResume?.origin === 'reserva-rapida' ? draftToResume : null}
+            onConsumeDraft={() => setDraftToResume(null)}
           />
         )}
 
@@ -5177,165 +5188,164 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 }
 
 // --- DASHBOARD VIEW (CREATOR FORM) ---
-function DashboardView({ navigateTo, setActiveReservation, recentReservations, setRecentReservations, showToast, reservasUsadas, totalReservasPlano, setReservaParaGerenciar }) {
-  const [showConfirmClearModal, setShowConfirmClearModal] = useState(false);
+function DashboardView({ navigateTo, setActiveReservation, recentReservations, setRecentReservations, showToast, reservasUsadas, totalReservasPlano, setReservaParaGerenciar, activeTab = 'ativos', setActiveTab = (_t: string) => {}, setDraftToResume = (_d: any) => {} }) {
+  const drafts = recentReservations.filter((r: any) => r.status === 'Draft');
+  const ativos = recentReservations.filter((r: any) => r.status === 'Active' || r.status === 'Completed');
+  const inativos = recentReservations.filter((r: any) => r.status === 'Expired');
+
+  const TABS = [
+    { id: 'ativos', label: 'Ativos', count: ativos.length },
+    { id: 'inativos', label: 'Inativos', count: inativos.length },
+    { id: 'rascunhos', label: 'Rascunhos', count: drafts.length },
+  ];
+
+  const resumeDraft = (res: any) => {
+    setRecentReservations((prev: any) => prev.filter((r: any) => r.id !== res.id));
+    setDraftToResume(res);
+    navigateTo(res.origin === 'reserva-rapida' ? 'reserva-rapida' : 'cadastrar-reserva');
+  };
+
+  const criarReserva = () => {
+    if (reservasUsadas >= totalReservasPlano) {
+      showToast('Limite de créditos de reserva atingido pelo seu plano. Faça upgrade nas configurações!', 'error');
+      return;
+    }
+    navigateTo('cadastrar-reserva');
+  };
+
+  const StatusPill = ({ status }: { status: string }) => {
+    if (status === 'Completed') return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PIX Recebido</span>;
+    if (status === 'Expired') return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-600"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Expirado</span>;
+    return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-600"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Aguardando Sinal</span>;
+  };
+
+  const ReservaCard = ({ res }: { res: any }) => (
+    <div className={`bg-white border rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group transition-colors duration-200 ${res.status === 'Completed' ? 'border-emerald-200' : 'border-[#E5E5E2] hover:border-[#B9B9B4]'}`}>
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <StatusPill status={res.status} />
+          <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
+        </div>
+        <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-1">{res.title || `${res.marcaText} ${res.modeloText}`}</h4>
+        {res.clienteNome && !['Não informado', 'Cliente'].includes(res.clienteNome) && (
+          <p className="text-[11px] text-[#8A8A85] font-semibold mb-4">Cliente: {res.clienteNome}</p>
+        )}
+        <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-[#5F5F5A] mb-6 mt-3">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Sinal Requerido</span>
+            <span className="text-sm font-bold font-mono text-[#141414]">{formatCurrency(res.signal || res.sinal || 1500)}</span>
+          </div>
+          <div className="w-px h-8 bg-[#E5E5E2]"></div>
+          <div className="flex flex-col">
+            <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Tempo Limiar</span>
+            <span className="text-sm font-bold font-mono text-[#2A2A26]">{res.duration || 60}m</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-[#EBEBE8]">
+        <div className="flex gap-2">
+          <button onClick={() => { setActiveReservation(res); navigateTo('preview', 'dashboard'); }}
+            className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1">
+            <Laptop size={12} /> Desktop
+          </button>
+          <button onClick={() => { setActiveReservation(res); navigateTo('mobile-preview', 'dashboard'); }}
+            className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1">
+            <Smartphone size={12} /> Mobile Sim
+          </button>
+        </div>
+        <button onClick={() => setReservaParaGerenciar(res)}
+          className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
+          <Settings size={12} /> Gerenciar Reserva
+        </button>
+      </div>
+    </div>
+  );
+
+  const DraftCard = ({ res }: { res: any }) => (
+    <div className="bg-white border border-dashed border-[#D9D9D5] rounded-3xl p-6 flex flex-col justify-between transition-colors hover:border-[#141414]">
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#8A8A85]"><span className="w-1.5 h-1.5 rounded-full bg-[#B9B9B4]"></span> Rascunho</span>
+          <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.origin === 'reserva-rapida' ? 'Reserva Rápida' : 'Reserva'}</span>
+        </div>
+        <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-1">{res.title || 'Reserva sem título'}</h4>
+        {res.clienteNome && !['Não informado', 'Cliente'].includes(res.clienteNome) && (
+          <p className="text-[11px] text-[#8A8A85] font-semibold mb-2">Cliente: {res.clienteNome}</p>
+        )}
+        <p className="text-xs text-[#8A8A85] font-medium mt-2 mb-5">Cadastro não concluído. Continue de onde parou para gerar o link.</p>
+      </div>
+      <button onClick={() => resumeDraft(res)}
+        className="w-full bg-[#141414] hover:bg-[#2A2A26] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
+        Continuar cadastro <ChevronRight size={13} />
+      </button>
+    </div>
+  );
+
+  const EmptyState = ({ title, sub }: { title: string; sub: string }) => (
+    <div className="bg-white border border-[#E5E5E2] rounded-3xl py-16 px-8 text-center max-w-xl mx-auto">
+      <div className="w-14 h-14 rounded-2xl bg-[#F4F4F2] border border-[#E5E5E2] flex items-center justify-center mx-auto mb-5">
+        <Car className="text-[#B9B9B4]" size={26} />
+      </div>
+      <h4 className="font-extrabold text-[#141414] text-lg mb-2">{title}</h4>
+      <p className="text-xs text-[#8A8A85] leading-relaxed font-medium mb-6 max-w-xs mx-auto">{sub}</p>
+      <button onClick={criarReserva}
+        className={`font-bold text-xs px-6 py-3 rounded-xl transition ${reservasUsadas >= totalReservasPlano ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]' : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'}`}>
+        Criar Reserva
+      </button>
+    </div>
+  );
+
   return (
     <div className="pt-8 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Reservas</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Acompanhe links, sinais e clientes.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Minhas reservas</p>
         </div>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowConfirmClearModal(true)}
-            className="text-xs font-bold bg-white hover:bg-[#F4F4F2] text-[#5F5F5A] px-4 py-2.5 rounded-xl border border-[#E5E5E2] transition"
-          >
-            Limpar Tudo
-          </button>
-          <button 
-            onClick={() => {
-              if (reservasUsadas >= totalReservasPlano) {
-                showToast('Limite de créditos de reserva atingido pelo seu plano. Faça upgrade nas configurações!', 'error');
-                return;
-              }
-              navigateTo('cadastrar-reserva');
-            }}
-            className={`text-xs font-bold px-4 py-2.5 rounded-xl transition ${
-              reservasUsadas >= totalReservasPlano
-                ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]'
-                : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'
-            }`}
-          >
-            Criar Reserva +
+          <button onClick={criarReserva}
+            className={`text-xs font-bold px-4 py-2.5 rounded-xl transition ${reservasUsadas >= totalReservasPlano ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]' : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'}`}>
+            + Criar Reserva
           </button>
         </div>
+      </div>
+
+      {/* Tabs estilo Configurações */}
+      <div className="flex items-center gap-7 border-b border-[#E5E5E2] mb-8 overflow-x-auto">
+        {TABS.map(t => {
+          const active = activeTab === t.id;
+          return (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className={`relative pb-3 text-sm font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 ${active ? 'text-[#141414]' : 'text-[#8A8A85] hover:text-[#141414]'}`}>
+              {t.label}
+              {t.count != null && t.count > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${active ? 'bg-[#141414] text-white' : 'bg-[#E5E5E2] text-[#8A8A85]'}`}>{t.count}</span>
+              )}
+              {active && <span className="absolute -bottom-px left-0 w-full h-0.5 bg-[#C1F11D] rounded-full"></span>}
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-[#8A8A85] uppercase tracking-widest flex items-center gap-2">
-            <LinkIcon className="text-[#141414]" size={16} /> Reservas
-          </h3>
-          <span className="text-xs text-[#8A8A85] font-semibold">{recentReservations.length} links ativos</span>
-        </div>
+        {activeTab === 'ativos' && (
+          ativos.length > 0
+            ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{ativos.map((res: any) => <ReservaCard key={res.id} res={res} />)}</div>
+            : <EmptyState title="Você ainda não tem reservas" sub="Crie sua primeira reserva e comece a vender." />
+        )}
 
-        {recentReservations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentReservations.map((res: any) => (
-              <div key={res.id} className="bg-white border border-[#E5E5E2] rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group hover:border-[#B9B9B4] transition-colors duration-200">
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <span className="bg-[#F4F4F2] border border-[#E5E5E2] text-[9px] font-bold text-[#8A8A85] px-2.5 py-1 rounded-md uppercase tracking-wider">
-                      {res.marcaText || 'Veículo'}
-                    </span>
-                    <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
-                  </div>
-                  
-                  <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-4 group-hover:text-[#141414] transition-colors">
-                    {res.title || `${res.marcaText} ${res.modeloText}`}
-                  </h4>
+        {activeTab === 'inativos' && (
+          inativos.length > 0
+            ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{inativos.map((res: any) => <ReservaCard key={res.id} res={res} />)}</div>
+            : <EmptyState title="Nenhuma reserva inativa" sub="Reservas expiradas ou canceladas aparecem aqui." />
+        )}
 
-                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-[#5F5F5A] mb-6">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Sinal Requerido</span>
-                      <span className="text-sm font-bold font-mono text-[#141414]">{formatCurrency(res.signal || 1500)}</span>
-                    </div>
-                    <div className="w-px h-8 bg-[#E5E5E2]"></div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Tempo Limiar</span>
-                      <span className="text-sm font-bold font-mono text-[#2A2A26]">{res.duration || 60}m</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-[#EBEBE8]">
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setActiveReservation(res);
-                        navigateTo('preview', 'dashboard');
-                      }}
-                      className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1"
-                    >
-                      <Laptop size={12} /> Desktop
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setActiveReservation(res);
-                        navigateTo('mobile-preview', 'dashboard');
-                      }}
-                      className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1"
-                    >
-                      <Smartphone size={12} /> Mobile Sim
-                    </button>
-                  </div>
-                  <button 
-                    onClick={() => setReservaParaGerenciar(res)}
-                    className="w-full bg-[#141414] hover:bg-[#141414] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
-                  >
-                    <Settings size={12} /> Gerenciar Reserva
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white border border-[#E5E5E2] rounded-3xl p-12 text-center max-w-xl mx-auto">
-            <Car className="text-[#D9D9D5] mx-auto mb-4 animate-bounce" size={42} />
-            <h4 className="font-bold text-[#141414] text-lg mb-2">Nenhum link ativo gerado</h4>
-            <p className="text-xs text-[#8A8A85] leading-relaxed font-medium mb-6">
-              Os links criados pelos clientes finais a partir da página inicial aparecerão aqui automaticamente.
-            </p>
-            <button 
-              onClick={() => {
-                if (reservasUsadas >= totalReservasPlano) {
-                  showToast('Limite de créditos de reserva atingido pelo seu plano. Faça upgrade nas configurações!', 'error');
-                  return;
-                }
-                navigateTo('cadastrar-reserva');
-              }}
-              className={`font-bold text-xs px-5 py-3 rounded-xl transition ${
-                reservasUsadas >= totalReservasPlano
-                  ? 'bg-[#E5E5E2] text-[#B9B9B4] cursor-not-allowed border border-[#D9D9D5]'
-                  : 'bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2]'
-              }`}
-            >
-              Simular Fluxo do Cliente
-            </button>
-          </div>
+        {activeTab === 'rascunhos' && (
+          drafts.length > 0
+            ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{drafts.map((res: any) => <DraftCard key={res.id} res={res} />)}</div>
+            : <EmptyState title="Nenhum rascunho salvo" sub="Ao voltar de uma reserva sem concluir, ela fica salva aqui para você terminar depois." />
         )}
       </div>
-
-      {/* MODAL DE CONFIRMAÇÃO DE LIMPEZA (F4) */}
-      {showConfirmClearModal && (
-        <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E5E5E2] rounded-3xl p-8 max-w-sm w-full text-center relative">
-            <h3 className="text-lg font-black text-[#141414] mb-2">Confirmar Limpeza</h3>
-            <p className="text-[#8A8A85] text-xs mb-6 font-medium leading-relaxed">
-              Tem certeza de que deseja apagar permanentemente todas as propostas de reserva? Esta ação não pode ser desfeita.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmClearModal(false)}
-                className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-3.5 px-5 rounded-xl text-xs hover:bg-[#F4F4F2] transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  setRecentReservations([]);
-                  setShowConfirmClearModal(false);
-                  showToast('Histórico de links limpo com sucesso.', 'info');
-                }}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-5 rounded-xl text-xs transition"
-              >
-                Limpar Tudo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -5354,6 +5364,8 @@ function PreviewView({
   setEmpresaLogada,
   previewOrigin,
   publicarProposta,
+  setDraftToResume = (_d: any) => {},
+  setDashboardTab = (_t: string) => {},
   publicMode = false
 }) {
   const data = reservation || {
@@ -5418,6 +5430,24 @@ function PreviewView({
   const photosArray = data.fotos ? data.fotos.split(',').map((url: any) => url.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'];
 
   const isPrePublish = reservation && !recentReservations.some((r: any) => r.id === reservation.id);
+  const flowRoute = reservation?.origin === 'reserva-rapida' ? 'reserva-rapida' : 'cadastrar-reserva';
+
+  // Voltar (pré-publicação): salva como rascunho na aba Rascunhos para concluir depois.
+  const handleBackToDraft = () => {
+    if (isPrePublish && reservation && setRecentReservations) {
+      setRecentReservations((prev: any) => prev.some((r: any) => r.id === reservation.id) ? prev : [{ ...reservation, status: 'Draft' }, ...prev]);
+      setDashboardTab && setDashboardTab('rascunhos');
+      showToast('Rascunho salvo. Conclua quando quiser na aba Rascunhos.', 'info');
+      navigateTo('dashboard');
+    } else {
+      navigateTo(previewOrigin);
+    }
+  };
+  // Editar agora: reabre o fluxo de origem já preenchido com os dados atuais.
+  const handleEditCadastro = () => {
+    setDraftToResume && setDraftToResume(reservation);
+    navigateTo(flowRoute);
+  };
 
   const publishingRef = useRef(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -5450,6 +5480,7 @@ function PreviewView({
       }
 
       showToast('Link de reserva criado e publicado com sucesso!', 'success');
+      setDashboardTab && setDashboardTab('ativos');
       navigateTo('dashboard');
     } catch {
       publishingRef.current = false;
@@ -5490,10 +5521,10 @@ function PreviewView({
         </header>
       ) : (
         <button
-          onClick={() => navigateTo(isPrePublish ? 'cadastrar-reserva' : previewOrigin)}
+          onClick={isPrePublish ? handleBackToDraft : () => navigateTo(previewOrigin)}
           className="absolute top-6 left-6 text-[#6F6F6A] hover:text-[#141414] font-semibold flex items-center text-sm transition z-20 bg-white border border-[#E5E5E2] px-4 py-2 rounded-xl"
         >
-          <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Voltar para o Cadastro' : 'Voltar ao Sistema'}
+          <ChevronLeft size={16} className="mr-1"/> {isPrePublish ? 'Salvar rascunho e sair' : 'Voltar ao Sistema'}
         </button>
       )}
 
@@ -5506,8 +5537,8 @@ function PreviewView({
             <p className="text-xs text-[#8A8A85] mt-1 font-medium">Você está visualizando a proposta antes de ativá-la. Confirme abaixo para gerar o link.</p>
           </div>
           <div className="flex gap-3 shrink-0">
-            <button 
-              onClick={() => navigateTo('cadastrar-reserva')}
+            <button
+              onClick={handleEditCadastro}
               className="bg-white hover:bg-[#F4F4F2] text-[#5F5F5A] font-bold text-xs px-5 py-3 rounded-xl transition border border-[#E5E5E2]"
             >
               Editar Cadastro
@@ -6209,7 +6240,9 @@ function MobileClientView({
   totalReservasPlano = 30,
   empresaLogada,
   setEmpresaLogada,
-  previewOrigin
+  previewOrigin,
+  setDashboardTab = (_t: string) => {},
+  setDraftToResume = (_d: any) => {}
 }) {
   const data = reservation || {
     title: 'BMW 320i Sport GP 2024',
@@ -6397,6 +6430,7 @@ function MobileClientView({
       }
 
       showToast('Link de reserva criado e publicado com sucesso!', 'success');
+      setDashboardTab && setDashboardTab('ativos');
       navigateTo('dashboard');
     } catch {
       publishingRef.current = false;
@@ -7130,7 +7164,8 @@ function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
 }
 
 // --- NEW COMPONENT: WIZARD FLOW "CADASTRO DE RESERVA DO CLIENTE" ---
-function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0 }) {
+function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0, initialDraft = null, onConsumeDraft = () => {} }) {
+  const draftData = initialDraft?.draftData || null;
   if (reservasUsadas >= totalReservasPlano) {
     return (
       <div className="pt-28 pb-20 px-4 max-w-md mx-auto text-center">
@@ -7156,7 +7191,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
   const [isAnosLoading, setIsAnosLoading] = useState(false);
   const [isPrecoLoading, setIsPrecoLoading] = useState(false);
 
-  const [vehicleData, setVehicleData] = useState<any>({
+  const [vehicleData, setVehicleData] = useState<any>(draftData?.vehicleData || {
     brand: '',
     model: '',
     version: '',
@@ -7187,8 +7222,10 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
     expiracaoMinutos: 60,
     atendente: '',
   });
+  // Consome o rascunho no parent (evita re-hidratar numa próxima abertura limpa).
+  useEffect(() => { if (initialDraft) onConsumeDraft(); }, []);
 
-  const [sinal, setSinal] = useState(empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : '');
+  const [sinal, setSinal] = useState(draftData?.sinal ?? (empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : ''));
   const [expiracao, setExpiracao] = useState(60);
 
   const formatExpiracaoInput = (minutos: number): string => {
@@ -7447,6 +7484,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 
     const compiledReservation = {
       id: Date.now(),
+      origin: 'cadastrar-reserva',
+      draftData: { vehicleData, sinal, expiracao },
       title: `${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim(),
       created: new Date().toLocaleString('pt-BR'),
       duration: String(vehicleData.expiracaoMinutos || 60),
@@ -7977,10 +8016,15 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 // --- NEW COMPONENT: RESERVA RÁPIDA (fluxo em 3 fases, uma info por tela) ---
 // Reaproveita 100% do fluxo/back-end: coleta os campos, monta o mesmo objeto
 // e entrega para a tela de preview (que publica no Supabase).
-function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0 }) {
+function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empresaLogada, totalReservasPlano = 30, reservasUsadas = 0, initialDraft = null, onConsumeDraft = () => {} }) {
+  const draftData = initialDraft?.draftData || null;
+  // Consome o rascunho no parent (evita re-hidratar numa próxima abertura limpa).
+  useEffect(() => { if (initialDraft) onConsumeDraft(); }, []);
   const CORES = ['Branco', 'Preto', 'Prata', 'Cinza', 'Vermelho', 'Azul', 'Verde', 'Amarelo', 'Bege', 'Marrom', 'Laranja'];
   const CAMBIOS = ['Automático', 'Manual'];
   const OPCIONAIS_POOL = ['Computador de Bordo', 'Ar Condicionado', 'Ar Quente', 'Banco do Motorista com Ajuste de Altura', 'Banco em Couro', 'Travas Elétricas', 'Vidros Elétricos', 'Direção Elétrica', 'Rodas de Liga Leve', 'Teto Solar', 'Air Bag', 'Alarme', 'Desembaçador Traseiro', 'Freio ABS', 'Central Multimídia', 'Sensores de Estacionamento'];
+  const CONDICOES_POOL = ['Único dono', 'IPVA pago', 'Aceita troca', 'Garantia de fábrica', 'Todas as revisões feitas', 'Licenciado', 'Sem multas', 'Manual e chave reserva', 'Nunca batido', 'Garantia estendida'];
+  const SINAL_MINIMO = 500;
 
   const PHASES = ['Dados do veículo', 'Detalhes da reserva', 'Dados do contato'];
 
@@ -7992,10 +8036,12 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
     { phase: 2, key: 'cor', q: 'Qual a cor?', sub: 'Cor predominante do veículo' },
     { phase: 2, key: 'opcionais', q: 'Opcionais', sub: 'Selecione os diferenciais do veículo que chamam a atenção dos compradores de showroom.' },
     { phase: 2, key: 'cambio', q: 'Qual o câmbio?', sub: 'Tipo de transmissão' },
+    { phase: 2, key: 'extras', q: 'Informações adicionais do veículo', sub: 'Destaque o que dá confiança ao comprador. Selecione tudo que se aplica.' },
     { phase: 2, key: 'fotos', q: 'Adicione fotos do veículo', sub: 'Boas fotos aumentam as chances de reserva em até 70%.' },
     { phase: 2, key: 'sinal', q: 'Qual o valor do sinal?', sub: 'Quanto o cliente paga via Pix para reservar.' },
     { phase: 2, key: 'expiracao', q: 'Tempo de expiração', sub: 'Quanto a reserva fica de pé (HH:MM).' },
     { phase: 3, key: 'lead', q: 'Lead de venda', sub: 'Informe os dados do lead para quem você enviará este link de reserva e sinal.' },
+    { phase: 3, key: 'atendente', q: 'Atendente dedicado', sub: 'Selecione o profissional do atendimento' },
   ];
   const TOTAL = SCREENS.length;
 
@@ -8011,19 +8057,20 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const [isPrecoLoading, setIsPrecoLoading] = useState(false);
   const [uploadingFotos, setUploadingFotos] = useState(false);
 
-  const [vehicleData, setVehicleData] = useState<any>({
+  const [vehicleData, setVehicleData] = useState<any>(draftData?.vehicleData || {
     brand: '', model: '', version: '', year: '', color: 'Branco', fuel: 'Flex',
     transmission: 'Automático', km: '', price: '', fipePrice: 0, blindado: false,
     fullName: '', cpf: '', phone: '', email: '', cep: '', atendente: '',
     selectedOpcionais: ['Ar Condicionado', 'Direção Elétrica', 'Freio ABS', 'Central Multimídia'],
+    condicoes: ['Único dono', 'IPVA pago'],
     description: 'Veículo em excelente estado de conservação, único dono e com todas as revisões periódicas em dia.',
     photos: [],
   });
-  const [sinal, setSinal] = useState(empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : '');
-  const [expiracao, setExpiracao] = useState(60);
+  const [sinal, setSinal] = useState(draftData?.sinal ?? (empresaLogada?.valorMinimoSinal ? String(empresaLogada.valorMinimoSinal) : ''));
+  const [expiracao, setExpiracao] = useState(draftData?.expiracao || 60);
 
   const fmtExp = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-  const [expiracaoText, setExpiracaoText] = useState(fmtExp(60));
+  const [expiracaoText, setExpiracaoText] = useState(fmtExp(draftData?.expiracao || 60));
   const parseExp = (raw: string) => {
     const c = raw.replace(/[^\d:]/g, '');
     if (c.includes(':')) { const [h, m] = c.split(':'); return (parseInt(h || '0', 10) * 60) + parseInt(m || '0', 10); }
@@ -8100,6 +8147,10 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
     ...prev,
     selectedOpcionais: prev.selectedOpcionais.includes(opc) ? prev.selectedOpcionais.filter((o: string) => o !== opc) : [...prev.selectedOpcionais, opc],
   }));
+  const toggleCondicao = (c: string) => setVehicleData(prev => ({
+    ...prev,
+    condicoes: (prev.condicoes || []).includes(c) ? prev.condicoes.filter((o: string) => o !== c) : [...(prev.condicoes || []), c],
+  }));
 
   // Upload de fotos (copiado do fluxo normal: Supabase Storage, bucket "veiculos")
   const uploadFotos = async (fileList: FileList | null) => {
@@ -8137,16 +8188,18 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
 
   const isScreenValid = (key: string): boolean => {
     switch (key) {
-      case 'veiculo': return !!selectedMarca && !!selectedModelo && !!selectedAno && !isPrecoLoading && Number(vehicleData.fipePrice) > 0;
+      case 'veiculo': return (Number(vehicleData.fipePrice) > 0 && !!vehicleData.brand && !selectedMarca) || (!!selectedMarca && !!selectedModelo && !!selectedAno && !isPrecoLoading && Number(vehicleData.fipePrice) > 0);
       case 'km': return String(vehicleData.km).replace(/\D/g, '').length > 0;
       case 'preco': return Number(vehicleData.price) > 0;
       case 'cor': return !!vehicleData.color;
       case 'opcionais': return true;
       case 'cambio': return !!vehicleData.transmission;
+      case 'extras': return true;
       case 'fotos': return true;
-      case 'sinal': return Number(sinal) > 0;
+      case 'sinal': return Number(sinal) >= SINAL_MINIMO;
       case 'expiracao': return expiracao >= 15;
-      case 'lead': return vehicleData.fullName.trim().length >= 3 && vehicleData.cpf.replace(/\D/g, '').length === 11 && vehicleData.phone.replace(/\D/g, '').length === 11 && !!vehicleData.atendente;
+      case 'lead': return vehicleData.fullName.trim().length >= 3 && vehicleData.cpf.replace(/\D/g, '').length === 11 && vehicleData.phone.replace(/\D/g, '').length === 11;
+      case 'atendente': return !!vehicleData.atendente;
       default: return false;
     }
   };
@@ -8154,10 +8207,13 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const finalizar = () => {
     const now = new Date();
     const stamp = now.toLocaleTimeString('pt-BR') + ' de ' + now.toLocaleDateString('pt-BR');
-    const opcionais = vehicleData.blindado && !vehicleData.selectedOpcionais.includes('Blindado')
+    const base = vehicleData.blindado && !vehicleData.selectedOpcionais.includes('Blindado')
       ? ['Blindado', ...vehicleData.selectedOpcionais] : vehicleData.selectedOpcionais;
+    const opcionais = [...base, ...(vehicleData.condicoes || [])];
     const compiledReservation = {
       id: Date.now(),
+      origin: 'reserva-rapida',
+      draftData: { vehicleData, sinal, expiracao },
       title: `${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim(),
       created: now.toLocaleString('pt-BR'),
       duration: String(expiracao),
@@ -8223,6 +8279,22 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
   const renderScreen = () => {
     switch (screen.key) {
       case 'veiculo':
+        if (vehicleData.brand && !selectedMarca) {
+          // Reabertura de rascunho: veículo já escolhido — mostra resumo (FIPE preservada).
+          return (
+            <div className="space-y-4">
+              <div className="bg-white border-2 border-[#E5E5E2] rounded-2xl p-5">
+                <span className="block text-[11px] font-black uppercase tracking-wider text-[#8A8A85] mb-1">Veículo selecionado</span>
+                <h3 className="text-lg font-black text-[#141414] leading-tight">{`${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim()}</h3>
+                {Number(vehicleData.fipePrice) > 0 && (
+                  <p className="text-xs text-[#141414] font-bold bg-[#C1F11D]/25 inline-block px-3 py-1.5 rounded-lg mt-3">FIPE {formatCurrency(vehicleData.fipePrice)}</p>
+                )}
+              </div>
+              <button type="button" onClick={() => { setVehicleData(prev => ({ ...prev, brand: '', model: '', version: '', year: '', fipePrice: 0, price: '' })); setModelos([]); setAnos([]); }}
+                className="text-[11px] uppercase tracking-widest text-[#8A8A85] font-bold hover:text-[#141414] transition">Trocar veículo</button>
+            </div>
+          );
+        }
         return (
           <div className="space-y-4">
             <div>
@@ -8306,6 +8378,20 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
             {CAMBIOS.map(c => <button key={c} type="button" className={chip(vehicleData.transmission === c)} onClick={() => setVehicleData(prev => ({ ...prev, transmission: c }))}>{c}</button>)}
           </div>
         );
+      case 'extras':
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {CONDICOES_POOL.map(c => {
+              const on = (vehicleData.condicoes || []).includes(c);
+              return (
+                <button key={c} type="button" onClick={() => toggleCondicao(c)}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-bold border-2 transition flex items-center gap-1.5 ${on ? 'bg-[#141414] border-[#141414] text-white' : 'bg-white border-[#E5E5E2] text-[#141414] hover:border-[#141414]'}`}>
+                  <span>{c}</span><span>{on ? '✓' : '+'}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
       case 'fotos':
         return (
           <div>
@@ -8337,11 +8423,24 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
             )}
           </div>
         );
-      case 'sinal':
+      case 'sinal': {
+        const sinalNum = Number(sinal) || 0;
+        const abaixoMin = sinalNum > 0 && sinalNum < SINAL_MINIMO;
         return (
-          <input autoFocus type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 1.500"
-            value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''} onChange={e => setSinal(e.target.value.replace(/\D/g, ''))} />
+          <div>
+            <div className="flex items-baseline gap-2 border-b-2 border-[#E5E5E2] focus-within:border-[#141414] pb-3 transition-colors">
+              <span className="text-3xl font-black text-[#141414] shrink-0">R$</span>
+              <input autoFocus type="text" inputMode="numeric" placeholder="0"
+                value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''} onChange={e => setSinal(e.target.value.replace(/\D/g, ''))}
+                className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+              <span className="text-xl font-bold text-[#8A8A85] shrink-0">,00</span>
+            </div>
+            <p className={`text-xs font-bold inline-block px-3 py-1.5 rounded-lg mt-4 ${abaixoMin ? 'text-rose-700 bg-rose-50 border border-rose-200' : 'text-[#141414] bg-[#C1F11D]/25'}`}>
+              {abaixoMin ? `Sinal abaixo do mínimo de ${formatCurrency(SINAL_MINIMO)}` : `Valor mínimo de sinal: ${formatCurrency(SINAL_MINIMO)}`}
+            </p>
+          </div>
         );
+      }
       case 'expiracao':
         return (
           <div className="space-y-3">
@@ -8381,13 +8480,16 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
               <label className={labelCls}>CEP do lead</label>
               <input type="text" inputMode="numeric" className={inputCls} placeholder="Ex: 02522-000" value={vehicleData.cep} onChange={e => setVehicleData(prev => ({ ...prev, cep: maskCEP(e.target.value) }))} />
             </div>
-            <div>
-              <label className={labelCls}>Atendente dedicado *</label>
-              <select className={selectCls} style={chevronBg} value={vehicleData.atendente} onChange={e => setVehicleData(prev => ({ ...prev, atendente: e.target.value }))}>
-                <option value="">Selecione o vendedor...</option>
-                {(empresaLogada?.vendedores || []).map((v: any, i: number) => <option key={v.id || i} value={v.nome}>{v.nome}{v.cargo ? ` (${v.cargo})` : ''}</option>)}
-              </select>
-            </div>
+          </div>
+        );
+      case 'atendente':
+        return (
+          <div>
+            <label className={labelCls}>Nome *</label>
+            <select autoFocus className={selectCls} style={chevronBg} value={vehicleData.atendente} onChange={e => setVehicleData(prev => ({ ...prev, atendente: e.target.value }))}>
+              <option value="">Selecione o vendedor...</option>
+              {(empresaLogada?.vendedores || []).map((v: any, i: number) => <option key={v.id || i} value={v.nome}>{v.nome}{v.cargo ? ` (${v.cargo})` : ''}</option>)}
+            </select>
           </div>
         );
       default: return null;
