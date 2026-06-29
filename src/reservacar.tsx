@@ -8056,7 +8056,8 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
 function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReservations = [], setActiveReservation }) {
   const [visitas, setVisitas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState<'proximas' | 'todas'>('proximas');
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedVisita, setSelectedVisita] = useState<any>(null);
 
   const hojeISO = new Date().toISOString().slice(0, 10);
 
@@ -8108,14 +8109,23 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
     return data.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
   }
 
-  const lista = filtro === 'proximas' ? visitas.filter(v => v.dia >= hojeISO && v.status !== 'cancelada') : visitas;
+  // Dias com visitas futuras (de hoje em diante), em ordem — viram as abas do topo.
+  const dias = [...new Set(visitas.filter(v => v.dia >= hojeISO).map(v => v.dia))].sort();
+  useEffect(() => {
+    if (dias.length && (!selectedDay || !dias.includes(selectedDay))) setSelectedDay(dias[0]);
+  }, [visitas]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Agrupa por dia preservando a ordem (já vem ordenado por dia/hora)
-  const grupos: { dia: string; itens: any[] }[] = [];
-  lista.forEach(v => {
-    const g = grupos.find(x => x.dia === v.dia);
-    if (g) g.itens.push(v); else grupos.push({ dia: v.dia, itens: [v] });
-  });
+  const visitasDoDia = visitas.filter(v => v.dia === selectedDay).sort((a, b) => a.hora.localeCompare(b.hora));
+
+  const diaLongo = (diaISO: string) => {
+    const [y, m, d] = diaISO.split('-').map(Number);
+    const base = formatarDia(diaISO);
+    if (base === 'Hoje' || base === 'Amanhã') {
+      const data = new Date(y, m - 1, d);
+      return `${base}, ${data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}`;
+    }
+    return base;
+  };
 
   const statusPill = (s: string) => {
     if (s === 'compareceu') return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Compareceu</span>;
@@ -8123,33 +8133,25 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
     return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#141414]"><span className="w-1.5 h-1.5 rounded-full bg-[#C1F11D]" /> Agendada</span>;
   };
 
-  const totalProximas = visitas.filter(v => v.dia >= hojeISO && v.status !== 'cancelada').length;
+  const horaChip = (s: string, hora: string) => {
+    const cls = s === 'compareceu' ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : s === 'cancelada' ? 'border-rose-200 bg-rose-50 text-rose-600 line-through'
+      : 'border-[#E5E5E2] bg-white text-[#141414]';
+    return <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold font-mono shrink-0 ${cls}`}>{hora}</span>;
+  };
+
+  const sel = selectedVisita;
 
   return (
-    <div className="pt-8 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-      <div className="mb-6">
+    <div className="pt-8 pb-16 px-6 md:px-12 max-w-3xl mx-auto">
+      <div className="mb-5">
         <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Agenda de Visitas</h1>
         <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Leads que agendaram uma visita pelo link da reserva.</p>
       </div>
 
-      {/* Tabs simples */}
-      <div className="flex items-center gap-7 border-b border-[#E5E5E2] mb-8 overflow-x-auto">
-        {[{ id: 'proximas', label: 'Próximas', count: totalProximas }, { id: 'todas', label: 'Todas', count: visitas.length }].map(t => {
-          const active = filtro === t.id;
-          return (
-            <button key={t.id} onClick={() => setFiltro(t.id as any)}
-              className={`relative pb-3 text-sm font-bold transition cursor-pointer whitespace-nowrap flex items-center gap-2 ${active ? 'text-[#141414]' : 'text-[#8A8A85] hover:text-[#141414]'}`}>
-              {t.label}
-              {t.count > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${active ? 'bg-[#141414] text-white' : 'bg-[#E5E5E2] text-[#8A8A85]'}`}>{t.count}</span>}
-              {active && <span className="absolute -bottom-px left-0 w-full h-0.5 bg-[#C1F11D] rounded-full" />}
-            </button>
-          );
-        })}
-      </div>
-
       {loading ? (
         <div className="flex items-center gap-2 text-[#8A8A85] text-sm font-semibold"><RefreshCw size={16} className="animate-spin" /> Carregando visitas...</div>
-      ) : grupos.length === 0 ? (
+      ) : dias.length === 0 ? (
         <div className="bg-white border border-[#E5E5E2] rounded-3xl py-16 px-8 text-center max-w-xl mx-auto">
           <div className="w-14 h-14 rounded-2xl bg-[#F4F4F2] border border-[#E5E5E2] flex items-center justify-center mx-auto mb-5">
             <CalendarClock className="text-[#B9B9B4]" size={26} />
@@ -8158,62 +8160,99 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
           <p className="text-xs text-[#8A8A85] leading-relaxed font-medium max-w-xs mx-auto">Quando um cliente agendar uma visita pelo link da reserva, ela aparece aqui com nome, WhatsApp e horário.</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {grupos.map(g => (
-            <div key={g.dia}>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-black text-[#141414] uppercase tracking-widest">{formatarDia(g.dia)}</h3>
-                <span className="text-[11px] text-[#8A8A85] font-semibold font-mono">{g.itens.length} {g.itens.length === 1 ? 'visita' : 'visitas'}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {g.itens.map(v => (
-                  <div key={v.id} className="bg-white border border-[#E5E5E2] rounded-3xl p-6 flex flex-col">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      {statusPill(v.status)}
-                      <span className="text-sm font-black font-mono text-[#141414]">{v.hora}</span>
-                    </div>
-                    <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug">{v.cliente_nome}</h4>
-                    <p className="text-[11px] text-[#8A8A85] font-semibold mt-0.5 mb-3">{v.propostas?.title || 'Veículo'}</p>
-                    <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-3 rounded-2xl flex items-center justify-between gap-2 text-xs mb-4">
-                      <div className="flex flex-col">
-                        <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">WhatsApp</span>
-                        <span className="text-xs font-bold font-mono text-[#141414]">{v.whatsapp || '—'}</span>
-                      </div>
-                      <div className="w-px h-7 bg-[#E5E5E2]" />
-                      <div className="flex flex-col">
-                        <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Duração</span>
-                        <span className="text-xs font-bold font-mono text-[#2A2A26]">30min</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2 mt-auto">
-                      <div className="flex gap-2">
-                        <a href={waLink(v.whatsapp, v.cliente_nome, v.propostas?.title || 'veículo', v.dia, v.hora)} target="_blank" rel="noreferrer"
-                          className="flex-1 bg-[#C1F11D] hover:brightness-105 text-[#141414] text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
-                          <MessageCircle size={13} /> WhatsApp
-                        </a>
-                        <button onClick={() => verProposta(v.proposta_id)}
-                          className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-[11px] font-bold py-2.5 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1">
-                          <Eye size={13} /> Ver proposta
-                        </button>
-                      </div>
-                      {v.status === 'agendada' && (
-                        <div className="flex gap-2">
-                          <button onClick={() => atualizarStatus(v.id, 'compareceu')}
-                            className="flex-1 bg-[#141414] hover:bg-[#2A2A26] text-white text-[11px] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-1.5">
-                            <CalendarCheck size={13} /> Compareceu
-                          </button>
-                          <button onClick={() => atualizarStatus(v.id, 'cancelada')}
-                            className="px-3 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-bold py-2.5 rounded-xl transition">
-                            Cancelar
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <>
+          {/* Abas de dia (rolagem horizontal) */}
+          <div className="flex items-center gap-6 border-b border-[#E5E5E2] mb-2 overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
+            {dias.map(d => {
+              const active = selectedDay === d;
+              return (
+                <button key={d} onClick={() => setSelectedDay(d)}
+                  className={`relative pb-3 text-sm font-bold transition cursor-pointer whitespace-nowrap ${active ? 'text-[#141414]' : 'text-[#8A8A85] hover:text-[#141414]'}`}>
+                  {diaLongo(d)}
+                  {active && <span className="absolute -bottom-px left-0 w-full h-0.5 bg-[#C1F11D] rounded-full" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Lista enxuta do dia selecionado */}
+          <h3 className="text-base font-extrabold text-[#141414] tracking-tight mt-6 mb-1">Visitas</h3>
+          <p className="text-xs text-[#8A8A85] font-medium mb-4 flex items-center gap-1.5"><MapPin size={12} /> {empresaLogada?.nome || 'Showroom'}</p>
+
+          <div className="bg-white border border-[#E5E5E2] rounded-3xl divide-y divide-[#EBEBE8] overflow-hidden">
+            {visitasDoDia.map(v => (
+              <button key={v.id} onClick={() => setSelectedVisita(v)}
+                className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#F4F4F2] transition">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-[15px] text-[#141414] tracking-tight truncate">{v.cliente_nome}</h4>
+                  <p className="text-xs text-[#8A8A85] font-medium truncate mt-0.5">{v.propostas?.title || 'Veículo'}</p>
+                  <div className="mt-2">{horaChip(v.status, v.hora)}</div>
+                </div>
+                <ChevronRight size={18} className="text-[#B9B9B4] shrink-0" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Detalhe da visita (bottom sheet no mobile, modal no desktop) */}
+      {sel && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center" onClick={() => setSelectedVisita(null)}>
+          <div className="absolute inset-0 bg-[#141414]/40 backdrop-blur-sm" />
+          <div onClick={e => e.stopPropagation()}
+            className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl border border-[#E5E5E2] shadow-2xl p-6 animate-rapida-step">
+            <div className="sm:hidden w-10 h-1 bg-[#E5E5E2] rounded-full mx-auto -mt-2 mb-4" />
+            <div className="flex items-center justify-between gap-2 mb-4">
+              {statusPill(sel.status)}
+              <button onClick={() => setSelectedVisita(null)} className="p-1.5 -mr-1.5 text-[#8A8A85] hover:text-[#141414] transition"><X size={18} /></button>
             </div>
-          ))}
+
+            <h3 className="text-xl font-black text-[#141414] tracking-tight leading-tight">{sel.cliente_nome}</h3>
+            <p className="text-xs text-[#8A8A85] font-semibold mt-1 mb-4">{sel.propostas?.title || 'Veículo'}</p>
+
+            <div className="grid grid-cols-3 gap-px bg-[#E5E5E2] border border-[#E5E5E2] rounded-2xl overflow-hidden mb-5">
+              {[
+                { l: 'Dia', v: diaLongo(sel.dia) },
+                { l: 'Horário', v: sel.hora },
+                { l: 'Duração', v: '30min' },
+              ].map((c, i) => (
+                <div key={i} className="bg-[#F4F4F2] p-3">
+                  <span className="block text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">{c.l}</span>
+                  <span className="block text-xs font-bold font-mono text-[#141414] mt-0.5 truncate">{c.v}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-4 mb-5">
+              <span className="block text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">WhatsApp</span>
+              <span className="block text-sm font-bold font-mono text-[#141414] mt-0.5">{sel.whatsapp || '—'}</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <a href={waLink(sel.whatsapp, sel.cliente_nome, sel.propostas?.title || 'veículo', sel.dia, sel.hora)} target="_blank" rel="noreferrer"
+                  className="flex-1 bg-[#C1F11D] hover:brightness-105 text-[#141414] text-xs font-bold py-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                  <MessageCircle size={14} /> WhatsApp
+                </a>
+                <button onClick={() => { verProposta(sel.proposta_id); }}
+                  className="flex-1 bg-white border border-[#E5E5E2] text-[#5F5F5A] text-xs font-bold py-3 rounded-xl hover:bg-[#F4F4F2] hover:text-[#141414] transition flex items-center justify-center gap-1.5">
+                  <Eye size={14} /> Ver proposta
+                </button>
+              </div>
+              {sel.status === 'agendada' && (
+                <div className="flex gap-2">
+                  <button onClick={() => { atualizarStatus(sel.id, 'compareceu'); setSelectedVisita(null); }}
+                    className="flex-1 bg-[#141414] hover:bg-[#2A2A26] text-white text-xs font-bold py-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                    <CalendarCheck size={14} /> Compareceu
+                  </button>
+                  <button onClick={() => { atualizarStatus(sel.id, 'cancelada'); setSelectedVisita(null); }}
+                    className="px-4 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold py-3 rounded-xl transition">
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
