@@ -17,6 +17,28 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 };
 
+// Quebra o título vindo da FIPE em marca + modelo (destaque) e o restante
+// (versão/motor) para uma diagramação no estilo Webmotors.
+// Ex.: "BMW X1 SDRIVE 18i GP 1.5 TB Aut. 2023 Gasolina"
+//   -> { marca: 'BMW', modelo: 'X1', resto: 'SDRIVE 18i GP 1.5 TB Aut.' }
+// Exibe a quilometragem sempre com a unidade "km" (sem duplicar se já vier com ela).
+const formatKm = (km: any) => {
+  const s = String(km ?? '').trim();
+  if (!s) return '';
+  return /km/i.test(s) ? s : `${s} km`;
+};
+
+const FUEL_WORDS = ['Gasolina', 'Flex', 'Diesel', 'Híbrido', 'Hibrido', 'Elétrico', 'Eletrico', 'Etanol', 'Álcool', 'Alcool', 'GNV'];
+const parseVeiculoTitulo = (title: string) => {
+  const tokens = String(title || '').trim().split(/\s+/).filter(Boolean);
+  const marca = tokens[0] || '';
+  const modelo = tokens[1] || '';
+  const resto = tokens.slice(2)
+    .filter(t => !/^\d{4}$/.test(t) && !/^\(.*\)$/.test(t) && !FUEL_WORDS.includes(t))
+    .join(' ');
+  return { marca, modelo, resto };
+};
+
 // Teto de valor de um veículo: R$ 100 milhões. Evita preços absurdos no cadastro
 // e estouro de layout no preview/link.
 const MAX_VEHICLE_PRICE = 100_000_000;
@@ -5598,7 +5620,12 @@ function PreviewView({
             <span className="bg-[#141414] text-[#F4F4F2] px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest mb-4 inline-block">
               PROPOSTA DE RESERVA
             </span>
-            <h1 className="text-4xl font-extrabold tracking-tight text-[#141414] leading-tight">{data.title}</h1>
+            {(() => { const tv = parseVeiculoTitulo(data.title); return (
+              <>
+                <h1 className="text-4xl font-extrabold tracking-tight text-[#141414] leading-tight break-words">{tv.marca} {tv.modelo}</h1>
+                {tv.resto && <p className="text-sm font-medium text-[#8A8A85] uppercase tracking-wide mt-1.5">{tv.resto}</p>}
+              </>
+            ); })()}
           </div>
           {data.laudoAprovado && (
             <div className="bg-[#C1F11D]/15 border border-[#C1F11D]/30 text-[#141414] px-4 py-2 rounded-full flex items-center shrink-0 self-start md:self-auto">
@@ -6626,9 +6653,14 @@ function MobileClientView({
               </div>
             )}
             
-            <h1 className="text-2xl font-extrabold text-[#141414] mb-1 tracking-tight leading-tight break-words">{data.title}</h1>
-            <p className="text-xs text-[#8A8A85] mb-4 font-semibold">
-              {data.anoText || '2024'} • {data.km || '0 km'} • {data.corText || 'Preto'} • {data.cambio || 'Automático'}
+            {(() => { const tv = parseVeiculoTitulo(data.title); return (
+              <>
+                <h1 className="text-2xl font-extrabold text-[#141414] tracking-tight leading-tight break-words">{tv.marca} {tv.modelo}</h1>
+                {tv.resto && <p className="text-[11px] font-medium text-[#8A8A85] uppercase tracking-wide mt-1">{tv.resto}</p>}
+              </>
+            ); })()}
+            <p className="text-xs text-[#8A8A85] mt-2 mb-4 font-semibold">
+              {data.anoText || '2024'} • {formatKm(data.km) || '0 km'} • {data.corText || 'Preto'} • {data.cambio || 'Automático'}
             </p>
             
             <div className="flex items-center mb-6 gap-3">
@@ -6703,7 +6735,7 @@ function MobileClientView({
                   </div>
                   <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
                     <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Quilometragem</span>
-                    <span className="block text-xs font-bold text-[#141414]">{data.km || 'N/A'}</span>
+                    <span className="block text-xs font-bold text-[#141414]">{formatKm(data.km) || 'N/A'}</span>
                   </div>
                   <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
                     <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Cor Externa</span>
