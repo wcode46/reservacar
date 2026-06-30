@@ -6745,6 +6745,16 @@ function MobileClientView({
                     <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Câmbio</span>
                     <span className="block text-xs font-bold text-[#141414]">{data.cambio || 'N/A'}</span>
                   </div>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">Ano</span>
+                    <span className="block text-xs font-bold text-[#141414]">{data.anoText || 'N/A'}</span>
+                  </div>
+                  <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-xl">
+                    <span className="block text-[10px] text-[#8A8A85] mb-0.5 font-bold uppercase tracking-wider">IPVA</span>
+                    {/^.*ipva\s*pago.*$/i.test(data.opcionais || '')
+                      ? <span className="block text-xs font-bold text-emerald-700">Pago</span>
+                      : <span className="block text-xs font-bold text-amber-600">Consulte</span>}
+                  </div>
                 </div>
 
                 <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-5 mt-4 text-left">
