@@ -29,11 +29,18 @@ const formatKm = (km: any) => {
 };
 
 const FUEL_WORDS = ['Gasolina', 'Flex', 'Diesel', 'Híbrido', 'Hibrido', 'Elétrico', 'Eletrico', 'Etanol', 'Álcool', 'Alcool', 'GNV'];
+// Marcas cujo nome tem 2 palavras: sem isso, "Land Rover Evoque" viraria
+// marca="Land" / modelo="Rover". Comparação case-insensitive nos 2 primeiros tokens.
+const COMPOUND_BRANDS = ['Land Rover', 'Alfa Romeo', 'Mercedes-Benz', 'Mercedes Benz', 'Aston Martin', 'Great Wall', 'Rolls-Royce', 'Rolls Royce'];
 const parseVeiculoTitulo = (title: string) => {
   const tokens = String(title || '').trim().split(/\s+/).filter(Boolean);
-  const marca = tokens[0] || '';
-  const modelo = tokens[1] || '';
-  const resto = tokens.slice(2)
+  const twoWordBrand = COMPOUND_BRANDS.some(
+    b => b.toLowerCase() === `${tokens[0] || ''} ${tokens[1] || ''}`.toLowerCase()
+  );
+  const brandLen = twoWordBrand ? 2 : 1;
+  const marca = tokens.slice(0, brandLen).join(' ');
+  const modelo = tokens[brandLen] || '';
+  const resto = tokens.slice(brandLen + 1)
     .filter(t => !/^\d{4}$/.test(t) && !/^\(.*\)$/.test(t) && !FUEL_WORDS.includes(t))
     .join(' ');
   return { marca, modelo, resto };
@@ -573,7 +580,7 @@ export default function App() {
     return () => { cancelado = true; };
   }, [empresaLogada?.id, eventosRealtime.length]);
 
-  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'reserva-rapida', 'vendedores', 'relatorios', 'visitas'].includes(currentRoute);
+  const isLoggedRoute =['hub', 'sales-stats', 'dashboard', 'configuracoes', 'plano', 'checkout-plano', 'cadastrar-reserva', 'reserva-rapida', 'vendedores', 'relatorios', 'logs', 'visitas'].includes(currentRoute);
 
   // Link público da proposta para o cliente (?p=<id>) — renderiza só a proposta, sem app.
   const publicPropostaId = useMemo(() => new URLSearchParams(window.location.search).get('p'), []);
@@ -873,7 +880,7 @@ export default function App() {
           />
         )}
 
-        {['configuracoes', 'vendedores', 'relatorios', 'plano'].includes(currentRoute) && (
+        {['configuracoes', 'vendedores', 'relatorios', 'logs', 'plano'].includes(currentRoute) && (
           <ConfiguracoesHub currentRoute={currentRoute} navigateTo={navigateTo} empresaLogada={empresaLogada}>
             {(currentRoute === 'configuracoes' || currentRoute === 'plano') && (
               <ConfiguracoesView
@@ -892,6 +899,9 @@ export default function App() {
               <VendedoresView embedded navigateTo={navigateTo} showToast={showToast} empresaLogada={empresaLogada} setEmpresaLogada={setEmpresaLogada} />
             )}
             {currentRoute === 'relatorios' && (
+              <RelatorioDesempenhoView embedded recentReservations={recentReservations} empresaLogada={empresaLogada} showToast={showToast} />
+            )}
+            {currentRoute === 'logs' && (
               <RelatorioReservasView embedded navigateTo={navigateTo} showToast={showToast} recentReservations={recentReservations} setRecentReservations={setRecentReservations} />
             )}
           </ConfiguracoesHub>
@@ -1543,6 +1553,7 @@ const CONFIG_TABS = [
   { id: 'vendedores', label: 'Vendedores' },
   { id: 'plano', label: 'Plano' },
   { id: 'relatorios', label: 'Relatórios' },
+  { id: 'logs', label: 'Logs' },
 ];
 function ConfiguracoesHub({ currentRoute, navigateTo, empresaLogada, children }) {
   const slug = (empresaLogada?.nome || 'bmw-premium').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -1587,7 +1598,7 @@ function MiniSpark({ trend = 'up' }: { trend?: 'up' | 'down' }) {
 const ROUTE_LABELS: any = {
   hub: 'Painel de loja', 'sales-stats': 'Painel de loja', dashboard: 'Reservas',
   visitas: 'Agenda de Visitas',
-  vendedores: 'Vendedores', relatorios: 'Relatórios', configuracoes: 'Configurações',
+  vendedores: 'Vendedores', relatorios: 'Relatórios', logs: 'Logs', configuracoes: 'Configurações',
   plano: 'Configurações', 'checkout-plano': 'Configurações', 'cadastrar-reserva': 'Nova proposta',
 };
 
@@ -5091,8 +5102,8 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             </button>
           </div>
 
-          {/* Lista de Transações/Propostas Remodeladas (Estilo E-commerce Linhas) */}
-          <div className="space-y-4">
+          {/* Lista de Transações/Propostas Remodeladas (grid de 2 colunas em telas largas) */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
             {filteredReservations.length > 0 ? (
               filteredReservations.map((res) => {
                 const isCompleted = res.status === 'Completed' || res.paidSignal;
@@ -5232,7 +5243,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 );
               })
             ) : (
-              <div className="bg-white border border-[#E5E5E2] rounded-[32px] p-12 text-center">
+              <div className="xl:col-span-2 bg-white border border-[#E5E5E2] rounded-[32px] p-12 text-center">
                 <Clock size={48} className="mx-auto text-[#D9D9D5] mb-4" />
                 <h4 className="text-lg font-bold text-[#2A2A26]">Nenhuma proposta encontrada</h4>
                 <p className="text-[#8A8A85] text-xs mt-1">Nenhuma proposta de reserva atende ao filtro de status selecionado.</p>
@@ -10600,20 +10611,215 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
 }
 
 // --- NEW COMPONENT: RELATÓRIO DE RESERVAS E LOGS ---
+// Dashboard de desempenho de reservas (estilo "Relatórios" por semana), sem
+// nada de tráfego pago: as métricas saem das reservas (criadas / PIX recebido /
+// sinais) e o LUCRO de cada semana é lançado à mão pelo lojista.
+function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showToast, embedded = false }) {
+  const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const hoje = new Date();
+  const [ref, setRef] = useState<{ ano: number; mes: number }>({ ano: hoje.getFullYear(), mes: hoje.getMonth() });
+  // Lucros lançados por semana. Chave: "ano-mes-semana". Em memória (como o resto do app).
+  const [lucros, setLucros] = useState<Record<string, number>>({});
+  const [draft, setDraft] = useState<Record<number, string>>({});
+
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const parseCreated = (s: any): Date | null => {
+    const m = String(s || '').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null;
+  };
+  const weekOf = (dia: number) => (dia <= 8 ? 0 : dia <= 15 ? 1 : dia <= 22 ? 2 : 3);
+
+  const lastDay = new Date(ref.ano, ref.mes + 1, 0).getDate();
+  const rangesBase: [number, number][] = [[1, 8], [9, 15], [16, 22], [23, lastDay]];
+  const keyOf = (wi: number) => `${ref.ano}-${ref.mes}-${wi}`;
+
+  // Agrega as reservas do mês selecionado em 4 baldes semanais.
+  const semanas = rangesBase.map(([ini, fim], wi) => {
+    const item = { ini, fim, reservas: 0, vendas: 0, sinais: 0 };
+    recentReservations.forEach((r: any) => {
+      const d = parseCreated(r.created);
+      if (!d || d.getFullYear() !== ref.ano || d.getMonth() !== ref.mes) return;
+      if (weekOf(d.getDate()) !== wi) return;
+      item.reservas += 1;
+      if (r.status === 'Completed') {
+        item.vendas += 1;
+        item.sinais += Number(r.signal || r.sinal || 0);
+      }
+    });
+    return item;
+  });
+
+  const totais = semanas.reduce((a, s, wi) => ({
+    reservas: a.reservas + s.reservas,
+    vendas: a.vendas + s.vendas,
+    sinais: a.sinais + s.sinais,
+    ganhos: a.ganhos + (lucros[keyOf(wi)] || 0),
+  }), { reservas: 0, vendas: 0, sinais: 0, ganhos: 0 });
+
+  // Ao trocar de mês, recarrega o rascunho de lançamento com o que já foi salvo.
+  useEffect(() => {
+    const d: Record<number, string> = {};
+    rangesBase.forEach((_, wi) => { d[wi] = lucros[keyOf(wi)] ? String(lucros[keyOf(wi)]) : ''; });
+    setDraft(d);
+  }, [ref.ano, ref.mes]);
+
+  const mudarMes = (delta: number) => {
+    setRef(prev => {
+      const nova = new Date(prev.ano, prev.mes + delta, 1);
+      return { ano: nova.getFullYear(), mes: nova.getMonth() };
+    });
+  };
+
+  const salvarLancamento = () => {
+    setLucros(prev => {
+      const next = { ...prev };
+      rangesBase.forEach((_, wi) => {
+        const v = Number(String(draft[wi] ?? '').replace(/[^\d]/g, ''));
+        if (v > 0) next[keyOf(wi)] = v; else delete next[keyOf(wi)];
+      });
+      return next;
+    });
+    showToast && showToast('Lançamento de ganhos salvo.', 'success');
+  };
+
+  const conv = (s: { reservas: number; vendas: number }) => (s.reservas > 0 ? `${Math.round((s.vendas / s.reservas) * 100)}%` : '—');
+  const periodo = (s: { ini: number; fim: number }) => `${pad2(s.ini)}/${pad2(ref.mes + 1)} – ${pad2(s.fim)}/${pad2(ref.mes + 1)}`;
+  const mesLabel = `${MESES[ref.mes]} ${ref.ano}`;
+
+  const cardCls = 'bg-white border border-[#E5E5E2] rounded-[22px] p-6 text-left';
+  const cardLabel = 'text-[11px] font-bold text-[#8A8A85] uppercase tracking-wider';
+  const th = 'text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider py-3 px-3 text-right';
+  const td = 'py-4 px-3 text-sm font-mono text-[#2A2A26] text-right';
+
+  return (
+    <div className="text-left">
+      {/* Cabeçalho + navegador de mês */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-[#E5E5E2] pb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-[#141414] tracking-tight">Relatórios</h1>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Reservas e ganhos — {empresaLogada?.nome || 'sua loja'}</p>
+        </div>
+        <div className="flex items-center gap-2 self-start">
+          <button onClick={() => mudarMes(-1)} className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">‹</button>
+          <span className="min-w-[150px] text-center text-sm font-bold text-[#141414]">{mesLabel}</span>
+          <button onClick={() => mudarMes(1)} className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">›</button>
+        </div>
+      </div>
+
+      {/* Banner de destaque */}
+      <div className="relative overflow-hidden rounded-[24px] bg-[#141414] p-7 mb-6">
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-1.5 rounded-full bg-[#C1F11D]/30" />
+        <span className="text-[11px] font-bold text-[#C1F11D] uppercase tracking-wider">Sinais recebidos via PIX · {mesLabel}</span>
+        <div className="text-4xl font-extrabold text-white mt-2 font-mono">{formatCurrency(totais.sinais)}</div>
+        <p className="text-[13px] text-[#B9B9B4] mt-2 font-medium">
+          {totais.vendas > 0
+            ? `${totais.vendas} ${totais.vendas === 1 ? 'carro vendido' : 'carros vendidos'} de ${totais.reservas} ${totais.reservas === 1 ? 'reserva criada' : 'reservas criadas'} neste mês.`
+            : 'Nenhuma venda registrada neste mês ainda.'}
+        </p>
+      </div>
+
+      {/* Cards de KPI */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className={cardCls}>
+          <span className={cardLabel}>Reservas</span>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{totais.reservas}</div>
+        </div>
+        <div className={cardCls}>
+          <span className={cardLabel}>Carros vendidos</span>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{totais.vendas}</div>
+        </div>
+        <div className={cardCls}>
+          <span className={cardLabel}>Sinais recebidos</span>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{formatCurrency(totais.sinais)}</div>
+        </div>
+        <div className={cardCls}>
+          <span className={cardLabel}>Ganhos (lançados)</span>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{formatCurrency(totais.ganhos)}</div>
+        </div>
+      </div>
+
+      {/* Tabela por semana */}
+      <div className="bg-white border border-[#E5E5E2] rounded-[24px] p-6 mb-8 overflow-x-auto">
+        <h3 className="text-base font-bold text-[#141414] mb-4">Por semana — {mesLabel}</h3>
+        <table className="w-full min-w-[640px]">
+          <thead>
+            <tr className="border-b border-[#E5E5E2]">
+              <th className="text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider py-3 px-3 text-left">Período</th>
+              <th className={th}>Reservas</th>
+              <th className={th}>Vendas</th>
+              <th className={th}>Conversão</th>
+              <th className={th}>Sinais</th>
+              <th className={th}>Ganhos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {semanas.map((s, wi) => (
+              <tr key={wi} className="border-b border-[#F0F0EE]">
+                <td className="py-4 px-3 text-sm font-semibold text-[#2A2A26] text-left">{periodo(s)}</td>
+                <td className={td}>{s.reservas}</td>
+                <td className={td}>{s.vendas || '—'}</td>
+                <td className={td}>{conv(s)}</td>
+                <td className={td}>{s.sinais > 0 ? formatCurrency(s.sinais) : '—'}</td>
+                <td className={td}>{lucros[keyOf(wi)] ? formatCurrency(lucros[keyOf(wi)]) : '—'}</td>
+              </tr>
+            ))}
+            <tr className="bg-[#F4F4F2]">
+              <td className="py-4 px-3 text-sm font-extrabold text-[#141414] text-left rounded-l-xl">Total do mês</td>
+              <td className={td + ' font-extrabold text-[#141414]'}>{totais.reservas}</td>
+              <td className={td + ' font-extrabold text-[#141414]'}>{totais.vendas || '—'}</td>
+              <td className={td + ' font-extrabold text-[#141414]'}>{conv(totais)}</td>
+              <td className={td + ' font-extrabold text-[#141414]'}>{totais.sinais > 0 ? formatCurrency(totais.sinais) : '—'}</td>
+              <td className={td + ' font-extrabold text-[#141414] rounded-r-xl'}>{totais.ganhos > 0 ? formatCurrency(totais.ganhos) : '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Lançamento de ganhos por semana */}
+      <div className="bg-white border border-[#E5E5E2] rounded-[24px] p-6 mb-4">
+        <h3 className="text-base font-bold text-[#141414]">Lançamento — {empresaLogada?.nome || 'sua loja'}</h3>
+        <p className="text-[12px] text-[#8A8A85] mt-1 mb-5 font-medium">As vendas e os sinais vêm sozinhos das reservas com PIX recebido. Aqui você só lança o <strong>lucro/ganho</strong> de cada semana.</p>
+        <div className="divide-y divide-[#F0F0EE]">
+          {semanas.map((s, wi) => (
+            <div key={wi} className="flex items-center justify-between gap-4 py-3">
+              <span className="text-sm font-semibold text-[#2A2A26]">{periodo(s)}</span>
+              <div className="relative w-40">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#B9B9B4]">R$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={draft[wi] ?? ''}
+                  onChange={(e) => setDraft(prev => ({ ...prev, [wi]: e.target.value.replace(/[^\d]/g, '') }))}
+                  className="w-full bg-[#F8FAFC] border border-[#E5E5E2] rounded-xl pl-9 pr-3 py-2.5 text-sm font-semibold font-mono text-[#141414] outline-none focus:border-[#141414] transition"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={salvarLancamento} className="mt-5 bg-[#141414] hover:bg-black text-white text-sm font-bold px-6 py-3 rounded-xl transition cursor-pointer">Salvar lançamento</button>
+      </div>
+    </div>
+  );
+}
+
+// Aba "Logs": auditoria de reservas em formato acordeão. Cada proposta é uma
+// linha compacta (desktop = colunas; mobile = empilhada); tocar expande inline
+// o formulário de gerenciar + histórico em timeline. Sem troca de tela.
 function RelatorioReservasView({ navigateTo, showToast, recentReservations, setRecentReservations, embedded = false }) {
+  // Linha expandida do acordeão. null = tudo recolhido.
   const [selectedId, setSelectedId] = useState<any>(null);
-  
+  // Filtro por status: todos | Active | Completed | Expired
+  const [filtro, setFiltro] = useState('todos');
+
   // Form states for the selected reservation
   const [sinal, setSinal] = useState('');
   const [vendedor, setVendedor] = useState('');
   const [status, setStatus] = useState('Active');
 
-  // Sync selected reservation with states
-  const selectedRes = recentReservations.find((r: any) => r.id === selectedId) || recentReservations[0];
+  const selectedRes = recentReservations.find((r: any) => r.id === selectedId) || null;
 
   useEffect(() => {
     if (selectedRes) {
-      setSelectedId(selectedRes.id);
       setSinal(String(selectedRes.signal || selectedRes.sinal || 0));
       setVendedor(selectedRes.vendedores || '');
       setStatus(selectedRes.status || 'Active');
@@ -10731,214 +10937,161 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
     }
   };
 
-  const inputClass = "w-full bg-[#f8fafc] border border-[#E5E5E2] rounded-2xl px-5 py-4 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition";
-  const labelClass = "block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2.5";
+  const inputClass = "w-full bg-white border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition";
+  const labelClass = "block text-[10px] font-semibold text-[#8A8A85] uppercase tracking-wider mb-2";
+
+  const dotClass = (s: string) =>
+    s === 'Completed' ? 'bg-[#C1F11D]' : s === 'Expired' ? 'bg-rose-400' : s === 'Active' ? 'bg-amber-400' : 'bg-[#B9B9B4]';
+
+  const chips = [
+    { id: 'todos', label: 'Todos', count: recentReservations.length },
+    { id: 'Active', label: 'Aguardando', count: recentReservations.filter((r: any) => r.status === 'Active').length },
+    { id: 'Completed', label: 'PIX Recebido', count: recentReservations.filter((r: any) => r.status === 'Completed').length },
+    { id: 'Expired', label: 'Expirados', count: recentReservations.filter((r: any) => r.status === 'Expired').length },
+  ];
+  const filtered = filtro === 'todos' ? recentReservations : recentReservations.filter((r: any) => r.status === filtro);
 
   return (
     <div className={embedded ? '' : 'pt-28 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto'}>
 
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6 text-left">
-        <div>
-          <h1 className="text-3xl font-bold text-[#141414] tracking-tight flex items-center gap-2">
-            <FileText size={28} className="text-[#141414]" /> Relatório de Reservas
-          </h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Monitore a auditoria completa de propostas, alteração de valores, status e acessos de leads.</p>
-        </div>
+      <div className="mb-6 text-left">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#141414] tracking-tight flex items-center gap-2">
+          <FileText size={24} className="text-[#141414] shrink-0" /> Logs de Reservas
+        </h1>
+        <p className="text-[#8A8A85] text-[13px] md:text-sm mt-1 font-medium font-mono">Auditoria completa de propostas: valores, status, atendentes e acessos de leads.</p>
       </div>
 
       {recentReservations.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column: List of Reservations */}
-          <div className="space-y-4 lg:col-span-1 text-left max-h-[80vh] overflow-y-auto pr-2">
-            <span className="block text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider mb-2 px-1">Selecione uma Proposta</span>
-            {recentReservations.map((res: any) => {
-              const isSelected = res.id === selectedId;
-              const dateOnly = res.created ? res.created.split('de')[1] || res.created : 'Recente';
-              return (
-                <button
-                  key={res.id}
-                  onClick={() => setSelectedId(res.id)}
-                  className={`w-full text-left bg-white border p-5 rounded-[22px] transition flex flex-col gap-3.5 ${
-                    isSelected ? 'border-[#2A2A26]' : 'border-[#E5E5E2] hover:border-[#B9B9B4]'
-                  }`}
-                >
-                  <div>
-                    <h4 className="text-[13px] font-bold text-[#141414] tracking-tight leading-tight line-clamp-2">
-                      {res.title}
-                    </h4>
-                    <span className="text-[10px] font-bold text-[#B9B9B4] block mt-1">{res.vendedores || 'Sem Atendente'}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-[#EBEBE8] pt-3 mt-1">
-                    <span className="text-[10px] font-mono text-[#B9B9B4]">{dateOnly.trim()}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${getStatusBadge(res.status)}`}>
-                      {getStatusLabel(res.status)}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+        <>
+          {/* Filtros por status */}
+          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+            {chips.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setFiltro(c.id)}
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-[11px] font-bold transition cursor-pointer ${
+                  filtro === c.id ? 'bg-[#141414] border-[#141414] text-white' : 'bg-white border-[#E5E5E2] text-[#5F5F5A] hover:border-[#B9B9B4]'
+                }`}
+              >
+                {c.label}
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtro === c.id ? 'bg-white/15 text-white' : 'bg-[#F4F4F2] text-[#8A8A85]'}`}>{c.count}</span>
+              </button>
+            ))}
           </div>
 
-          {/* Right Column: Detailed Proposal Log Panel */}
-          {selectedRes ? (
-            <div className="lg:col-span-2">
-              <div className="bg-white border border-[#E5E5E2] rounded-[32px] p-6 md:p-8 text-left">
-                
-                {/* Proposal Title Header */}
-                <div className="border-b border-[#EBEBE8] pb-5 mb-6">
-                  <h3 className="text-xl font-bold text-[#141414] tracking-tight leading-tight">Gerenciar Reserva</h3>
-                  <p className="text-[11px] font-semibold text-[#B9B9B4] tracking-wide mt-1">
-                    {selectedRes.title}
-                  </p>
-                </div>
-
-                <div className="space-y-6">
-                  
-                  {/* Lead and Date Card */}
-                  <div className="grid grid-cols-2 gap-4 bg-[#F4F4F2] border border-[#E5E5E2] p-5 rounded-[20px] text-xs">
-                    <div>
-                      <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Lead Associado</span>
-                      <strong className="text-[#2A2A26] text-sm font-extrabold">
-                        {selectedRes.clienteNome || 'Não informado'}
-                      </strong>
+          {/* Tabela/acordeão de logs */}
+          <div className="bg-white border border-[#E5E5E2] rounded-[24px] overflow-hidden text-left">
+            {filtered.length > 0 ? filtered.map((res: any, i: number) => {
+              const isOpen = res.id === selectedId;
+              const dateOnly = res.created ? (res.created.split('de')[1] || res.created).trim() : 'Recente';
+              const logsToShow = (res.logs && res.logs.length > 0) ? res.logs : [
+                { time: res.created || 'Hoje', text: `Proposta criada por ${res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}` },
+                { time: res.created || 'Hoje', text: `Link de sinal de ${formatCurrency(Number(res.signal || res.sinal || 0))} ativado` },
+              ];
+              return (
+                <div key={res.id} className={i > 0 ? 'border-t border-[#EBEBE8]' : ''}>
+                  {/* Linha do log */}
+                  <button
+                    onClick={() => setSelectedId(isOpen ? null : res.id)}
+                    className={`w-full flex items-center gap-3 md:gap-4 px-4 md:px-6 py-4 text-left transition cursor-pointer ${isOpen ? 'bg-[#FAFAF8]' : 'hover:bg-[#FAFAF8]'}`}
+                  >
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass(res.status)}`}></span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[13px] font-bold text-[#141414] tracking-tight leading-tight truncate">{res.title}</h4>
+                      <span className="text-[10px] font-medium text-[#B9B9B4] block mt-0.5 truncate">
+                        {res.vendedores || 'Sem atendente'} · <span className="font-mono">{dateOnly}</span>
+                      </span>
                     </div>
-                    <div>
-                      <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
-                      <strong className="text-[#2A2A26] text-sm font-semibold">
-                        {selectedRes.created || 'Hoje'}
-                      </strong>
-                    </div>
-                  </div>
+                    <span className="hidden md:block w-28 text-right text-sm font-bold font-mono text-[#141414] shrink-0">{formatCurrency(Number(res.signal || res.sinal || 0))}</span>
+                    <span className={`hidden sm:inline-block px-2 py-0.5 rounded text-[9px] font-bold border shrink-0 ${getStatusBadge(res.status)}`}>{getStatusLabel(res.status)}</span>
+                    <ChevronDown size={16} className={`text-[#B9B9B4] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                  {/* Valor do Sinal */}
-                  <div>
-                    <label className={labelClass}>Valor do Sinal (R$)</label>
-                    <input 
-                      type="text" 
-                      value={sinal}
-                      onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
-                      className={inputClass}
-                      placeholder="Ex: 1500"
-                    />
-                  </div>
-
-                  {/* Atendente Responsável */}
-                  <div>
-                    <label className={labelClass}>Atendente Responsável</label>
-                    <input 
-                      type="text" 
-                      value={vendedor}
-                      onChange={(e) => setVendedor(e.target.value)}
-                      className={inputClass}
-                      placeholder="Nome do vendedor"
-                    />
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <label className={labelClass}>Status da Reserva</label>
-                    <div className="relative">
-                      <select 
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className={`${inputClass} appearance-none bg-no-repeat bg-[right_1.25rem_center] bg-[length:1em]`}
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%25236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")` }}
-                      >
-                        <option value="Active">Aguardando Sinal</option>
-                        <option value="Completed">PIX Recebido</option>
-                        <option value="Expired">Expirado / Cancelado</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Proposal History Logs */}
-                  <div>
-                    <label className={labelClass}>Histórico da Proposta</label>
-                    <div className="space-y-4 bg-[#f8fafc] border border-[#E5E5E2] p-5 rounded-[22px] max-h-56 overflow-y-auto">
-                      {selectedRes.logs && selectedRes.logs.length > 0 ? (
-                        selectedRes.logs.map((log: any, idx: number) => {
-                          const isAccess = log.time.toLowerCase().includes('acesso') || log.text.toLowerCase().includes('visualizada') || log.text.toLowerCase().includes('visualizado');
-                          return (
-                            <div key={idx} className="flex items-start gap-4">
-                              <span className={`text-[10px] font-mono shrink-0 w-36 mt-0.5 font-bold ${
-                                isAccess ? 'text-[#94a3b8]' : 'text-[#B9B9B4]'
-                              }`}>
-                                {log.time}
-                              </span>
-                              <p className={`text-xs leading-snug font-bold ${
-                                isAccess ? 'text-[#1e3a8a]' : 'text-[#2A2A26]'
-                              }`}>{log.text}</p>
+                  {/* Painel expandido: gerenciar + histórico */}
+                  {isOpen && (
+                    <div className="border-t border-[#EBEBE8] bg-[#FAFAF8] px-4 md:px-6 py-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Coluna 1: formulário de gerenciamento */}
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white border border-[#E5E5E2] rounded-xl p-3.5">
+                              <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Lead Associado</span>
+                              <strong className="text-[#2A2A26] text-[13px] font-extrabold break-words">{res.clienteNome || 'Não informado'}</strong>
                             </div>
-                          );
-                        })
-                      ) : (
-                        // Fallback logs generated on the fly if logs array is not present yet
-                        <>
-                          <div className="flex items-start gap-4">
-                            <span className="text-[10px] font-mono text-[#B9B9B4] shrink-0 w-36 mt-0.5 font-bold">
-                              {selectedRes.created || 'Hoje'}
-                            </span>
-                            <p className="text-xs font-bold text-[#2A2A26] leading-snug">
-                              Proposta criada por {selectedRes.vendedores ? selectedRes.vendedores.split(',')[0] : 'Consultor'}
-                            </p>
+                            <div className="bg-white border border-[#E5E5E2] rounded-xl p-3.5">
+                              <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
+                              <strong className="text-[#2A2A26] text-[13px] font-semibold font-mono break-words">{res.created || 'Hoje'}</strong>
+                            </div>
                           </div>
-                          <div className="flex items-start gap-4">
-                            <span className="text-[10px] font-mono text-[#B9B9B4] shrink-0 w-36 mt-0.5 font-bold">
-                              {selectedRes.created || 'Hoje'}
-                            </span>
-                            <p className="text-xs font-bold text-[#2A2A26] leading-snug">
-                              Link de sinal de R$ {Number(selectedRes.signal || selectedRes.sinal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ativado
-                            </p>
+                          <div>
+                            <label className={labelClass}>Valor do Sinal (R$)</label>
+                            <input type="text" inputMode="numeric" value={sinal} onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))} className={inputClass} placeholder="Ex: 1500" />
                           </div>
-                        </>
-                      )}
+                          <div>
+                            <label className={labelClass}>Atendente Responsável</label>
+                            <input type="text" value={vendedor} onChange={(e) => setVendedor(e.target.value)} className={inputClass} placeholder="Nome do vendedor" />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Status da Reserva</label>
+                            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
+                              <option value="Active">Aguardando Sinal</option>
+                              <option value="Completed">PIX Recebido</option>
+                              <option value="Expired">Expirado / Cancelado</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Coluna 2: histórico em timeline */}
+                        <div>
+                          <label className={labelClass}>Histórico da Proposta</label>
+                          <div className="bg-white border border-[#E5E5E2] rounded-xl p-4 max-h-64 overflow-y-auto">
+                            <div className="relative pl-4 space-y-4">
+                              <span className="absolute left-[3px] top-1.5 bottom-1.5 w-px bg-[#E5E5E2]"></span>
+                              {logsToShow.map((log: any, idx: number) => {
+                                const isAccess = String(log.time).toLowerCase().includes('acesso') || String(log.text).toLowerCase().includes('visualizad');
+                                return (
+                                  <div key={idx} className="relative">
+                                    <span className={`absolute -left-[15.5px] top-1 w-2 h-2 rounded-full border-2 border-white ${isAccess ? 'bg-[#94a3b8]' : 'bg-[#141414]'}`}></span>
+                                    <span className={`block text-[10px] font-mono font-bold ${isAccess ? 'text-[#94a3b8]' : 'text-[#B9B9B4]'}`}>{log.time}</span>
+                                    <p className={`text-xs leading-snug font-bold mt-0.5 ${isAccess ? 'text-[#1e3a8a]' : 'text-[#2A2A26]'}`}>{log.text}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ações */}
+                      <div className="flex flex-col sm:flex-row gap-3 pt-5 border-t border-[#EBEBE8] mt-6 justify-between">
+                        {status === 'Active' ? (
+                          <button onClick={handleCancel} className="bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 font-bold py-3 px-5 rounded-xl text-[11px] transition uppercase tracking-wider cursor-pointer">
+                            Cancelar Reserva
+                          </button>
+                        ) : (<div />)}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <button onClick={handleDiscard} className="bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-3 px-5 rounded-xl text-[11px] hover:bg-[#F4F4F2] transition uppercase tracking-wider cursor-pointer">
+                            Descartar
+                          </button>
+                          <button onClick={handleSave} className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold py-3 px-5 rounded-xl text-[11px] transition uppercase tracking-wider cursor-pointer">
+                            Salvar Alterações
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-[#EBEBE8] mt-8 justify-between">
-                  {status === 'Active' ? (
-                    <button
-                      onClick={handleCancel}
-                      className="bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
-                    >
-                      Cancelar Reserva
-                    </button>
-                  ) : (
-                    <div />
                   )}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleDiscard}
-                      className="bg-white border border-[#E5E5E2] text-[#5F5F5A] font-bold py-4 px-6 rounded-2xl text-xs hover:bg-[#F4F4F2] transition uppercase tracking-wider"
-                    >
-                      Descartar
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="bg-[#141414] hover:bg-[#2A2A26] text-[#F4F4F2] font-bold py-4 px-6 rounded-2xl text-xs transition uppercase tracking-wider"
-                    >
-                      Salvar Alterações
-                    </button>
-                  </div>
                 </div>
-
+              );
+            }) : (
+              <div className="text-center py-16 px-6">
+                <FileText size={40} className="mx-auto text-[#D9D9D5] mb-3" />
+                <h3 className="text-base font-bold text-[#2A2A26]">Nada por aqui</h3>
+                <p className="text-[#8A8A85] text-xs mt-1">Nenhuma reserva com esse status.</p>
               </div>
-            </div>
-          ) : (
-            <div className="lg:col-span-2 text-center py-20 bg-white border border-[#E5E5E2] rounded-[32px] p-10">
-              <FileText size={48} className="mx-auto text-[#D9D9D5] mb-4" />
-              <h3 className="text-lg font-bold text-[#2A2A26]">Selecione uma reserva</h3>
-              <p className="text-[#8A8A85] text-xs mt-1">Escolha uma proposta na coluna da esquerda para auditar o log completo.</p>
-            </div>
-          )}
-
-        </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className="text-center py-20 bg-white border border-[#E5E5E2] rounded-[32px] p-10 max-w-xl mx-auto">
           <FileText size={48} className="mx-auto text-[#D9D9D5] mb-4" />
