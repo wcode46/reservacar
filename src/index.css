@@ -3,9 +3,7 @@
 
 @theme {
   --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  /* Números padronizados na mesma família da UI (Manrope). 'font-mono' continua
-     existindo nas classes, mas renderiza Manrope para unificar todo o projeto. */
-  --font-mono: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  /* Todo o projeto (números inclusive) usa Manrope; as classes font-mono foram removidas. */
   --animate-fade-in-down: fade-in-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-draw-line: draw-line 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in-area: fade-in-area 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -79,6 +77,21 @@
     0%   { opacity: 0; transform: scale(0.7); }
     100% { opacity: 1; transform: scale(1); }
   }
+}
+
+/* Vitrine do painel — o carro entra vindo da direita (fora da tela) e "freia"
+   até parar: ease-out-expo dá a desaceleração de frenagem. O vídeo é pausado
+   via JS no mesmo instante em que o slide termina (carro de perfil completo). */
+@keyframes vitrine-drive-in {
+  from { transform: translateX(115%); }
+  to   { transform: translateX(0); }
+}
+.animate-vitrine-drive {
+  animation: vitrine-drive-in 2.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-vitrine-drive { animation: none !important; }
 }
 
 .animate-rapida-step {

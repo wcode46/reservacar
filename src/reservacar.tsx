@@ -285,7 +285,7 @@ export default function App() {
   // Initial Seed for Reservations (idêntico aos prints!)
   const [recentReservations, setRecentReservations] = useState<any[]>([
     { 
-      id: 1, title: 'Audi A3 1.6 3p 2002 Gasolina', signal: 1500, duration: '60', created: '12:12:33 de 24/05/2026',
+      id: 1, title: 'Audi A3 1.6 3p 2002 Gasolina', duration: '60', created: '12:12:33 de 24/05/2026',
       anoText: '2002', corText: 'Prata', motorText: '1.6 Gasolina', fipeValue: 22000, valorVenda: 19780, km: '185.000', cambio: 'Manual',
       opcionais: 'Ar Condicionado, Vidro Elétrico, Alarme',
       fotos: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&w=800&q=80',
@@ -299,7 +299,7 @@ export default function App() {
       ]
     },
     { 
-      id: 2, title: 'JAC iEV 20 68cv 5p Aut. (Elétrico)', signal: 1500, duration: '60', created: '12:16:33 de 24/05/2026',
+      id: 2, title: 'JAC iEV 20 68cv 5p Aut. (Elétrico)', duration: '60', created: '12:16:33 de 24/05/2026',
       anoText: '2022', corText: 'Branco', motorText: '1.0 Elétrico', fipeValue: 81262, valorVenda: 78262, km: '8.200', cambio: 'Automático',
       opcionais: 'Ar Condicionado, Direção Elétrica, Vidro Elétrico, Airbag, Freio ABS, Central Multimídia',
       fotos: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
@@ -313,7 +313,7 @@ export default function App() {
       ]
     },
     { 
-      id: 3, title: 'BMW 320i 2.0 Turbo 2023', signal: 5000, duration: '30', created: '12:14:52 de 24/05/2026',
+      id: 3, title: 'BMW 320i 2.0 Turbo 2023', duration: '30', created: '12:14:52 de 24/05/2026',
       anoText: '2023', corText: 'Preto', motorText: '2.0 Turbo', fipeValue: 230000, valorVenda: 214900, km: '12.000', cambio: 'Automático',
       opcionais: 'Teto Solar, Ar Condicionado Dual Zone, Bancos de Couro',
       fotos: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
@@ -328,7 +328,7 @@ export default function App() {
       ]
     },
     { 
-      id: 4, title: 'Mercedes-Benz C200 2.0 Avantgarde 2018', signal: 3000, duration: '60', created: '12:15:00 de 24/05/2026',
+      id: 4, title: 'Mercedes-Benz C200 2.0 Avantgarde 2018', duration: '60', created: '12:15:00 de 24/05/2026',
       anoText: '2018', corText: 'Azul', motorText: '2.0 Turbo', fipeValue: 145000, valorVenda: 139900, km: '48.000', cambio: 'Automático',
       opcionais: 'Teto Solar, Bancos de Couro, Sensor de Estacionamento',
       fotos: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=800&q=80',
@@ -362,7 +362,7 @@ export default function App() {
       if (isPaid) {
         return {
           id: `pix-${r.id}`, type: 'pix', label: 'PIX RECEBIDO',
-          text: `Sinal de ${formatCurrency(Number(r.sinal || r.signal) || 0)} ${nomeCliente ? `pago por ${nomeCliente}` : 'pago'} — ${r.title}.`,
+          text: `Sinal de ${formatCurrency(Number(r.sinal) || 0)} ${nomeCliente ? `pago por ${nomeCliente}` : 'pago'} — ${r.title}.`,
           time: r.created || 'Agora',
         };
       }
@@ -453,7 +453,7 @@ export default function App() {
       anoText: p.ano, corText: p.cor, motorText: p.motor, cambio: p.cambio, km: p.km,
       combustivel: p.motor, opcionais: p.opcionais || '',
       fipeValue: clampPrice(p.fipe_value), valorVenda: clampPrice(p.valor_venda),
-      sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
+      sinal: Number(p.sinal) || 0,
       expiracao: p.expiracao, duration: String(p.expiracao),
       status: p.status, clienteNome: p.cliente_nome || 'Não informado',
       fotos: (p.fotos || []).join(','), vendedores: vendName,
@@ -687,7 +687,7 @@ export default function App() {
                           <p className="text-sm font-bold text-[#141414] truncate">{r.title}</p>
                           <p className="text-[11px] text-[#8A8A85] font-medium truncate">{r.vendedores || 'Sem vendedor'} · {r.clienteNome || 'Sem cliente'}</p>
                         </div>
-                        <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || r.signal || 0)}</span>
+                        <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || 0)}</span>
                       </button>
                     ))}
                   </div>
@@ -1000,7 +1000,7 @@ export default function App() {
 
 // --- MODAL DE GERENCIAMENTO DE RESERVA (F5) ---
 function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, currentUserRole = 'owner', showToast = (..._a: any[]) => {} }) {
-  const [sinal, setSinal] = useState(String(reserva.signal || reserva.sinal || 0));
+  const [sinal, setSinal] = useState(String(reserva.sinal || 0));
   const [status, setStatus] = useState(reserva.status || 'Active');
   const [vendedor, setVendedor] = useState(reserva.vendedores || '');
   const [fotos, setFotos] = useState<string[]>(String(reserva.fotos || reserva.foto || '').split(',').map(s => s.trim()).filter(Boolean));
@@ -1038,7 +1038,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
   const handleSave = () => {
     const novosLogs = [...(reserva.logs || [])];
-    const originalSignal = Number(reserva.signal || reserva.sinal || 0);
+    const originalSignal = Number(reserva.sinal || 0);
     const newSignal = Number(sinal);
 
     const signalToSave = currentUserRole === 'owner' ? newSignal : originalSignal;
@@ -1096,7 +1096,6 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
     onSave({
       ...reserva,
-      signal: signalToSave,
       sinal: signalToSave,
       status: status,
       vendedores: sellerToSave,
@@ -1112,7 +1111,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
 
   const historico = reserva.logs && reserva.logs.length > 0 ? reserva.logs : [
     { time: reserva.created || 'Hoje', text: `Proposta criada por ${reserva.vendedores ? reserva.vendedores.split(',')[0] : 'Consultor'}` },
-    { time: reserva.created || 'Hoje', text: `Link de sinal ativado: ${formatCurrencyLocal(reserva.signal || reserva.sinal || 1500)}` },
+    { time: reserva.created || 'Hoje', text: `Link de sinal ativado: ${formatCurrencyLocal(reserva.sinal || 1500)}` },
   ];
 
   return (
@@ -1120,6 +1119,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
       <div className="bg-white border border-[#E5E5E2] rounded-3xl p-6 md:p-8 max-w-lg w-full text-left relative max-h-[90vh] overflow-y-auto">
         <button 
           onClick={onClose}
+          aria-label="Fechar"
           className="absolute top-4 right-4 text-[#B9B9B4] hover:text-[#141414] transition"
         >
           <X size={20} />
@@ -1139,7 +1139,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
             </div>
             <div>
               <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
-              <strong className="text-[#2A2A26] text-sm font-semibold font-mono">{reserva.created}</strong>
+              <strong className="text-[#2A2A26] text-sm font-semibold">{reserva.created}</strong>
             </div>
           </div>
 
@@ -1153,7 +1153,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                 {fotos.map((url, i) => (
                   <div key={i} className="relative aspect-[4/3] rounded-lg overflow-hidden border border-[#E5E5E2] bg-white">
                     <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removeFoto(i)} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition">
+                    <button type="button" onClick={() => removeFoto(i)} aria-label={`Remover foto ${i + 1}`} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition">
                       <X size={10} />
                     </button>
                   </div>
@@ -1202,7 +1202,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                       placeholder="https://exemplo.com/foto.jpg"
                       value={customUrl}
                       onChange={(e) => setCustomUrl(e.target.value)}
-                      className="flex-1 bg-white border border-[#E5E5E2] rounded-xl px-3 py-2.5 text-xs text-[#2A2A26] outline-none focus:border-[#141414] font-mono"
+                      className="flex-1 bg-white border border-[#E5E5E2] rounded-xl px-3 py-2.5 text-xs text-[#2A2A26] outline-none focus:border-[#141414]"
                     />
                     <button
                       type="button"
@@ -1225,10 +1225,10 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
                 type="text" 
                 value={sinal}
                 onChange={(e) => setSinal(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition font-mono"
+                className="w-full bg-[#F4F4F2] border border-[#E5E5E2] rounded-xl px-4 py-3 text-sm font-semibold text-[#2A2A26] outline-none focus:border-[#141414] transition"
               />
             ) : (
-              <div className="w-full bg-[#F4F4F2] border border-[#EBEBE8] rounded-xl px-4 py-3 text-sm font-semibold text-[#8A8A85] font-mono select-none">
+              <div className="w-full bg-[#F4F4F2] border border-[#EBEBE8] rounded-xl px-4 py-3 text-sm font-semibold text-[#8A8A85] select-none">
                 {formatCurrencyLocal(Number(sinal))}
               </div>
             )}
@@ -1271,7 +1271,7 @@ function GerenciarReservaModal({ reserva, onClose, onSave, onCancelReserva, curr
             <div className="space-y-3 bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl max-h-36 overflow-y-auto">
               {historico.map((log, index) => (
                 <div key={index} className="flex items-start gap-2.5 text-xs text-[#5F5F5A]">
-                  <span className="text-[10px] font-mono text-[#B9B9B4] mt-0.5">{log.time}</span>
+                  <span className="text-[10px] text-[#B9B9B4] mt-0.5">{log.time}</span>
                   <p className="font-semibold">{log.text}</p>
                 </div>
               ))}
@@ -1535,7 +1535,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
           <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsOpen(false)}></div>
           <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white z-50 h-full">
             <div className="absolute top-4 right-4 z-10">
-              <button onClick={() => setIsOpen(false)} className="p-2 rounded-xl text-[#8A8A85] hover:text-[#2A2A26] hover:bg-[#EBEBE8] transition">
+              <button onClick={() => setIsOpen(false)} aria-label="Fechar menu" className="p-2 rounded-xl text-[#8A8A85] hover:text-[#2A2A26] hover:bg-[#EBEBE8] transition">
                 <X size={20} />
               </button>
             </div>
@@ -1561,7 +1561,7 @@ function ConfiguracoesHub({ currentRoute, navigateTo, empresaLogada, children })
     <div className="pt-8 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto text-left">
       <div className="mb-6">
         <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Configurações</h1>
-        <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">{empresaLogada?.nome || 'BMW Premium SP'} · reservacar.app/{slug}</p>
+        <p className="text-[#8A8A85] text-sm mt-1 font-medium">{empresaLogada?.nome || 'BMW Premium SP'} · reservacar.app/{slug}</p>
       </div>
       <div className="flex items-center gap-7 border-b border-[#E5E5E2] mb-8 overflow-x-auto">
         {CONFIG_TABS.map(t => {
@@ -1671,7 +1671,7 @@ function Topbar({ currentRoute, navigateTo, empresaLogada, liveNotifications = [
                       <p className="text-sm font-bold text-[#141414] truncate">{r.title}</p>
                       <p className="text-[11px] text-[#8A8A85] font-medium truncate">{r.vendedores} · {r.clienteNome || 'Sem cliente'}</p>
                     </div>
-                    <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || r.signal || 0)}</span>
+                    <span className="text-xs font-bold text-[#141414] shrink-0">{formatCurrency(r.sinal || 0)}</span>
                   </button>
                 ))}
               </div>
@@ -2261,7 +2261,7 @@ function HomeView({ navigateTo }) {
       <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4">
         <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Sinais Pix Recebidos</span>
         <div className="space-y-1">
-          <p className="text-3xl font-extrabold text-white font-mono">R$ 14.250,00</p>
+          <p className="text-3xl font-extrabold text-white">R$ 14.250,00</p>
           <p className="text-xs text-[#C1F11D] font-bold flex items-center gap-1">
             <TrendingUp size={14} /> +12% em relação ao mês anterior
           </p>
@@ -2291,7 +2291,7 @@ function HomeView({ navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold font-mono text-white">R$ 269.000</p>
+              <p className="text-xs font-bold text-white">R$ 269.000</p>
               <span className="text-[9px] text-[#C1F11D] font-bold">Reservado</span>
             </div>
           </div>
@@ -2304,7 +2304,7 @@ function HomeView({ navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold font-mono text-white">R$ 78.262</p>
+              <p className="text-xs font-bold text-white">R$ 78.262</p>
               <span className="text-[9px] text-amber-400 font-bold">Aguardando Pix</span>
             </div>
           </div>
@@ -2319,7 +2319,7 @@ function HomeView({ navigateTo }) {
       <div className="bg-white/5 p-5 rounded-xl border border-white/5 space-y-4">
         <span className="text-[11px] text-white/50 font-bold uppercase tracking-wider block">Garantia e Segurança</span>
         <div className="space-y-1">
-          <p className="text-3xl font-extrabold text-white font-mono">100% Protegido</p>
+          <p className="text-3xl font-extrabold text-white">100% Protegido</p>
           <p className="text-xs text-[#C1F11D] font-bold flex items-center gap-1">
             <ShieldCheck size={14} /> Pix direto para a concessionária
           </p>
@@ -2349,7 +2349,7 @@ function HomeView({ navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold font-mono text-white">R$ 399.900</p>
+              <p className="text-xs font-bold text-white">R$ 399.900</p>
               <span className="text-[9px] text-[#C1F11D] font-bold">Aguardando Seu Pix</span>
             </div>
           </div>
@@ -2362,7 +2362,7 @@ function HomeView({ navigateTo }) {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold font-mono text-white">R$ 145.000</p>
+              <p className="text-xs font-bold text-white">R$ 145.000</p>
               <span className="text-[9px] text-[#C1F11D] font-bold">Aprovado e Reservado</span>
             </div>
           </div>
@@ -2944,7 +2944,7 @@ function HomeView({ navigateTo }) {
               <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414]">
                 R$ {bilhoes.toFixed(1)}M+
               </h3>
               <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Sinais Processados (BRL)</p>
@@ -2953,7 +2953,7 @@ function HomeView({ navigateTo }) {
               <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414]">
                 {clientes}k+
               </h3>
               <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Carros Reservados Ativos</p>
@@ -2962,7 +2962,7 @@ function HomeView({ navigateTo }) {
               <div className="w-12 h-12 bg-[#C1F11D]/20 text-[#141414] rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414] font-mono">
+              <h3 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#141414]">
                 {aprovacao.toFixed(1)}%
               </h3>
               <p className="text-xs uppercase tracking-wider font-extrabold text-[#8A8A85]">Aprovação Legal e Conformidade</p>
@@ -3250,7 +3250,7 @@ function LinkGeneratorPreview({ navigateTo }) {
           <div className="flex items-center justify-between bg-[#F4F4F2] border border-[#E5E5E2] rounded-lg px-3 py-2.5">
             <div className="flex items-center gap-2 overflow-hidden w-full">
               <LinkIcon className="w-4 h-4 text-[#6b7c77] shrink-0" />
-              <span className="text-xs text-[#0f172a] font-mono truncate">reservacar.com/reserva/bmw...</span>
+              <span className="text-xs text-[#0f172a] truncate">reservacar.com/reserva/bmw...</span>
             </div>
             <button 
               onClick={handleCopy}
@@ -3395,7 +3395,7 @@ function RankingGamificationPreview({ navigateTo }) {
                 </div>
                 <span className="text-xs font-bold text-[#2A2A26]">Carlos Pereira</span>
               </div>
-              <span className="text-xs font-mono font-extrabold text-[#B9B9B4]">#1</span>
+              <span className="text-xs font-extrabold text-[#B9B9B4]">#1</span>
             </div>
 
             {/* Ana Souza */}
@@ -3406,7 +3406,7 @@ function RankingGamificationPreview({ navigateTo }) {
                 </div>
                 <span className="text-xs font-bold text-[#2A2A26]">Ana Souza</span>
               </div>
-              <span className="text-xs font-mono font-extrabold text-[#B9B9B4]">#2</span>
+              <span className="text-xs font-extrabold text-[#B9B9B4]">#2</span>
             </div>
 
             {/* Badge */}
@@ -3822,7 +3822,7 @@ function EmpresaView({ navigateTo }) {
                 <div className="w-12 h-12 bg-[#C1F11D]/10 text-[#C1F11D] rounded-xl flex items-center justify-center">
                   <p.icon size={24} />
                 </div>
-                <span className="text-4xl font-black text-[#C1F11D] block font-mono">{p.num}</span>
+                <span className="text-4xl font-black text-[#C1F11D] block">{p.num}</span>
                 <h4 className="text-lg font-bold text-white">{p.title}</h4>
                 <p className="text-sm text-[#B9B9B4] leading-relaxed">{p.text}</p>
               </div>
@@ -4218,7 +4218,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Olá, Marcos</h1>
-            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium">
               {empresaLogada?.nome || 'BMW Premium SP'} · Central de Vendas
             </p>
           </div>
@@ -4248,7 +4248,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
           <div className="w-full md:max-w-md flex-1 text-left">
             <div className="flex justify-between items-center text-[10px] font-bold text-[#6F6F6A] mb-1.5 uppercase tracking-wider">
               <span>USO DO PLANO</span>
-              <span className="text-[#141414] text-xs font-bold font-mono">{reservasUsadas}/{totalReservasPlano}</span>
+              <span className="text-[#141414] text-xs font-bold">{reservasUsadas}/{totalReservasPlano}</span>
             </div>
             <div className="w-full bg-[#EBEBE8]/80 h-2.5 rounded-full overflow-hidden mb-2 border border-[#E5E5E2]/60">
               <div 
@@ -4282,7 +4282,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               <LinkIcon size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">7</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">7</span>
           <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> 3 novas hoje
           </span>
@@ -4295,7 +4295,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               <TrendingUp size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">71%</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">71%</span>
           <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> +8% vs mês anterior
           </span>
@@ -4308,7 +4308,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               <DollarSign size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">R$ 42k</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">R$ 42k</span>
           <span className="text-xs text-[#B9B9B4] font-medium">Este mês</span>
         </div>
 
@@ -4319,7 +4319,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
               <Clock size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">1h 48m</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">1h 48m</span>
           <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]" /> Fechamento rápido
           </span>
@@ -4397,7 +4397,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
                     <span className={labelColor}>{notif.label || 'ATIVIDADE'}</span>
                   </div>
                   <p className="font-semibold text-[#2A2A26] text-[11px] leading-snug mt-1.5 pr-14">{notif.text}</p>
-                  <span className="text-[9px] text-[#B9B9B4] font-medium font-mono absolute bottom-3 right-4">{notif.time}</span>
+                  <span className="text-[9px] text-[#B9B9B4] font-medium absolute bottom-3 right-4">{notif.time}</span>
                 </div>
               );
             })}
@@ -4471,21 +4471,33 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
     : '';
 
 
-  // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas
+  // Timer regressivo a cada segundo para decrementar o tempo de expiração simulado das propostas ativas.
+  // Ao esgotar o tempo, a proposta expira SOZINHA (o cliente já vê o link como expirado; o painel
+  // precisa refletir o mesmo estado). Sem propostas ativas, devolve a mesma referência para o React
+  // pular o re-render (evita repintar o painel inteiro a cada segundo à toa).
   useEffect(() => {
     const timer = setInterval(() => {
-      setRecentReservations((prev: any) => prev.map((res: any) => {
-        if (res.status === 'Active') {
+      setRecentReservations((prev: any) => {
+        let mudou = false;
+        const next = prev.map((res: any) => {
+          if (res.status !== 'Active') return res;
+          mudou = true;
           const limit = res.expiracao * 60;
-          if ((res.elapsedSeconds || 0) < limit) {
-            return {
-              ...res,
-              elapsedSeconds: (res.elapsedSeconds || 0) + 1
-            };
+          const elapsed = res.elapsedSeconds || 0;
+          if (elapsed < limit) {
+            return { ...res, elapsedSeconds: elapsed + 1 };
           }
-        }
-        return res;
-      }));
+          return {
+            ...res,
+            status: 'Expired',
+            logs: [...(res.logs || []), {
+              time: new Date().toLocaleTimeString('pt-BR') + ' de ' + new Date().toLocaleDateString('pt-BR'),
+              text: 'Link expirado automaticamente ao fim do cronômetro.'
+            }]
+          };
+        });
+        return mudou ? next : prev;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [setRecentReservations]);
@@ -4512,7 +4524,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
   const totalSinalCaixa = recentReservations
     .filter(r => r.status === 'Completed' || r.paidSignal)
-    .reduce((acc, r) => acc + (Number(r.signal || r.sinal) || 0), 0);
+    .reduce((acc, r) => acc + (Number(r.sinal) || 0), 0);
   const formatSinalCaixa = totalSinalCaixa >= 1000 
     ? `R$ ${(totalSinalCaixa / 1000).toFixed(1)}k` 
     : `R$ ${totalSinalCaixa}`;
@@ -4650,29 +4662,93 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 text-left">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Painel da loja</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Atividade comercial em tempo real</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Atividade comercial em tempo real</p>
         </div>
         <div className="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Ticker estilo push (mesmo visual do card mobile, condensado): card escuro
+              com ícone, label uppercase e texto animado. h-10 = mesma altura dos
+              botões Exportar/Nova proposta (text-sm + py-2.5 = 40px). */}
           {tItem && (
-            <div className={`w-full sm:w-auto px-4 py-2 rounded-full flex items-center justify-center gap-2 text-xs transition-all duration-300 border ${
-              tItem.urgent
-                ? 'bg-rose-50/60 border-rose-200 text-rose-700 font-semibold'
-                : 'bg-white border-[#E5E5E2] text-[#5F5F5A]'
-            }`}>
-              <span className={`w-2 h-2 rounded-full shrink-0 ${tItem.urgent ? 'bg-rose-500 animate-pulse' : 'bg-[#141414]'}`}></span>
-              <span key={tIdx} className={`font-bold max-w-[460px] truncate ${tAnim}`}>
-                {tItem.tipo === 'reserva'
-                  ? `${tNome} expira em ${formatTempoRestante(tempoRestanteSegundos)}`
-                  : tItem.text}
+            <div className="flex items-center gap-2.5 rounded-xl bg-[#141414] pl-1.5 pr-4 h-10 max-w-[560px]">
+              <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Clock size={14} className="text-[#C1F11D]" />
               </span>
+              <div className="min-w-0 flex-1">
+                <div key={tIdx} className={tAnim}>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className={`w-1 h-1 rounded-full shrink-0 ${tItem.urgent ? 'bg-rose-400 animate-pulse' : 'bg-[#C1F11D] animate-pulse'}`}></span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-white/60 leading-none">{tLabel}</span>
+                  </div>
+                  {tItem.tipo === 'reserva' ? (
+                    <p className="text-[13px] leading-tight font-bold text-white truncate">
+                      {tNome}
+                      <span className="text-white/65 font-semibold"> expira em </span>
+                      <span className={tItem.urgent ? 'text-rose-400' : 'text-[#C1F11D]'}>{formatTempoRestante(tempoRestanteSegundos)}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[13px] leading-tight font-bold text-white truncate">{tItem.text}</p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
-          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer">
+          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 rounded-xl transition cursor-pointer">
             <UploadCloud size={15} /> Exportar
           </button>
-          <button onClick={() => navigateTo('dashboard')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 py-2.5 rounded-xl transition cursor-pointer whitespace-nowrap">
+          <button onClick={() => navigateTo('dashboard')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 rounded-xl transition cursor-pointer whitespace-nowrap">
             <Plus size={15} className="text-[#C1F11D]" /> Nova proposta
           </button>
+        </div>
+      </div>
+
+      {/* Vitrine da loja (só desktop; o mobile tem o card próprio mais abaixo):
+          o carro entra dirigindo da direita (fora da tela) e para de perfil.
+          Vídeo espelhado (nariz p/ esquerda) tocando SEM loop na janela 2.5s→5.2s;
+          o slide CSS (.animate-vitrine-drive) dura o mesmo que a reprodução, então
+          as rodas param junto com o movimento. Fundo = tom de lima do vídeo. */}
+      <div
+        className="hidden lg:block relative overflow-hidden rounded-[32px] border border-[#E5E5E2] mb-8 h-[280px]"
+        style={{ background: '#BDBE30' }}
+      >
+        <div className="absolute inset-y-0 right-0 h-full aspect-[16/7] animate-vitrine-drive">
+          <video
+            src="/video/vitrine-loop.mp4"
+            autoPlay
+            muted
+            playsInline
+            onLoadedMetadata={(e) => { e.currentTarget.currentTime = 2.5; }}
+            onTimeUpdate={(e) => { const v = e.currentTarget; if (v.currentTime >= 5.2 && !v.paused) v.pause(); }}
+            className="w-full h-full object-cover -scale-x-100"
+          />
+          <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-[#BDBE30] to-transparent"></div>
+        </div>
+        <div className="relative z-10 h-full flex flex-col justify-between p-8 text-left max-w-[52%]">
+          <div>
+            <span className="block text-[11px] font-black uppercase tracking-[0.25em] text-[#141414]/70">
+              {empresaLogada?.nome || 'Sua loja'} · Vitrine digital
+            </span>
+            <div className="flex items-end gap-4 mt-2">
+              <span className="text-[84px] font-extrabold text-[#141414] leading-[0.85] tracking-tight tabular-nums">
+                {totalCriadasAcumulado}
+              </span>
+              <span className="pb-1.5 text-sm font-bold text-[#141414]/75 leading-snug">
+                veículos<br />cadastrados
+              </span>
+            </div>
+          </div>
+          {/* Chips entram em cascata enquanto o carro freia (delays casados com o slide) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 bg-[#141414] text-white text-[11px] font-bold px-3.5 py-2 rounded-full animate-fade-in-down" style={{ animationDelay: '1.7s', animationFillMode: 'both' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C1F11D] animate-pulse"></span>
+              {recentReservations.filter((r: any) => r.status === 'Active').length} reservas ativas
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/70 border border-[#141414]/10 text-[#141414] text-[11px] font-bold px-3.5 py-2 rounded-full animate-fade-in-down" style={{ animationDelay: '2.0s', animationFillMode: 'both' }}>
+              {countConfirmados} PIX {countConfirmados === 1 ? 'recebido' : 'recebidos'}
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/70 border border-[#141414]/10 text-[#141414] text-[11px] font-bold px-3.5 py-2 rounded-full animate-fade-in-down" style={{ animationDelay: '2.3s', animationFillMode: 'both' }}>
+              {Math.max(0, reservasDisponiveis)} links disponíveis
+            </span>
+          </div>
         </div>
       </div>
 
@@ -4708,7 +4784,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         <div className="bg-white border border-[#E5E5E2] rounded-3xl p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-bold text-[#8A8A85] uppercase tracking-widest">Uso do plano</span>
-            <span className="text-xs font-black text-[#141414] font-mono">{reservasUsadas}/{totalReservasPlano}</span>
+            <span className="text-xs font-black text-[#141414]">{reservasUsadas}/{totalReservasPlano}</span>
           </div>
           <div className="w-full bg-[#EBEBE8] h-2 rounded-full overflow-hidden">
             <div
@@ -4798,7 +4874,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               <DollarSign size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{formatSinalCaixa}</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">{formatSinalCaixa}</span>
           <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]"/> Este mês corrente
           </span>
@@ -4813,7 +4889,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               <Users size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{totalResgatesAtivos}</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">{totalResgatesAtivos}</span>
           <span className="text-xs text-[#141414] font-bold flex items-center gap-1">
             <ArrowUpRight size={14} className="stroke-[2.5px]"/> 3 novas hoje
           </span>
@@ -4828,7 +4904,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               <ShieldAlert size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{totalExpiradas}</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">{totalExpiradas}</span>
           <span className="text-xs text-[#B9B9B4] font-medium">Por inatividade de leads</span>
           <MiniSpark trend="down" />
         </div>
@@ -4841,7 +4917,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               <TrendingUp size={16} />
             </div>
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{conversaoLiquida}%</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">{conversaoLiquida}%</span>
           <span className="text-xs text-[#B9B9B4] font-medium">
             Baseado em {totalCriadasAcumulado} propostas
           </span>
@@ -4862,7 +4938,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 <div key={vend.nome} className="space-y-1.5">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-[#5F5F5A]">{vend.nome.split(' ')[0]}</span>
-                    <span className="font-mono text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
+                    <span className="text-[#8A8A85] font-bold">{vend.conversao}% ({vend.pagas}/{vend.total})</span>
                   </div>
                   <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
                     <div
@@ -4893,7 +4969,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             <h3 className="font-bold text-[#2A2A26] text-sm">Velocidade Média</h3>
             <Clock size={16} className="text-[#141414] shrink-0" />
           </div>
-          <span className="block text-3xl font-bold font-mono tracking-tight text-[#141414] mb-1">{velocidadeMediaText}</span>
+          <span className="block text-3xl font-bold tracking-tight text-[#141414] mb-1">{velocidadeMediaText}</span>
           <p className="text-[10px] text-[#B9B9B4] font-medium leading-relaxed">
             Tempo médio de fechamento medido entre a ativação do link e a confirmação do sinal.
           </p>
@@ -5041,7 +5117,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-[#141414] border-r border-b border-[#2A2A26]" />
                   
                   <span className="text-[9px] font-bold text-[#B9B9B4] uppercase tracking-wider">{chartPoints[hoveredPoint].label}</span>
-                  <span className="font-mono font-bold text-sm text-[#C1F11D]">
+                  <span className="font-bold text-sm text-[#C1F11D]">
                     {formatCurrency(chartPoints[hoveredPoint].valor)}
                   </span>
                   <span className="text-[9px] text-[#B9B9B4]">
@@ -5063,7 +5139,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'todos' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countTodos}</span>
+                Todos <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'todos' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countTodos}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('aguardando')}
@@ -5073,7 +5149,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'aguardando' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countAguardando}</span>
+                Aguardando sinal <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'aguardando' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countAguardando}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('urgentes')}
@@ -5083,7 +5159,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'urgentes' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countUrgentes}</span>
+                Urgentes <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'urgentes' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countUrgentes}</span>
               </button>
               <button 
                 onClick={() => setFiltroStatus('confirmados')}
@@ -5093,7 +5169,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                     : 'bg-white border border-[#E5E5E2] text-[#6F6F6A] hover:border-[#D9D9D5]'
                 }`}
               >
-                Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtroStatus === 'confirmados' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countConfirmados}</span>
+                Confirmados <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtroStatus === 'confirmados' ? 'bg-[#2A2A26] text-white' : 'bg-[#EBEBE8] text-[#8A8A85]'}`}>{countConfirmados}</span>
               </button>
             </div>
             
@@ -5177,7 +5253,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       <div className="text-left md:text-right shrink-0">
                         <span className="block text-[9px] font-black text-[#B9B9B4] uppercase tracking-widest">Sinal Exigido</span>
                         <span className="font-black text-xl text-[#141414] tracking-tight">
-                          {formatCurrency(res.signal || res.sinal)}
+                          {formatCurrency(res.sinal)}
                         </span>
                       </div>
                     </div>
@@ -5195,7 +5271,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       <div className="space-y-1.5 border-t border-[#EBEBE8] pt-4">
                         <div className="flex justify-between items-center text-[9px] font-bold text-[#B9B9B4] uppercase tracking-wider">
                           <span>Expiração do Link</span>
-                          <span className={`font-mono text-[11px] font-bold ${isUrgente ? 'text-rose-600' : 'text-[#6F6F6A]'}`}>{timerText}</span>
+                          <span className={`text-[11px] font-bold ${isUrgente ? 'text-rose-600' : 'text-[#6F6F6A]'}`}>{timerText}</span>
                         </div>
                         <div className="w-full bg-[#EBEBE8] h-1.5 rounded-full overflow-hidden border border-[#E5E5E2]/50">
                           <div 
@@ -5293,7 +5369,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
           <StatusPill status={res.status} />
-          <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.created?.split(' ')[0] || 'Hoje'}</span>
+          <span className="text-[10px] text-[#8A8A85] font-semibold">{res.created?.split(' ')[0] || 'Hoje'}</span>
         </div>
         <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-1">{res.title || `${res.marcaText} ${res.modeloText}`}</h4>
         {res.clienteNome && !['Não informado', 'Cliente'].includes(res.clienteNome) && (
@@ -5302,12 +5378,12 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
         <div className="bg-[#F4F4F2] border border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-between gap-2 text-xs font-semibold text-[#5F5F5A] mb-6 mt-3">
           <div className="flex flex-col">
             <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Sinal Requerido</span>
-            <span className="text-sm font-bold font-mono text-[#141414]">{formatCurrency(res.signal || res.sinal || 1500)}</span>
+            <span className="text-sm font-bold text-[#141414]">{formatCurrency(res.sinal || 1500)}</span>
           </div>
           <div className="w-px h-8 bg-[#E5E5E2]"></div>
           <div className="flex flex-col">
             <span className="text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">Tempo Limiar</span>
-            <span className="text-sm font-bold font-mono text-[#2A2A26]">{res.duration || 60}m</span>
+            <span className="text-sm font-bold text-[#2A2A26]">{res.duration || 60}m</span>
           </div>
         </div>
       </div>
@@ -5335,7 +5411,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#8A8A85]"><span className="w-1.5 h-1.5 rounded-full bg-[#B9B9B4]"></span> Rascunho</span>
-          <span className="text-[10px] text-[#8A8A85] font-semibold font-mono">{res.origin === 'reserva-rapida' ? 'Reserva Rápida' : 'Reserva'}</span>
+          <span className="text-[10px] text-[#8A8A85] font-semibold">{res.origin === 'reserva-rapida' ? 'Reserva Rápida' : 'Reserva'}</span>
         </div>
         <h4 className="font-bold text-base text-[#141414] tracking-tight leading-snug mb-1">{res.title || 'Reserva sem título'}</h4>
         {res.clienteNome && !['Não informado', 'Cliente'].includes(res.clienteNome) && (
@@ -5369,7 +5445,7 @@ function DashboardView({ navigateTo, setActiveReservation, recentReservations, s
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Reservas</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Minhas reservas</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Minhas reservas</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={criarReserva}
@@ -5653,7 +5729,7 @@ function PreviewView({
               <Clock size={14} className="text-[#C1F11D] animate-spin" style={{ animationDuration: '4s' }} />
               Tempo limite para garantir esta oferta exclusiva de showroom
             </span>
-            <span className="font-mono text-3xl font-black text-[#C1F11D]">{formatTime(timeLeft)}</span>
+            <span className="text-3xl font-black text-[#C1F11D]">{formatTime(timeLeft)}</span>
           </div>
           <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
             <div className="bg-[#C1F11D] h-full transition-all duration-1000 ease-linear" style={{ width: `${progressPercent}%` }}></div>
@@ -5932,7 +6008,12 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
     });
   }, []);
 
-  const [diaAtivo, setDiaAtivo] = useState(0);
+  // Se todos os horários de hoje já passaram, abre direto em "Amanhã" —
+  // senão o lead cai numa grade 100% indisponível (beco sem saída à noite).
+  const [diaAtivo, setDiaAtivo] = useState(() => {
+    const agora = new Date();
+    return grade.every(h => parseInt(h) <= agora.getHours()) ? 1 : 0;
+  });
   const [slotSel, setSlotSel] = useState<string | null>(null);
   const [holdLeft, setHoldLeft] = useState(0);
   // Inicia colapsado para reduzir a altura do card; expande sob demanda
@@ -5945,11 +6026,12 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
   }, [dias, diaAtivo, grade]);
 
   const agora = new Date();
-  const indisponivel = (h: string) => {
-    const passou = diaAtivo === 0 && parseInt(h) <= agora.getHours();
-    return ocupados.includes(h) || passou;
-  };
-  const qtdOcupados = grade.filter(indisponivel).length;
+  // "Passou" (hora de hoje que ficou para trás) não é o mesmo que "ocupado"
+  // (alguém agendou) — rotular hora passada de "ocupado" engana o lead.
+  const jaPassou = (h: string) => diaAtivo === 0 && parseInt(h) <= agora.getHours();
+  const indisponivel = (h: string) => ocupados.includes(h) || jaPassou(h);
+  // Só agendamentos reais (futuros) contam na mensagem de fila.
+  const qtdOcupados = grade.filter(h => ocupados.includes(h) && !jaPassou(h)).length;
 
   const diaLabel = (i: number) => i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS_SEMANA[dias[i].getDay()];
 
@@ -6030,6 +6112,7 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
             {/* Slot grid */}
             <div className="grid grid-cols-3 gap-2">
               {grade.map((h) => {
+                const passou = jaPassou(h);
                 const taken = indisponivel(h);
                 const sel = slotSel === h;
                 return (
@@ -6045,8 +6128,8 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
                           : 'bg-white/10 border-transparent hover:bg-white/15 cursor-pointer'
                     }`}
                   >
-                    <span className={`block text-sm font-extrabold ${sel ? 'text-[#141414]' : 'text-white'} ${taken ? 'line-through' : ''}`}>{h}</span>
-                    <span className={`block text-[9px] font-semibold ${sel ? 'text-[#141414]/60' : 'text-white/40'}`}>{taken ? 'ocupado' : '30min'}</span>
+                    <span className={`block text-sm font-extrabold ${sel ? 'text-[#141414]' : 'text-white'} ${taken && !passou ? 'line-through' : ''}`}>{h}</span>
+                    <span className={`block text-[9px] font-semibold ${sel ? 'text-[#141414]/60' : 'text-white/40'}`}>{passou ? '—' : taken ? 'ocupado' : '30min'}</span>
                   </button>
                 );
               })}
@@ -6078,7 +6161,7 @@ function SlotPickerCard({ titulo, onSelect, horarios }) {
         <div className="mt-3.5 bg-[#C1F11D]/10 rounded-[14px] px-3.5 py-2.5 flex items-center gap-2 text-xs font-semibold text-[#C1F11D]">
           <Clock size={14} />
           <span>Horário segurado para você</span>
-          <span className="ml-auto font-extrabold text-sm font-mono">
+          <span className="ml-auto font-extrabold text-sm">
             {String(Math.floor(holdLeft / 60)).padStart(2, '0')}:{String(holdLeft % 60).padStart(2, '0')}
           </span>
         </div>
@@ -6243,7 +6326,7 @@ function PublicPropostaView({ id, showToast }) {
           id: p.id, loja_id: p.loja_id, title: p.title, anoText: p.ano, corText: p.cor, motorText: p.motor, combustivel: p.motor,
           cambio: p.cambio, km: p.km, opcionais: p.opcionais || '',
           fipeValue: clampPrice(p.fipe_value), valorVenda: clampPrice(p.valor_venda),
-          sinal: Number(p.sinal) || 0, signal: Number(p.sinal) || 0,
+          sinal: Number(p.sinal) || 0,
           expiracao: p.expiracao, duration: String(p.expiracao),
           status: p.status, clienteNome: p.cliente_nome || 'Cliente',
           fotos: (p.fotos || []).join(','), vendedores: vendName,
@@ -6687,7 +6770,7 @@ function MobileClientView({
             <div className="bg-[#141414] rounded-2xl p-5 mb-6 shadow-lg">
               <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 text-[#B9B9B4]">RESERVADO EXCLUSIVAMENTE PARA VOCÊ</h3>
               <div className="flex justify-between items-end mb-3">
-                <span className="text-3xl font-black leading-none font-mono text-[#C1F11D]">{formatTimeFull(timeLeft)}</span>
+                <span className="text-3xl font-black leading-none text-[#C1F11D]">{formatTimeFull(timeLeft)}</span>
                 <span className="bg-[#C1F11D] text-[#141414] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">ATIVO</span>
               </div>
               <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
@@ -7152,7 +7235,7 @@ function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
         
         {status === 'waiting' ? (
           <>
-            <button onClick={onClose} className="absolute top-6 right-6 bg-[#EBEBE8] p-2.5 rounded-full hover:bg-[#E5E5E2] transition text-[#6F6F6A] border border-[#E5E5E2]">
+            <button onClick={onClose} aria-label="Fechar" className="absolute top-6 right-6 bg-[#EBEBE8] p-2.5 rounded-full hover:bg-[#E5E5E2] transition text-[#6F6F6A] border border-[#E5E5E2]">
               <X size={16} />
             </button>
             
@@ -7579,7 +7662,6 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
       created: new Date().toLocaleString('pt-BR'),
       duration: String(vehicleData.expiracaoMinutos || 60),
       expiracao: Number(vehicleData.expiracaoMinutos || 60),
-      signal: Number(vehicleData.sinal || 0),
       sinal: Number(vehicleData.sinal || 0),
       marcaText: vehicleData.brand,
       modeloText: vehicleData.model,
@@ -7620,7 +7702,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
         <div className="mb-6">
           <div className="mb-5">
             <h1 className="text-2xl md:text-3xl font-extrabold text-[#141414] tracking-tight">Criar Proposta de Reserva</h1>
-            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Fluxo do Cliente</p>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium">Fluxo do Cliente</p>
           </div>
 
           <div className="grid grid-cols-5 gap-3">
@@ -7819,7 +7901,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                             else if (e.key === 'ArrowDown') { e.preventDefault(); stepExpiracao(-15); }
                             else if (e.key === 'Enter') { e.currentTarget.blur(); }
                           }}
-                          className={`${inputClass} pr-12 font-mono tracking-wide`}
+                          className={`${inputClass} pr-12 tracking-wide`}
                           placeholder="01:00"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-px">
@@ -7848,11 +7930,11 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                   <div className="bg-[#F4F4F2] p-6 rounded-2xl border border-[#E5E5E2] space-y-4">
                     <div className="flex justify-between items-center text-xs font-semibold text-[#6F6F6A]">
                       <span>Preço FIPE Lido</span>
-                      <span className="font-bold text-black font-mono">{formatCurrency(vehicleData.fipePrice || 0)}</span>
+                      <span className="font-bold text-black">{formatCurrency(vehicleData.fipePrice || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center border-t border-[#E5E5E2] pt-3 text-xs font-semibold text-[#6F6F6A]">
                       <span>Preço do Veículo Escolhido</span>
-                      <span className="font-black text-[#141414] text-sm font-mono">{formatCurrency(parseFloat(vehicleData.price) || 0)}</span>
+                      <span className="font-black text-[#141414] text-sm">{formatCurrency(parseFloat(vehicleData.price) || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -7974,6 +8056,7 @@ function CadastroReservaClienteView({ navigateTo, showToast, setActiveReservatio
                         <button 
                           type="button" 
                           onClick={() => removePhoto(i)}
+                          aria-label={`Remover foto ${i + 1}`}
                           className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition"
                         >
                           <X size={10} />
@@ -8190,7 +8273,7 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
     const cls = s === 'compareceu' ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
       : s === 'cancelada' ? 'border-rose-200 bg-rose-50 text-rose-600 line-through'
       : 'border-[#E5E5E2] bg-white text-[#141414]';
-    return <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold font-mono shrink-0 ${cls}`}>{hora}</span>;
+    return <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold shrink-0 ${cls}`}>{hora}</span>;
   };
 
   const sel = selectedVisita;
@@ -8199,7 +8282,7 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
     <div className="pt-8 pb-16 px-6 md:px-12 max-w-3xl mx-auto">
       <div className="mb-5">
         <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Agenda de Visitas</h1>
-        <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Leads que agendaram uma visita pelo link da reserva.</p>
+        <p className="text-[#8A8A85] text-sm mt-1 font-medium">Leads que agendaram uma visita pelo link da reserva.</p>
       </div>
 
       {loading ? (
@@ -8257,7 +8340,7 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
             <div className="sm:hidden w-10 h-1 bg-[#E5E5E2] rounded-full mx-auto -mt-2 mb-4" />
             <div className="flex items-center justify-between gap-2 mb-4">
               {statusPill(sel.status)}
-              <button onClick={() => setSelectedVisita(null)} className="p-1.5 -mr-1.5 text-[#8A8A85] hover:text-[#141414] transition"><X size={18} /></button>
+              <button onClick={() => setSelectedVisita(null)} aria-label="Fechar detalhes" className="p-1.5 -mr-1.5 text-[#8A8A85] hover:text-[#141414] transition"><X size={18} /></button>
             </div>
 
             <h3 className="text-xl font-black text-[#141414] tracking-tight leading-tight">{sel.cliente_nome}</h3>
@@ -8271,14 +8354,14 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
               ].map((c, i) => (
                 <div key={i} className="bg-[#F4F4F2] p-3">
                   <span className="block text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">{c.l}</span>
-                  <span className="block text-xs font-bold font-mono text-[#141414] mt-0.5 truncate">{c.v}</span>
+                  <span className="block text-xs font-bold text-[#141414] mt-0.5 truncate">{c.v}</span>
                 </div>
               ))}
             </div>
 
             <div className="bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl p-4 mb-5">
               <span className="block text-[9px] text-[#8A8A85] uppercase tracking-wider font-bold">WhatsApp</span>
-              <span className="block text-sm font-bold font-mono text-[#141414] mt-0.5">{sel.whatsapp || '—'}</span>
+              <span className="block text-sm font-bold text-[#141414] mt-0.5">{sel.whatsapp || '—'}</span>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -8514,7 +8597,6 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
       created: now.toLocaleString('pt-BR'),
       duration: String(expiracao),
       expiracao: Number(expiracao),
-      signal: Number(sinal || 0),
       sinal: Number(sinal || 0),
       marcaText: vehicleData.brand,
       modeloText: vehicleData.model,
@@ -8629,7 +8711,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
           <div className="flex items-baseline gap-3 border-b-2 border-[#E5E5E2] focus-within:border-[#141414] pb-3 transition-colors">
             <input autoFocus type="text" inputMode="numeric" placeholder="0" value={vehicleData.km}
               onChange={e => setVehicleData(prev => ({ ...prev, km: maskMilhar(e.target.value) }))}
-              className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+              className="flex-1 min-w-0 bg-transparent text-5xl font-black text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
             <span className="text-xl font-bold text-[#8A8A85] shrink-0">km</span>
           </div>
         );
@@ -8640,7 +8722,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
               <span className="text-3xl font-black text-[#141414] shrink-0">R$</span>
               <input autoFocus type="text" inputMode="numeric" placeholder="0" value={vehicleData.price ? Number(vehicleData.price).toLocaleString('pt-BR') : ''}
                 onChange={e => { const d = e.target.value.replace(/\D/g, ''); setVehicleData(prev => ({ ...prev, price: d ? String(clampPrice(Number(d))) : '' })); }}
-                className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+                className="flex-1 min-w-0 bg-transparent text-5xl font-black text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
               <span className="text-xl font-bold text-[#8A8A85] shrink-0">,00</span>
             </div>
             {Number(vehicleData.fipePrice) > 0 && (
@@ -8711,8 +8793,8 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
               <div className="grid grid-cols-4 gap-2.5 mt-5">
                 {vehicleData.photos.map((url: string, i: number) => (
                   <div key={i} className="relative h-16 rounded-xl overflow-hidden border border-[#E5E5E2]">
-                    <img src={url} className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition"><X size={10} /></button>
+                    <img src={url} alt={`Foto ${i + 1} do veículo`} className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removePhoto(i)} aria-label={`Remover foto ${i + 1}`} className="absolute top-1 right-1 bg-black/70 hover:bg-black p-1 rounded-full text-white transition"><X size={10} /></button>
                   </div>
                 ))}
               </div>
@@ -8728,7 +8810,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
               <span className="text-3xl font-black text-[#141414] shrink-0">R$</span>
               <input autoFocus type="text" inputMode="numeric" placeholder="0"
                 value={sinal ? Number(sinal).toLocaleString('pt-BR') : ''} onChange={e => setSinal(e.target.value.replace(/\D/g, ''))}
-                className="flex-1 min-w-0 bg-transparent text-5xl font-black font-mono text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
+                className="flex-1 min-w-0 bg-transparent text-5xl font-black text-[#141414] outline-none placeholder:text-[#D9D9D5]" />
               <span className="text-xl font-bold text-[#8A8A85] shrink-0">,00</span>
             </div>
             <p className={`text-xs font-bold inline-block px-3 py-1.5 rounded-lg mt-4 ${abaixoMin ? 'text-rose-700 bg-rose-50 border border-rose-200' : 'text-[#141414] bg-[#C1F11D]/25'}`}>
@@ -8741,7 +8823,7 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
         return (
           <div className="space-y-3">
             <div className="relative">
-              <input type="text" inputMode="numeric" className={`${inputCls} font-mono tracking-wide pr-14`} placeholder="01:00"
+              <input type="text" inputMode="numeric" className={`${inputCls} tracking-wide pr-14`} placeholder="01:00"
                 value={expiracaoText} onChange={e => setExpiracaoText(e.target.value)}
                 onBlur={() => { const m = Math.min(360, Math.max(15, parseExp(expiracaoText) || 15)); setExpiracao(m); setExpiracaoText(fmtExp(m)); }}
                 onKeyDown={e => { if (e.key === 'ArrowUp') { e.preventDefault(); stepExp(15); } else if (e.key === 'ArrowDown') { e.preventDefault(); stepExp(-15); } }} />
@@ -9653,7 +9735,7 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
         {!embedded && (
           <div className="mb-8 text-left">
             <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Configurações do Lojista</h2>
-            <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
+            <p className="text-[#8A8A85] text-sm mt-1 font-medium">Ajuste os parâmetros da sua loja e gerencie seu plano SaaS Autolock.</p>
           </div>
         )}
 
@@ -10011,7 +10093,7 @@ function CheckoutPlanoView({ navigateTo, showToast, empresaLogada, setEmpresaLog
             <ArrowLeft size={14} /> Voltar para Configurações
           </button>
           <h2 className="text-3xl font-extrabold text-[#141414] tracking-tight">Checkout de Assinatura SaaS</h2>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Finalize seu pagamento para liberar o limite do plano {planoUpgrade}.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
@@ -10371,7 +10453,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10 border-b border-[#E5E5E2] pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Equipe de Vendedores</h1>
-          <p className="text-[#8A8A85] text-sm mt-1 font-medium font-mono">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
+          <p className="text-[#8A8A85] text-sm mt-1 font-medium">Cadastre e gerencie a equipe do showroom autorizada a gerar links Pix.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -10396,7 +10478,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                 <span className="text-[9px] font-bold uppercase tracking-wider text-[#8A8A85] bg-[#F4F4F2] px-2.5 py-1 border border-[#E5E5E2] rounded-md">
                   {v.cargo || 'Consultor'}
                 </span>
-                <span className="text-[10px] font-bold text-[#B9B9B4] font-mono">
+                <span className="text-[10px] font-bold text-[#B9B9B4]">
                   {v.dataCadastro || '31/05/2026'}
                 </span>
               </div>
@@ -10418,7 +10500,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                   <span className="block text-[9px] font-bold text-[#B9B9B4] tracking-wider uppercase mb-1">
                     Links Gerados
                   </span>
-                  <span className="block text-base font-bold font-mono text-[#141414]">
+                  <span className="block text-base font-bold text-[#141414]">
                     {v.linksGerados !== undefined ? v.linksGerados : 0}
                   </span>
                 </div>
@@ -10426,7 +10508,7 @@ function VendedoresView({ navigateTo, showToast, empresaLogada, setEmpresaLogada
                   <span className="block text-[9px] font-bold text-[#B9B9B4] tracking-wider uppercase mb-1">
                     Taxa Conversão
                   </span>
-                  <span className="block text-base font-bold text-[#141414] font-mono">
+                  <span className="block text-base font-bold text-[#141414]">
                     {v.conversao !== undefined ? `${v.conversao}%` : '0%'}
                   </span>
                 </div>
@@ -10643,7 +10725,7 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
       item.reservas += 1;
       if (r.status === 'Completed') {
         item.vendas += 1;
-        item.sinais += Number(r.signal || r.sinal || 0);
+        item.sinais += Number(r.sinal || 0);
       }
     });
     return item;
@@ -10689,7 +10771,7 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
   const cardCls = 'bg-white border border-[#E5E5E2] rounded-[22px] p-6 text-left';
   const cardLabel = 'text-[11px] font-bold text-[#8A8A85] uppercase tracking-wider';
   const th = 'text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider py-3 px-3 text-right';
-  const td = 'py-4 px-3 text-sm font-mono text-[#2A2A26] text-right';
+  const td = 'py-4 px-3 text-sm text-[#2A2A26] text-right';
 
   return (
     <div className="text-left">
@@ -10700,9 +10782,9 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
           <p className="text-[#8A8A85] text-sm mt-1 font-medium">Reservas e ganhos — {empresaLogada?.nome || 'sua loja'}</p>
         </div>
         <div className="flex items-center gap-2 self-start">
-          <button onClick={() => mudarMes(-1)} className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">‹</button>
+          <button onClick={() => mudarMes(-1)} aria-label="Mês anterior" className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">‹</button>
           <span className="min-w-[150px] text-center text-sm font-bold text-[#141414]">{mesLabel}</span>
-          <button onClick={() => mudarMes(1)} className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">›</button>
+          <button onClick={() => mudarMes(1)} aria-label="Próximo mês" className="w-9 h-9 rounded-full border border-[#E5E5E2] bg-white hover:border-[#141414] text-[#141414] text-lg leading-none transition cursor-pointer">›</button>
         </div>
       </div>
 
@@ -10710,7 +10792,7 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
       <div className="relative overflow-hidden rounded-[24px] bg-[#141414] p-7 mb-6">
         <div className="absolute right-6 top-1/2 -translate-y-1/2 w-40 h-1.5 rounded-full bg-[#C1F11D]/30" />
         <span className="text-[11px] font-bold text-[#C1F11D] uppercase tracking-wider">Sinais recebidos via PIX · {mesLabel}</span>
-        <div className="text-4xl font-extrabold text-white mt-2 font-mono">{formatCurrency(totais.sinais)}</div>
+        <div className="text-4xl font-extrabold text-white mt-2">{formatCurrency(totais.sinais)}</div>
         <p className="text-[13px] text-[#B9B9B4] mt-2 font-medium">
           {totais.vendas > 0
             ? `${totais.vendas} ${totais.vendas === 1 ? 'carro vendido' : 'carros vendidos'} de ${totais.reservas} ${totais.reservas === 1 ? 'reserva criada' : 'reservas criadas'} neste mês.`
@@ -10722,19 +10804,19 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className={cardCls}>
           <span className={cardLabel}>Reservas</span>
-          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{totais.reservas}</div>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2">{totais.reservas}</div>
         </div>
         <div className={cardCls}>
           <span className={cardLabel}>Carros vendidos</span>
-          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{totais.vendas}</div>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2">{totais.vendas}</div>
         </div>
         <div className={cardCls}>
           <span className={cardLabel}>Sinais recebidos</span>
-          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{formatCurrency(totais.sinais)}</div>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2">{formatCurrency(totais.sinais)}</div>
         </div>
         <div className={cardCls}>
           <span className={cardLabel}>Ganhos (lançados)</span>
-          <div className="text-3xl font-extrabold text-[#141414] mt-2 font-mono">{formatCurrency(totais.ganhos)}</div>
+          <div className="text-3xl font-extrabold text-[#141414] mt-2">{formatCurrency(totais.ganhos)}</div>
         </div>
       </div>
 
@@ -10790,7 +10872,7 @@ function RelatorioDesempenhoView({ recentReservations = [], empresaLogada, showT
                   inputMode="numeric"
                   value={draft[wi] ?? ''}
                   onChange={(e) => setDraft(prev => ({ ...prev, [wi]: e.target.value.replace(/[^\d]/g, '') }))}
-                  className="w-full bg-[#F8FAFC] border border-[#E5E5E2] rounded-xl pl-9 pr-3 py-2.5 text-sm font-semibold font-mono text-[#141414] outline-none focus:border-[#141414] transition"
+                  className="w-full bg-[#F8FAFC] border border-[#E5E5E2] rounded-xl pl-9 pr-3 py-2.5 text-sm font-semibold text-[#141414] outline-none focus:border-[#141414] transition"
                 />
               </div>
             </div>
@@ -10820,7 +10902,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
 
   useEffect(() => {
     if (selectedRes) {
-      setSinal(String(selectedRes.signal || selectedRes.sinal || 0));
+      setSinal(String(selectedRes.sinal || 0));
       setVendedor(selectedRes.vendedores || '');
       setStatus(selectedRes.status || 'Active');
     }
@@ -10830,7 +10912,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
     if (!selectedRes) return;
     
     const novosLogs = [...(selectedRes.logs || [])];
-    const originalSignal = Number(selectedRes.signal || selectedRes.sinal || 0);
+    const originalSignal = Number(selectedRes.sinal || 0);
     const newSignal = Number(sinal);
 
     if (newSignal !== originalSignal) {
@@ -10864,7 +10946,6 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
       if (res.id === selectedRes.id) {
         return {
           ...res,
-          signal: newSignal,
           sinal: newSignal,
           status: status,
           vendedores: vendedor,
@@ -10879,7 +10960,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
 
   const handleDiscard = () => {
     if (!selectedRes) return;
-    setSinal(String(selectedRes.signal || selectedRes.sinal || 0));
+    setSinal(String(selectedRes.sinal || 0));
     setVendedor(selectedRes.vendedores || '');
     setStatus(selectedRes.status || 'Active');
     showToast('Alterações descartadas.', 'info');
@@ -10959,7 +11040,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
         <h1 className="text-2xl md:text-3xl font-bold text-[#141414] tracking-tight flex items-center gap-2">
           <FileText size={24} className="text-[#141414] shrink-0" /> Logs de Reservas
         </h1>
-        <p className="text-[#8A8A85] text-[13px] md:text-sm mt-1 font-medium font-mono">Auditoria completa de propostas: valores, status, atendentes e acessos de leads.</p>
+        <p className="text-[#8A8A85] text-[13px] md:text-sm mt-1 font-medium">Auditoria completa de propostas: valores, status, atendentes e acessos de leads.</p>
       </div>
 
       {recentReservations.length > 0 ? (
@@ -10975,7 +11056,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                 }`}
               >
                 {c.label}
-                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${filtro === c.id ? 'bg-white/15 text-white' : 'bg-[#F4F4F2] text-[#8A8A85]'}`}>{c.count}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${filtro === c.id ? 'bg-white/15 text-white' : 'bg-[#F4F4F2] text-[#8A8A85]'}`}>{c.count}</span>
               </button>
             ))}
           </div>
@@ -10987,7 +11068,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
               const dateOnly = res.created ? (res.created.split('de')[1] || res.created).trim() : 'Recente';
               const logsToShow = (res.logs && res.logs.length > 0) ? res.logs : [
                 { time: res.created || 'Hoje', text: `Proposta criada por ${res.vendedores ? res.vendedores.split(',')[0] : 'Consultor'}` },
-                { time: res.created || 'Hoje', text: `Link de sinal de ${formatCurrency(Number(res.signal || res.sinal || 0))} ativado` },
+                { time: res.created || 'Hoje', text: `Link de sinal de ${formatCurrency(Number(res.sinal || 0))} ativado` },
               ];
               return (
                 <div key={res.id} className={i > 0 ? 'border-t border-[#EBEBE8]' : ''}>
@@ -11000,10 +11081,10 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                     <div className="flex-1 min-w-0">
                       <h4 className="text-[13px] font-bold text-[#141414] tracking-tight leading-tight truncate">{res.title}</h4>
                       <span className="text-[10px] font-medium text-[#B9B9B4] block mt-0.5 truncate">
-                        {res.vendedores || 'Sem atendente'} · <span className="font-mono">{dateOnly}</span>
+                        {res.vendedores || 'Sem atendente'} · <span>{dateOnly}</span>
                       </span>
                     </div>
-                    <span className="hidden md:block w-28 text-right text-sm font-bold font-mono text-[#141414] shrink-0">{formatCurrency(Number(res.signal || res.sinal || 0))}</span>
+                    <span className="hidden md:block w-28 text-right text-sm font-bold text-[#141414] shrink-0">{formatCurrency(Number(res.sinal || 0))}</span>
                     <span className={`hidden sm:inline-block px-2 py-0.5 rounded text-[9px] font-bold border shrink-0 ${getStatusBadge(res.status)}`}>{getStatusLabel(res.status)}</span>
                     <ChevronDown size={16} className={`text-[#B9B9B4] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -11021,7 +11102,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                             </div>
                             <div className="bg-white border border-[#E5E5E2] rounded-xl p-3.5">
                               <span className="block text-[9px] text-[#B9B9B4] font-bold uppercase tracking-wider mb-1">Criado em</span>
-                              <strong className="text-[#2A2A26] text-[13px] font-semibold font-mono break-words">{res.created || 'Hoje'}</strong>
+                              <strong className="text-[#2A2A26] text-[13px] font-semibold break-words">{res.created || 'Hoje'}</strong>
                             </div>
                           </div>
                           <div>
@@ -11053,7 +11134,7 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
                                 return (
                                   <div key={idx} className="relative">
                                     <span className={`absolute -left-[15.5px] top-1 w-2 h-2 rounded-full border-2 border-white ${isAccess ? 'bg-[#94a3b8]' : 'bg-[#141414]'}`}></span>
-                                    <span className={`block text-[10px] font-mono font-bold ${isAccess ? 'text-[#94a3b8]' : 'text-[#B9B9B4]'}`}>{log.time}</span>
+                                    <span className={`block text-[10px] font-bold ${isAccess ? 'text-[#94a3b8]' : 'text-[#B9B9B4]'}`}>{log.time}</span>
                                     <p className={`text-xs leading-snug font-bold mt-0.5 ${isAccess ? 'text-[#1e3a8a]' : 'text-[#2A2A26]'}`}>{log.text}</p>
                                   </div>
                                 );

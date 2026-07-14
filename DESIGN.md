@@ -2,30 +2,39 @@
 name: Reservacar
 description: Acelerador de Escassez Premium - Plataforma de reserva de veículos com sinal instantâneo.
 colors:
-  primary: "#0B1B17"
-  primary-hover: "#122621"
-  neutral-bg: "#ffffff"
-  neutral-surface: "#f8f9fa"
-  neutral-text: "#0f172a"
-  neutral-text-muted: "#64748b"
-  neutral-border: "#e2e8f0"
-  accent-success: "#16a34a"
-  accent-highlight: "#C1F651"
+  primary: "#141414"
+  primary-hover: "#2A2A26"
+  accent: "#C1F11D"
+  accent-hover: "#d4ff3d"
+  neutral-bg: "#F4F4F2"
+  neutral-surface: "#ffffff"
+  neutral-text: "#141414"
+  neutral-text-secondary: "#5F5F5A"
+  neutral-text-muted: "#8A8A85"
+  neutral-text-faint: "#B9B9B4"
+  neutral-border: "#E5E5E2"
+  neutral-border-soft: "#EBEBE8"
+  whatsapp: "#25D366"
+  status-waiting: "amber (50/400/600)"
+  status-expired: "rose (50/400/600)"
+  status-paid: "#C1F11D"
 typography:
   display:
-    fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2rem, 5vw, 3rem)"
+    fontFamily: "'Manrope', ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.5rem, 4vw, 2.25rem)"
     fontWeight: 800
     lineHeight: 1.15
   body:
-    fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "'Manrope', ui-sans-serif, system-ui, sans-serif"
     fontSize: "14px"
     fontWeight: 500
     lineHeight: 1.5
 rounded:
-  sm: "6px"
-  md: "12px"
-  lg: "20px"
+  sm: "12px"
+  md: "14px"
+  lg: "22px"
+  xl: "24px"
+  xxl: "32px"
 spacing:
   sm: "8px"
   md: "16px"
@@ -33,101 +42,123 @@ spacing:
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
-    textColor: "{colors.neutral-bg}"
+    textColor: "#ffffff"
     rounded: "{rounded.sm}"
-    padding: "14px 24px"
-  button-primary-hover:
-    backgroundColor: "{colors.primary-hover}"
+    padding: "10px 16px"
+  button-accent:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.primary}"
 ---
 
 # Design System: Reservacar
 
+> Regenerado a partir do código real (`src/reservacar.tsx` + `src/index.css`) em 2026-07-13.
+> A versão anterior deste arquivo descrevia Azul Cobalto e fonte Geist — ambos NÃO existem mais no app.
+
 ## 1. Overview
 
-**Creative North Star: "Acelerador de Escassez Premium (Tema Claro & Flat)"**
+**Creative North Star: linguagem visual inDrive — lima ácido sobre preto/branco, flat e de alto contraste.**
 
-O sistema de design do Reservacar adota uma estética contemporânea, limpa e de alto contraste, utilizando o **Tema Claro (Light Mode)** por padrão. Abandonando a saturação do tema escuro tradicional de tecnologia, o Reservacar projeta profissionalismo e clareza por meio de superfícies brancas puras, tons equilibrados de cinza e preto para contraste forte, e o uso cirúrgico de **Preto Carbono** e um **Verde Limão Ácido** para botões e realces de status ativo. 
-
-Laços e linhas de borda finos e sutis são usados no lugar de negritos muito pesados ou sombras decorativas, apoiando-se em uma filosofia **100% Flat (Plana)**. A hierarquia visual e a profundidade são estabelecidas através de contrastes de cor de fundo, espessuras de bordas de 1px e tipografia Geist leve.
+Tema claro por padrão. Superfícies brancas sobre fundo `#F4F4F2`, separação por bordas
+finas de 1px (`#E5E5E2` externa, `#EBEBE8` interna) — **sem sombras, sem gradientes,
+sem glassmorphism**. O Preto Carbono `#141414` é a cor de ação primária e de painéis
+de destaque (banners escuros, slot picker); o **Verde Lima `#C1F11D`** é o único acento,
+usado com parcimônia (≤10% da tela) para seleção, sucesso Pix e chamadas visuais.
+Tints do lima via opacidade: `/10 /15 /20 /25 /30`.
 
 **Key Characteristics:**
-* **Contraste Extremo**: Texto preto sobre fundo branco puro, otimizando a leitura sob qualquer iluminação.
-* **Layout Flat Puro**: Sem sombras de elevação, sem efeitos tridimensionais ou blurs de vidro.
-* **Accent Pontual**: O verde limão ácido é a única cor de destaque ativo (usada em ≤10% da tela) para orientar o olhar do usuário.
-* **Bordas Estruturais**: Uso de divisores cinza claro sólidos para separar seções e inputs com precisão.
+* **Contraste extremo**: texto `#141414` sobre branco; legível sob luz solar de pátio.
+* **Flat puro**: profundidade só por contraste de fundo e borda 1px.
+* **Acento pontual**: lima para estado ativo/selecionado/pago; nunca decorativo em massa.
+* **Painéis escuros de ênfase**: cards `#141414` com controles `white/10` e acentos lima
+  (banner de sinais, seletor de horários do link público).
 
 ## 2. Colors
 
-A paleta de cores é focada no contraste limpo e legibilidade.
-
 ### Primary
-- **Preto Carbono** (#0B1B17): Usado para botões de ação primários, cabeçalhos principais e identidade de marca.
-
-### Neutral
-- **Branco Absoluto** (#ffffff): Fundo principal da aplicação e de cards de destaque.
-- **Cinza Off-White** (#f8f9fa): Fundo de páginas secundárias e áreas de agrupamento de dados.
-- **Preto Carbono** (#0f172a / #0B1B17): Títulos principais, textos de corpo de alta leitura e ícones de alto contraste.
-- **Cinza Muted** (#64748b): Subtítulos, textos de apoio e rótulos secundários.
-- **Cinza Divisor** (#e2e8f0): Bordas de cards, divisores horizontais e contornos de inputs.
+- **Preto Carbono** `#141414` (hover `#2A2A26` ou `black`): botões primários, títulos, painéis escuros.
 
 ### Accent
-- **Verde Pix Comercial** (#16a34a): Usado estritamente para indicar sucesso financeiro (sinais recebidos, transações finalizadas).
-- **Verde Limão Ácido** (#C1F651): Usado para realçar itens selecionados, marcas ativas de menu e chamadas visuais.
+- **Verde Lima** `#C1F11D` (hover `#d4ff3d` / `#b0e040`): seleção ativa, badges de sucesso,
+  CTAs de conversão (ex.: "Confirmar PIX"). Texto sobre lima é sempre `#141414`.
+- **WhatsApp** `#25D366` (hover `#20BA5A`): exclusivo para ações de WhatsApp.
 
-### Named Rules
-**The Strict Neutral Rule.** Todos os elementos neutros devem usar a escala de cinza/preto definida sem qualquer tonalidade fria ou quente. A neutralidade deve ser absoluta para dar destaque ao Verde Limão.
+### Neutral (escala real usada no código)
+- Fundo de página: `#F4F4F2` · superfícies: `#ffffff` · superfície suave: `#FAFAF8` / `#F8FAFC`
+- Texto: `#141414` (título) → `#2A2A26` (forte) → `#5F5F5A` (secundário) → `#6F6F6A` →
+  `#8A8A85` (muted) → `#B9B9B4` (faint/labels) → `#D9D9D5` (desabilitado/ícones vazios)
+- Bordas: `#E5E5E2` (padrão) · `#EBEBE8` (divisores internos) · `#D9D9D5`/`#B9B9B4` (hover)
+
+### Status
+- **Aguardando Sinal**: âmbar (`amber-50` fundo, `amber-400` dot, `amber-600/700` texto)
+- **PIX Recebido / sucesso**: lima `#C1F11D` (badge `bg-[#C1F11D]/15`, dot sólido)
+- **Expirado / crítico**: rose (`rose-50` fundo, `rose-400/500` dot, `rose-600/700` texto)
 
 ## 3. Typography
 
-**Display Font:** 'Geist', ui-sans-serif, system-ui, sans-serif
-**Body Font:** 'Geist', ui-sans-serif, system-ui, sans-serif
-**Mono Font:** 'Geist Mono', monospace (para valores, timers, logs e números)
-
-**Character:** Tipografia neo-grotesca neutra, ultra-limpa e de alta legibilidade, com uso de pesos refinados e espaçamento adequado.
+**Única família: 'Manrope' (400–800) para TUDO — títulos, corpo, labels e NÚMEROS.**
+A Geist/Geist Mono foi removida do projeto; não existem mais classes `font-mono`.
 
 ### Hierarchy
-- **Display** (ExtraBold (800), clamp(2rem, 5vw, 3rem), 1.15): Títulos principais das telas (Ex: "Gerador de Reservas").
-- **Headline** (Bold (700), 24px, 1.25): Títulos de seções de cards e cabeçalhos de passos do wizard.
-- **Title** (SemiBold (600), 18px, 1.3): Títulos de itens de lista ou nomes de veículos nos cards.
-- **Body** (Regular (400) / Medium (500), 14px, 1.5): Textos informativos, descrições de veículos (limite recomendado de 65–75ch).
-- **Label** (Bold (700), 12px, tracking-wider, uppercase): Rótulos de campos de formulário e pequenas tags de status.
+- **Display** (ExtraBold 800, 24–36px): títulos de página (ex.: "Relatórios").
+- **Headline** (Bold 700, 18–20px): títulos de cards e seções.
+- **Title** (Bold 700, 13–16px, tracking-tight): nomes de veículos em listas.
+- **Body** (Medium/SemiBold, 13–14px): textos informativos.
+- **Label** (Bold 700–900, 9–11px, uppercase, tracking-wider, cor `#B9B9B4`/`#8A8A85`):
+  rótulos de campos, chips e micro-cabeçalhos.
+- **Valores monetários**: ExtraBold/Black em Manrope, formatados por `formatCurrency` (pt-BR).
 
 ## 4. Elevation
 
-O Reservacar é um sistema **Flat-By-Default**. Não são utilizadas sombras em nenhuma circunstância.
-
-**The Flat Separation Rule.** A separação de elementos é feita exclusivamente pelo contraste de cor de fundo (ex: card branco `#ffffff` sobre fundo da tela off-white `#f8f9fa`) e por bordas finas sólidas de `1px` ou `2px` usando a cor de Cinza Divisor (`#e2e8f0`).
+**Flat-by-default. Nenhuma sombra.** Separação exclusivamente por contraste de fundo
+(branco sobre `#F4F4F2`; `#FAFAF8` para linhas expandidas) e bordas sólidas de 1px.
 
 ## 5. Components
 
 ### Buttons
-- **Shape:** Cantos levemente arredondados (radius de 12px / `rounded-xl` ou 6px / `rounded-sm`).
-- **Primary:** Fundo Azul Cobalto sólido (`#2563eb`), texto branco, sem gradiente.
-- **Hover:** Transiciona a cor de fundo para Azul Escuro (`#1d4ed8`) de forma seca, sem transições lentas ou efeitos de escala.
-- **Secondary:** Fundo Branco sólido com borda Cinza Divisor (`#e2e8f0`), texto Preto Carbono (`#0f172a`).
+- **Primary:** fundo `#141414`, texto branco, hover `#2A2A26`/`black`; `rounded-xl` (12px);
+  texto 10–12px bold uppercase tracking-wider; sem escala no clique.
+- **Accent (conversão):** fundo `#C1F11D`, texto `#141414`, hover `#b0e040`.
+- **Secondary:** fundo branco, borda `#E5E5E2`, texto `#5F5F5A`, hover `bg-[#F4F4F2]`.
+- **Destructive:** `bg-rose-50` + borda `rose-200` + texto `rose-700`, hover `rose-100`.
+- **Chips/filtros:** pill (`rounded-full`), ativo = fundo `#141414` texto branco;
+  inativo = branco com borda `#E5E5E2`.
 
 ### Cards / Containers
-- **Corner Style:** Curva sutil (radius de 12px ou 20px).
-- **Background:** Branco absoluto ou Cinza Off-White.
-- **Border:** Borda contínua de 1px sólida na cor Cinza Divisor (`#e2e8f0`). Sem sombras.
+- Raio generoso: 12/14/22/24/28/32px conforme hierarquia (cards de lista `rounded-3xl`,
+  painéis maiores `rounded-[32px]`).
+- Fundo branco, borda 1px `#E5E5E2`, hover de borda `#D9D9D5`/`#B9B9B4`.
+- Painéis escuros de ênfase: fundo `#141414`, texto branco, controles `bg-white/10`.
 
 ### Inputs / Fields
-- **Style:** Fundo cinza suave (`#f8f9fa`) ou branco, contorno de 2px sólida na cor Cinza Divisor (`#e2e8f0`).
-- **Focus:** Ao focar, a borda torna-se Preto Carbono (`#0f172a`) de forma instantânea.
-- **Error:** Borda vermelha sólida de 2px.
+- Fundo branco ou `#F8FAFC`, borda `#E5E5E2`, `rounded-xl`/`rounded-2xl`,
+  texto sm font-semibold; **focus: borda `#141414`** instantânea. Erro: rose.
+
+### Status badges
+- Pill pequena (9–10px bold uppercase) com dot colorido de 1.5–2px à esquerda
+  (âmbar = aguardando, lima = pago, rose = expirado, cinza = neutro).
 
 ### Navigation
-- **Style:** Barra fixa no topo, fundo Branco absoluto com borda inferior sólida Cinza Divisor. Links em Preto Carbono com hover destacando em Azul Cobalto.
+- **Topbar** fixa branca com borda inferior `#E5E5E2`; **Sidebar** colapsável com item
+  ativo destacado; abas de hub (Configurações) com **underline lima 0.5px** no item ativo.
 
-## 6. Do's and Don'ts
+## 6. Motion
+
+Animações curtas com easing expo-out (`cubic-bezier(0.16, 1, 0.3, 1)`), definidas em
+`index.css`: `fade-in-down` 0.35s, `ticker-in` 0.45s, `rapida-step-in` 0.55s,
+`pulse-ring` 2s (indicadores ao vivo). Acordeões via `grid-rows` transition 300ms.
+**`prefers-reduced-motion` é respeitado** (animações desligam).
+
+## 7. Do's and Don'ts
 
 ### Do:
-- **Do** usar fundo branco absoluto para blocos de conteúdo e cinza off-white para o fundo das páginas.
-- **Do** delimitar todos os cards e campos de entrada com bordas sólidas cinzas claras de 1px ou 2px.
-- **Do** usar o Azul Cobalto para CTAs principais de conversão, limitando-o a elementos estratégicos de interação.
+- **Do** usar branco para conteúdo e `#F4F4F2` para o fundo das páginas.
+- **Do** delimitar cards e inputs com borda 1px `#E5E5E2`.
+- **Do** usar lima `#C1F11D` apenas para ação de conversão, seleção ativa e sucesso Pix.
+- **Do** usar Manrope para números também (não existe mais fonte mono).
 
 ### Don't:
-- **Don't** utilizar sombras (`box-shadow`) ou brilhos de fundo sob nenhuma circunstância.
-- **Don't** utilizar gradientes de cor em fundos, textos ou botões.
-- **Don't** utilizar escala ativa (`active:scale-95`) ou qualquer animação de deformação nos botões ao clicar.
-- **Don't** usar o tema escuro (Dark Mode). O sistema deve ser integralmente claro.
+- **Don't** usar sombras, gradientes ou glassmorphism.
+- **Don't** usar azul como cor de ação (o azul cobalto foi removido do sistema).
+- **Don't** usar escala/deformação no clique de botões.
+- **Don't** usar tema escuro como base (painéis escuros são ênfase pontual, não tema).
