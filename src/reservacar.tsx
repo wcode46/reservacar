@@ -55,6 +55,150 @@ const clampPrice = (value) => {
   return n > MAX_VEHICLE_PRICE ? MAX_VEHICLE_PRICE : n;
 };
 
+// ===== Exportação do relatório da loja =====
+// PDF: janela de impressão estilizada (o navegador salva como PDF, sem lib extra).
+// Markdown: download direto de um .md. Cada exportação vira um log em
+// localStorage, exibido na aba Configurações → Logs.
+const EXPORT_LOGS_KEY = 'reservacar_export_logs';
+const lerLogsExportacao = (): any[] => {
+  try { return JSON.parse(localStorage.getItem(EXPORT_LOGS_KEY) || '[]'); } catch { return []; }
+};
+const registrarExportacao = (entry: { formato: string; qtd: number; loja: string }) => {
+  try {
+    const logs = lerLogsExportacao();
+    logs.unshift({ ...entry, ts: new Date().toISOString() });
+    localStorage.setItem(EXPORT_LOGS_KEY, JSON.stringify(logs.slice(0, 50)));
+  } catch { /* sem localStorage a exportação segue, só não registra */ }
+};
+
+const STATUS_EXPORT_LABEL: any = { Active: 'Aguardando Sinal', Completed: 'PIX Recebido', Expired: 'Expirado', Pending: 'Pendente' };
+const montarRelatorioLoja = (reservas: any[], empresa: any, reservasUsadas: number, totalPlano: number) => {
+  const vendas = reservas.filter(r => r.status === 'Completed' || r.paidSignal);
+  return {
+    loja: {
+      nome: empresa?.nome || '—', cnpj: empresa?.cnpj || '—',
+      email: empresa?.email || '—', telefone: empresa?.telefone || '—',
+      plano: empresa?.plano || '—',
+    },
+    geradoEm: new Date().toLocaleString('pt-BR'),
+    stats: {
+      total: reservas.length,
+      ativas: reservas.filter(r => r.status === 'Active').length,
+      vendas: vendas.length,
+      expiradas: reservas.filter(r => r.status === 'Expired').length,
+      sinais: vendas.reduce((a, r) => a + (Number(r.sinal) || 0), 0),
+      conversao: reservas.length ? `${Math.round((vendas.length / reservas.length) * 100)}%` : '—',
+      uso: `${reservasUsadas}/${totalPlano}`,
+    },
+    linhas: reservas.map(r => ({
+      veiculo: r.title || '—',
+      cliente: r.clienteNome || '—',
+      vendedor: r.vendedores || '—',
+      sinal: formatCurrency(Number(r.sinal) || 0),
+      status: STATUS_EXPORT_LABEL[r.status] || r.status || '—',
+      criado: r.created || '—',
+    })),
+  };
+};
+
+const gerarMarkdownRelatorio = (rel: ReturnType<typeof montarRelatorioLoja>) => {
+  const md = [
+    `# Relatório da loja — ${rel.loja.nome}`,
+    ``,
+    `Gerado em ${rel.geradoEm} pelo Reservacar.`,
+    ``,
+    `## Loja`,
+    `- **CNPJ:** ${rel.loja.cnpj}`,
+    `- **E-mail:** ${rel.loja.email}`,
+    `- **Telefone:** ${rel.loja.telefone}`,
+    `- **Plano:** ${rel.loja.plano} (uso: ${rel.stats.uso})`,
+    ``,
+    `## Resumo`,
+    `| Indicador | Valor |`,
+    `|---|---|`,
+    `| Reservas criadas | ${rel.stats.total} |`,
+    `| Aguardando sinal | ${rel.stats.ativas} |`,
+    `| Vendas (PIX recebido) | ${rel.stats.vendas} |`,
+    `| Expiradas | ${rel.stats.expiradas} |`,
+    `| Sinais recebidos | ${formatCurrency(rel.stats.sinais)} |`,
+    `| Conversão | ${rel.stats.conversao} |`,
+    ``,
+    `## Reservas`,
+    `| Veículo | Cliente | Vendedor | Sinal | Status | Criado em |`,
+    `|---|---|---|---|---|---|`,
+    ...rel.linhas.map(l => `| ${l.veiculo} | ${l.cliente} | ${l.vendedor} | ${l.sinal} | ${l.status} | ${l.criado} |`),
+    ``,
+  ].join('\n');
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reservacar-relatorio-${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  return true;
+};
+
+const gerarPdfRelatorio = (rel: ReturnType<typeof montarRelatorioLoja>) => {
+  // Iframe oculto + print(): dispara o diálogo "Salvar como PDF" do navegador
+  // sem abrir popup (imune a bloqueadores). O iframe é removido no afterprint.
+  const linhas = rel.linhas.map(l => `
+    <tr><td>${l.veiculo}</td><td>${l.cliente}</td><td>${l.vendedor}</td><td class="num">${l.sinal}</td><td>${l.status}</td><td>${l.criado}</td></tr>`).join('');
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />
+    <title>reservacar-relatorio-${new Date().toISOString().slice(0, 10)}</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; }
+      body { font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif; color: #141414; padding: 36px; }
+      .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #141414; padding-bottom: 14px; margin-bottom: 20px; }
+      h1 { font-size: 21px; letter-spacing: -0.02em; }
+      .marca { font-size: 12px; font-weight: 800; background: #C1F11D; padding: 4px 10px; border-radius: 999px; }
+      .meta { font-size: 11px; color: #5F5F5A; margin-top: 4px; }
+      .kpis { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 22px; }
+      .kpi { border: 1px solid #E5E5E2; border-radius: 12px; padding: 10px 14px; min-width: 110px; }
+      .kpi b { display: block; font-size: 17px; }
+      .kpi span { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #8A8A85; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #8A8A85; border-bottom: 1px solid #E5E5E2; padding: 7px 8px; }
+      td { border-bottom: 1px solid #F0F0EE; padding: 7px 8px; }
+      td.num { font-weight: 700; white-space: nowrap; }
+      .foot { margin-top: 24px; font-size: 10px; color: #8A8A85; }
+      @media print { body { padding: 12px; } }
+    </style></head><body>
+    <div class="head">
+      <div>
+        <h1>Relatório da loja — ${rel.loja.nome}</h1>
+        <div class="meta">CNPJ ${rel.loja.cnpj} · ${rel.loja.email} · ${rel.loja.telefone} · Plano ${rel.loja.plano} (uso ${rel.stats.uso})</div>
+        <div class="meta">Gerado em ${rel.geradoEm}</div>
+      </div>
+      <span class="marca">Reservacar</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span>Reservas</span><b>${rel.stats.total}</b></div>
+      <div class="kpi"><span>Aguardando sinal</span><b>${rel.stats.ativas}</b></div>
+      <div class="kpi"><span>Vendas (PIX)</span><b>${rel.stats.vendas}</b></div>
+      <div class="kpi"><span>Expiradas</span><b>${rel.stats.expiradas}</b></div>
+      <div class="kpi"><span>Sinais recebidos</span><b>${formatCurrency(rel.stats.sinais)}</b></div>
+      <div class="kpi"><span>Conversão</span><b>${rel.stats.conversao}</b></div>
+    </div>
+    <table>
+      <thead><tr><th>Veículo</th><th>Cliente</th><th>Vendedor</th><th>Sinal</th><th>Status</th><th>Criado em</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="foot">Documento gerado automaticamente pelo Reservacar. Use "Salvar como PDF" na janela de impressão.</div>
+  </body></html>`;
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+  const idoc = iframe.contentWindow?.document;
+  if (!idoc) { iframe.remove(); return false; }
+  idoc.open(); idoc.write(html); idoc.close();
+  const limpar = () => iframe.remove();
+  iframe.contentWindow?.addEventListener('afterprint', limpar);
+  setTimeout(limpar, 120000); // fallback caso afterprint não dispare
+  setTimeout(() => { iframe.contentWindow?.focus(); iframe.contentWindow?.print(); }, 350);
+  return true;
+};
+
 // Eventos de atividade (proposta_eventos) — label por tipo e mapeamento para o feed.
 const LABEL_EVENTO: Record<string, string> = {
   view: 'VISUALIZAÇÃO', visita: 'VISITA AGENDADA', foto: 'FOTOS ATUALIZADAS',
@@ -4517,6 +4661,19 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   // Cálculos 100% dinâmicos baseados no estado real das reservas
   const totalResgatesAtivos = recentReservations.filter(r => r.status === 'Active').length;
   const totalCriadasAcumulado = recentReservations.length;
+  // Modal de confirmação da exportação do relatório da loja (PDF/Markdown)
+  const [exportarAberto, setExportarAberto] = useState(false);
+  const confirmarExportacao = (formato: 'pdf' | 'markdown') => {
+    const rel = montarRelatorioLoja(recentReservations, empresaLogada, reservasUsadas, totalReservasPlano);
+    const ok = formato === 'pdf' ? gerarPdfRelatorio(rel) : gerarMarkdownRelatorio(rel);
+    if (!ok) {
+      showToast('O navegador bloqueou a janela do PDF. Libere pop-ups e tente de novo.', 'error');
+      return;
+    }
+    registrarExportacao({ formato, qtd: rel.linhas.length, loja: rel.loja.nome });
+    showToast(formato === 'pdf' ? 'Relatório aberto para impressão/PDF.' : 'Relatório Markdown baixado.', 'success');
+    setExportarAberto(false);
+  };
   const concluidasAcumuladas = recentReservations.filter(r => r.status === 'Completed' || r.paidSignal).length;
   const conversaoLiquida = totalCriadasAcumulado > 0 
     ? Math.round((concluidasAcumuladas / totalCriadasAcumulado) * 100) 
@@ -4692,7 +4849,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
               </div>
             </div>
           )}
-          <button onClick={() => showToast('Relatório exportado (demo).', 'success')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 rounded-xl transition cursor-pointer">
+          <button onClick={() => setExportarAberto(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold px-4 rounded-xl transition cursor-pointer">
             <UploadCloud size={15} /> Exportar
           </button>
           <button onClick={() => navigateTo('dashboard')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold px-4 rounded-xl transition cursor-pointer whitespace-nowrap">
@@ -4829,7 +4986,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
         {/* Ações */}
         <div className="flex gap-3">
           <button
-            onClick={() => showToast('Relatório exportado (demo).', 'success')}
+            onClick={() => setExportarAberto(true)}
             className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] text-[#2A2A26] text-sm font-bold px-4 py-3 rounded-2xl active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#141414]/15 cursor-pointer"
           >
             <UploadCloud size={15} /> Exportar
@@ -5327,6 +5484,57 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
             )}
           </div>
         </div>
+
+      {/* Modal de confirmação da exportação */}
+      {exportarAberto && (
+        <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-4" onClick={() => setExportarAberto(false)}>
+          <div
+            role="dialog"
+            aria-label="Exportar relatório da loja"
+            className="bg-white rounded-3xl border border-[#E5E5E2] max-w-md w-full p-6 md:p-7 text-left animate-fade-in-down"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-xl font-black text-[#141414] tracking-tight">Exportar relatório da loja</h3>
+                <p className="text-xs text-[#8A8A85] font-medium mt-1">Resumo completo de {empresaLogada?.nome || 'sua loja'} gerado agora.</p>
+              </div>
+              <button onClick={() => setExportarAberto(false)} aria-label="Fechar" className="text-[#B9B9B4] hover:text-[#141414] transition p-1 shrink-0">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-[#F4F4F2] border border-[#EBEBE8] rounded-2xl p-4 space-y-2 mb-5">
+              <span className="block text-[9px] font-black uppercase tracking-widest text-[#8A8A85]">O que vai no relatório</span>
+              {[
+                'Dados da loja (CNPJ, contato e plano)',
+                `Indicadores: reservas, vendas PIX, sinais recebidos e conversão`,
+                `Tabela com as ${recentReservations.length} propostas (veículo, cliente, vendedor, sinal, status)`,
+              ].map((t, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs font-semibold text-[#2A2A26]">
+                  <Check size={13} className="text-[#141414] mt-0.5 shrink-0" /> {t}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <button
+                onClick={() => confirmarExportacao('markdown')}
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-[#E5E5E2] hover:border-[#B9B9B4] text-[#2A2A26] text-sm font-bold h-11 rounded-xl transition cursor-pointer"
+              >
+                <FileText size={15} /> Markdown (.md)
+              </button>
+              <button
+                onClick={() => confirmarExportacao('pdf')}
+                className="flex-1 flex items-center justify-center gap-2 bg-[#141414] hover:bg-[#2A2A26] text-white text-sm font-bold h-11 rounded-xl transition cursor-pointer"
+              >
+                <UploadCloud size={15} className="text-[#C1F11D]" /> Gerar PDF
+              </button>
+            </div>
+            <p className="text-[10px] text-[#B9B9B4] font-medium mt-3 text-center">Cada exportação fica registrada em Configurações → Logs.</p>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -11065,6 +11273,33 @@ function RelatorioReservasView({ navigateTo, showToast, recentReservations, setR
         </h1>
         <p className="text-[#8A8A85] text-[13px] md:text-sm mt-1 font-medium">Auditoria completa de propostas: valores, status, atendentes e acessos de leads.</p>
       </div>
+
+      {/* Logs de exportação — histórico do botão Exportar do Painel da loja */}
+      {(() => {
+        const exps = lerLogsExportacao();
+        return (
+          <div className="bg-white border border-[#E5E5E2] rounded-[24px] p-5 mb-6 text-left">
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h3 className="text-base font-bold text-[#141414]">Logs de exportação</h3>
+              <span className="text-[10px] font-bold text-[#B9B9B4] uppercase tracking-wider">{exps.length} {exps.length === 1 ? 'registro' : 'registros'}</span>
+            </div>
+            <p className="text-[11px] text-[#8A8A85] font-medium mb-3">Cada relatório gerado pelo botão Exportar do painel fica registrado aqui.</p>
+            {exps.length > 0 ? (
+              <div className="divide-y divide-[#F0F0EE]">
+                {exps.slice(0, 8).map((l: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 py-2.5">
+                    <span className={`shrink-0 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md ${l.formato === 'pdf' ? 'bg-[#141414] text-white' : 'bg-[#C1F11D]/25 text-[#141414]'}`}>{l.formato === 'pdf' ? 'PDF' : 'MD'}</span>
+                    <span className="text-xs font-semibold text-[#2A2A26] flex-1 min-w-0 truncate">Relatório da loja — {l.qtd} {l.qtd === 1 ? 'proposta' : 'propostas'} · {l.loja}</span>
+                    <span className="text-[10px] text-[#B9B9B4] font-semibold shrink-0">{new Date(l.ts).toLocaleString('pt-BR')}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#B9B9B4] font-medium py-2">Nenhuma exportação ainda. Use o botão Exportar no Painel da loja.</p>
+            )}
+          </div>
+        );
+      })()}
 
       {recentReservations.length > 0 ? (
         <>
