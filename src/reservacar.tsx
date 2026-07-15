@@ -8901,6 +8901,29 @@ function ReservaRapidaView({ navigateTo, showToast, setActiveReservation, empres
           <div className="h-1.5 w-full bg-[#E5E5E2] rounded-full overflow-hidden">
             <div className="h-full bg-[#C1F11D] rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${progress}%` }} />
           </div>
+          {/* Chip fixo do veículo: das fases 2 em diante o lojista sempre vê QUAL
+              carro está cadastrando (marca+modelo em destaque, versão esmaecida,
+              ano no selo lima) — mesmo padrão push do ticker do painel. */}
+          {currentPhase >= 2 && vehicleData.model && (() => {
+            const tv = parseVeiculoTitulo(`${vehicleData.brand} ${vehicleData.model} ${vehicleData.version}`.trim());
+            return (
+              <div className="mt-4 flex items-center gap-2.5 bg-[#141414] rounded-2xl pl-1.5 pr-3 py-1.5 text-left">
+                <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                  <Car size={15} className="text-[#C1F11D]" />
+                </span>
+                <div className="min-w-0 flex-1 leading-tight">
+                  <span className="block text-[8px] font-black uppercase tracking-widest text-white/50">Cadastrando</span>
+                  <p className="text-[13px] font-bold text-white truncate">
+                    {tv.marca} {tv.modelo}
+                    {tv.resto && <span className="text-white/60 font-semibold"> {tv.resto}</span>}
+                  </p>
+                </div>
+                {vehicleData.year && (
+                  <span className="shrink-0 text-[10px] font-black bg-[#C1F11D] text-[#141414] px-2 py-1 rounded-md">{vehicleData.year}</span>
+                )}
+              </div>
+            );
+          })()}
           <div className="mt-6 space-y-1">
             <h2 className="text-2xl font-black tracking-tight leading-tight text-[#141414]">{screen.q}</h2>
             <p className="text-xs text-[#8A8A85] font-medium">{screen.sub}</p>
