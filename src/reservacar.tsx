@@ -380,6 +380,19 @@ const MOCK_YEARS = [
 // --- MAIN APP COMPONENT ---
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState('home'); // home, login, hub, sales-stats, dashboard, preview, mobile-preview, assinar, cadastrar-reserva, configuracoes, checkout-plano
+
+  // Tema Black (glassmorphism): camada de estilo à parte via classe no <html>
+  // (overrides em index.css). O tema claro original fica intocado. Aplica-se ao
+  // app autenticado; as telas PÚBLICAS (landing 'home' e 'login') ficam SEMPRE
+  // no tema branco — o branco é o tema principal, inclusive no login.
+  const [temaBlack, setTemaBlack] = useState(() => {
+    try { return localStorage.getItem('reservacar_theme') === 'black'; } catch { return false; }
+  });
+  useEffect(() => {
+    const rotaPublica = currentRoute === 'home' || currentRoute === 'login';
+    document.documentElement.classList.toggle('theme-black', temaBlack && !rotaPublica);
+    try { localStorage.setItem('reservacar_theme', temaBlack ? 'black' : 'light'); } catch { /* sem storage, tema só na sessão */ }
+  }, [temaBlack, currentRoute]);
   const [activeReservation, setActiveReservation] = useState<any>(null); 
   const [toastMessage, setToastMessage] = useState<any>(null);
   const [previewOrigin, setPreviewOrigin] = useState('dashboard');
@@ -1037,6 +1050,8 @@ export default function App() {
                 totalReservasPlano={totalReservasPlano}
                 setTotalReservasPlano={setTotalReservasPlano}
                 setPlanoUpgrade={setPlanoUpgrade}
+                temaBlack={temaBlack}
+                setTemaBlack={setTemaBlack}
               />
             )}
             {currentRoute === 'vendedores' && (
@@ -1625,8 +1640,10 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
         </div>
       )}
 
-      {/* Suporte e Configurações */}
-      <div className={`pt-3 pb-1 space-y-1 bg-white text-left ${isCol ? 'px-2' : 'px-4'}`}>
+      {/* Suporte e Configurações — sem fundo próprio: herda o da sidebar (igual aos
+          itens de navegação). No tema claro era branco-sobre-branco (invisível); no
+          tema black o bg-white virava uma camada de vidro extra = faixa cinza. */}
+      <div className={`pt-3 pb-1 space-y-1 text-left ${isCol ? 'px-2' : 'px-4'}`}>
         <button
           onClick={() => showToast('Suporte Reservacar: Entre em contato pelo e-mail suporte@reservacar.com.br ou WhatsApp!', 'info')}
           title={isCol ? 'Suporte' : undefined}
@@ -1677,7 +1694,7 @@ function Sidebar({ currentRoute, navigateTo, empresaLogada, isOpen, setIsOpen, r
       {isOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-[#141414]/40 backdrop-blur-sm transition-opacity duration-300" onClick={() => setIsOpen(false)}></div>
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white z-50 h-full">
+          <div className="drawer-panel-solid relative flex-1 flex flex-col max-w-xs w-full bg-white z-50 h-full">
             <div className="absolute top-4 right-4 z-10">
               <button onClick={() => setIsOpen(false)} aria-label="Fechar menu" className="p-2 rounded-xl text-[#8A8A85] hover:text-[#2A2A26] hover:bg-[#EBEBE8] transition">
                 <X size={20} />
@@ -1729,11 +1746,13 @@ function MiniSpark({ trend = 'up' }: { trend?: 'up' | 'down' }) {
   const up = 'M0 27 L14 23 L28 25 L42 17 L56 19 L70 11 L84 13 L100 5';
   const down = 'M0 7 L14 9 L28 8 L42 14 L56 12 L70 18 L84 21 L100 27';
   const d = trend === 'down' ? down : up;
-  const stroke = trend === 'down' ? '#E11D48' : '#141414';
+  // Cor via currentColor + classe de texto: assim o tema black remapeia a linha
+  // (text-[#141414] -> claro) e ela não some no card escuro. O rose é acento fixo.
+  const colorClass = trend === 'down' ? 'text-[#E11D48]' : 'text-[#141414]';
   return (
-    <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="w-full h-8 mt-3 -mb-1">
-      <path d={`${d} L100 32 L0 32 Z`} fill={stroke} fillOpacity="0.06" />
-      <path d={d} fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 100 32" preserveAspectRatio="none" className={`w-full h-8 mt-3 -mb-1 ${colorClass}`}>
+      <path d={`${d} L100 32 L0 32 Z`} fill="currentColor" fillOpacity="0.06" />
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -4864,7 +4883,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
           o slide CSS (.animate-vitrine-drive) dura o mesmo que a reprodução, então
           as rodas param junto com o movimento. Fundo = tom de lima do vídeo. */}
       <div
-        className="hidden lg:block relative overflow-hidden rounded-[32px] border border-[#E5E5E2] mb-8 h-[280px]"
+        className="theme-light-island hidden lg:block relative overflow-hidden rounded-[32px] border border-[#E5E5E2] mb-8 h-[280px]"
         style={{ background: '#BDBE30' }}
       >
         <div className="absolute inset-y-0 right-0 h-full aspect-[16/7] animate-vitrine-drive">
@@ -8488,7 +8507,7 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
 
   return (
     <div className="pt-8 pb-16 px-6 md:px-12 max-w-3xl mx-auto">
-      <div className="mb-5">
+      <div className="mb-5 text-center">
         <h1 className="text-3xl font-extrabold text-[#141414] tracking-tight">Agenda de Visitas</h1>
         <p className="text-[#8A8A85] text-sm mt-1 font-medium">Leads que agendaram uma visita pelo link da reserva.</p>
       </div>
@@ -8496,12 +8515,14 @@ function AgendaVisitasView({ navigateTo, showToast, empresaLogada, recentReserva
       {loading ? (
         <div className="flex items-center gap-2 text-[#8A8A85] text-sm font-semibold"><RefreshCw size={16} className="animate-spin" /> Carregando visitas...</div>
       ) : dias.length === 0 ? (
-        <div className="bg-white border border-[#E5E5E2] rounded-3xl py-16 px-8 text-center max-w-xl mx-auto">
+        <div className="flex items-center justify-center min-h-[58vh]">
+        <div className="bg-white border border-[#E5E5E2] rounded-3xl py-16 px-8 text-center max-w-xl w-full mx-auto">
           <div className="w-14 h-14 rounded-2xl bg-[#F4F4F2] border border-[#E5E5E2] flex items-center justify-center mx-auto mb-5">
             <CalendarClock className="text-[#B9B9B4]" size={26} />
           </div>
           <h4 className="font-extrabold text-[#141414] text-lg mb-2">Nenhuma visita agendada</h4>
           <p className="text-xs text-[#8A8A85] leading-relaxed font-medium max-w-xs mx-auto">Quando um cliente agendar uma visita pelo link da reserva, ela aparece aqui com nome, WhatsApp e horário.</p>
+        </div>
         </div>
       ) : (
         <>
@@ -9849,7 +9870,7 @@ function AssinaturaEmpresaView({ navigateTo, showToast, setTotalReservasPlano, s
 }
 
 // --- CONFIGURACOES VIEW ---
-function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, totalReservasPlano, setTotalReservasPlano, setPlanoUpgrade, embedded = false, section = 'all' }) {
+function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLogada, totalReservasPlano, setTotalReservasPlano, setPlanoUpgrade, embedded = false, section = 'all', temaBlack = false, setTemaBlack = (_v: boolean) => {} }) {
   const [formData, setFormData] = useState({
     nome: empresaLogada.nome || '',
     telefone: empresaLogada.telefone || '',
@@ -10088,6 +10109,32 @@ function ConfiguracoesView({ navigateTo, showToast, empresaLogada, setEmpresaLog
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* Aparência: Tema Black (glassmorphism) — troca o sistema inteiro,
+                    inclusive o link/preview do cliente. Camada CSS à parte (.theme-black). */}
+                <div>
+                  <label className="block text-[10px] font-black text-[#8A8A85] uppercase tracking-wider mb-2">
+                    Aparência
+                  </label>
+                  <div className="flex items-center justify-between gap-4 bg-[#F4F4F2] border border-[#E5E5E2] rounded-2xl px-4 py-3.5">
+                    <div className="min-w-0">
+                      <span className="block text-sm font-bold text-[#141414]">Tema Black</span>
+                      <span className="block text-[11px] text-[#8A8A85] font-medium mt-0.5 leading-relaxed">
+                        Visual escuro com efeito de vidro em todo o sistema — painel, criação de link e a página que o cliente vê.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={temaBlack}
+                      aria-label="Alternar Tema Black"
+                      onClick={() => { const novo = !temaBlack; setTemaBlack(novo); showToast(novo ? 'Tema Black ativado em todo o sistema.' : 'Tema claro restaurado.', 'success'); }}
+                      className={`relative shrink-0 w-12 h-7 rounded-full transition-colors duration-300 cursor-pointer ${temaBlack ? 'bg-[#C1F11D]' : 'bg-[#D9D9D5]'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-300 ${temaBlack ? 'translate-x-5' : ''}`}></span>
+                    </button>
                   </div>
                 </div>
               </div>

@@ -132,3 +132,198 @@ html, body {
   overflow-x: hidden;
   max-width: 100%;
 }
+
+/* ============================================================================
+   TEMA BLACK (glassmorphism) — camada de estilo À PARTE, ativada pela classe
+   .theme-black no <html> (toggle em Configurações → Aparência).
+   O tema claro original fica 100% intocado: aqui só REMAPEAMOS as utilities
+   de cor que o app já usa, sob o escopo .theme-black.
+   Usa !important porque o Tailwind v4 gera as utilities em @layer com ordem
+   imprevisível — sem isso, o override pega em alguns elementos e falha em
+   outros (ex.: a <aside> ficava branca opaca). Como tudo aqui está sob
+   .theme-black, o tema claro nunca é afetado.
+   Paleta (ref. do mockup): canvas #0A0A0C, cartões de vidro translúcido com
+   borda sutil, texto claro e o lima #C1F11D intacto como acento.
+   ========================================================================== */
+.theme-black { background-color: #0A0A0C; color-scheme: dark; }
+.theme-black body { background-color: #0A0A0C; }
+
+/* --- Canvas do app (cascas de página): fundo escuro sólido p/ os cards saltarem --- */
+.theme-black .bg-\[\#f8f9fa\] { background-color: #0A0A0C !important; }
+
+/* --- Superfícies claras -> vidro --- */
+/* NOTA: NÃO usar backdrop-filter aqui. O <body> tem class="bg-white"; um
+   backdrop-filter nele (ou em qualquer ancestral) vira containing block dos
+   elementos `position: fixed` (sidebar, modais) e quebra `top-0 bottom-0` /
+   `inset-0`. O tint translúcido já dá o aspecto de vidro sem esse efeito
+   colateral de layout. */
+.theme-black .bg-white {
+  background-color: rgba(255, 255, 255, 0.055) !important;
+}
+.theme-black .focus\:bg-white:focus { background-color: rgba(255, 255, 255, 0.09) !important; }
+.theme-black .bg-\[\#F4F4F2\] { background-color: rgba(255, 255, 255, 0.045) !important; }
+.theme-black .bg-\[\#FAFAF8\] { background-color: rgba(255, 255, 255, 0.035) !important; }
+.theme-black .bg-\[\#F8FAFC\], .theme-black .bg-\[\#f8fafc\] { background-color: rgba(255, 255, 255, 0.035) !important; }
+.theme-black .bg-\[\#EBEBE8\] { background-color: rgba(255, 255, 255, 0.08) !important; }
+.theme-black .bg-\[\#E5E5E2\] { background-color: rgba(255, 255, 255, 0.1) !important; }
+.theme-black .hover\:bg-\[\#F4F4F2\]:hover { background-color: rgba(255, 255, 255, 0.08) !important; }
+.theme-black .hover\:bg-\[\#FAFAF8\]:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+.theme-black .hover\:bg-\[\#EBEBE8\]:hover,
+.theme-black .active\:bg-\[\#EBEBE8\]:active { background-color: rgba(255, 255, 255, 0.12) !important; }
+
+/* Painéis/botões escuros -> vidro elevado (texto branco continua legível) */
+.theme-black .bg-\[\#141414\], .theme-black .bg-black {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+.theme-black .hover\:bg-\[\#2A2A26\]:hover, .theme-black .hover\:bg-black:hover { background-color: rgba(255, 255, 255, 0.16) !important; }
+
+/* --- Texto --- */
+.theme-black .text-\[\#141414\], .theme-black .text-black { color: #F4F4F2 !important; }
+.theme-black .text-\[\#2A2A26\] { color: #E6E6E2 !important; }
+.theme-black .text-\[\#5F5F5A\] { color: #B9B9B4 !important; }
+.theme-black .text-\[\#6F6F6A\] { color: #A5A5A0 !important; }
+.theme-black .hover\:text-\[\#141414\]:hover, .theme-black .hover\:text-\[\#2A2A26\]:hover { color: #FFFFFF !important; }
+/* Texto/ícone escuro SOBRE o lima continua escuro (lima é claro nos dois temas) */
+.theme-black .bg-\[\#C1F11D\] .text-\[\#141414\],
+.theme-black .bg-\[\#C1F11D\].text-\[\#141414\],
+.theme-black .text-\[\#141414\].bg-\[\#C1F11D\] { color: #141414 !important; }
+
+/* --- Bordas --- */
+.theme-black .border-\[\#E5E5E2\] { border-color: rgba(255, 255, 255, 0.09) !important; }
+.theme-black .border-\[\#EBEBE8\] { border-color: rgba(255, 255, 255, 0.07) !important; }
+.theme-black .border-\[\#F0F0EE\] { border-color: rgba(255, 255, 255, 0.06) !important; }
+.theme-black .border-\[\#D9D9D5\] { border-color: rgba(255, 255, 255, 0.14) !important; }
+.theme-black .border-\[\#B9B9B4\] { border-color: rgba(255, 255, 255, 0.22) !important; }
+.theme-black .border-\[\#141414\], .theme-black .border-\[\#2A2A26\] { border-color: rgba(255, 255, 255, 0.5) !important; }
+.theme-black .hover\:border-\[\#B9B9B4\]:hover { border-color: rgba(255, 255, 255, 0.28) !important; }
+.theme-black .hover\:border-\[\#141414\]:hover { border-color: rgba(255, 255, 255, 0.6) !important; }
+.theme-black .hover\:border-\[\#D9D9D5\]:hover { border-color: rgba(255, 255, 255, 0.18) !important; }
+.theme-black .focus\:border-\[\#141414\]:focus, .theme-black .focus\:border-\[\#2A2A26\]:focus { border-color: rgba(255, 255, 255, 0.6) !important; }
+.theme-black .focus-within\:border-\[\#D9D9D5\]:focus-within { border-color: rgba(255, 255, 255, 0.2) !important; }
+.theme-black :is(.divide-\[\#F0F0EE\]) > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.06) !important; }
+.theme-black :is(.divide-\[\#EBEBE8\]) > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.07) !important; }
+
+/* --- Badges/estados (tintas escuras no lugar dos pastéis claros) --- */
+.theme-black .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14) !important; }
+.theme-black .text-amber-600 { color: #FBBF24 !important; }
+.theme-black .text-amber-700 { color: #FCD34D !important; }
+.theme-black .bg-rose-50 { background-color: rgba(244, 63, 94, 0.14) !important; }
+.theme-black .hover\:bg-rose-100:hover { background-color: rgba(244, 63, 94, 0.24) !important; }
+.theme-black .border-rose-200 { border-color: rgba(244, 63, 94, 0.4) !important; }
+.theme-black .text-rose-700 { color: #FDA4AF !important; }
+.theme-black .text-rose-600 { color: #FB7185 !important; }
+.theme-black .text-emerald-700 { color: #6EE7B7 !important; }
+.theme-black .text-\[\#1e3a8a\] { color: #93C5FD !important; }
+
+/* Sombras claras não fazem sentido no escuro */
+.theme-black .shadow-sm, .theme-black .shadow-xl { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) !important; }
+
+/* --- Complementos de coerência (gaps do audit estático) --------------------
+   Cores que o bloco acima não pegava e que quebravam o tema: superfícies
+   escuras/claras usadas como FUNDO, textos escuros que sumiam sobre o vidro,
+   e badges semânticos com tons 800 (escuros) ou fundos -50 (claros) restantes.
+   As superfícies-acento vivas (lima #C1F11D, gradiente lima dos cards, vitrine)
+   são MANTIDAS de propósito — acento é o mesmo nos dois temas.
+   -------------------------------------------------------------------------- */
+/* Superfície escura secundária como FUNDO (chips de filtro selecionados) -> vidro elevado */
+.theme-black .bg-\[\#2A2A26\] { background-color: rgba(255, 255, 255, 0.15) !important; }
+/* Trilhas de toggle / divisores claros usados como fundo -> vidro */
+.theme-black .bg-\[\#D9D9D5\] { background-color: rgba(255, 255, 255, 0.16) !important; }
+.theme-black .bg-\[\#B9B9B4\] { background-color: rgba(255, 255, 255, 0.24) !important; }
+/* Textos escuros nos cards de preview do cliente/landing (sumiriam no vidro) */
+.theme-black .text-\[\#0f172a\] { color: #E6E6E2 !important; }
+.theme-black .text-\[\#6b7c77\] { color: #A5A5A0 !important; }
+/* Borda slate clara -> sutil */
+.theme-black .border-\[\#e2e8f0\] { border-color: rgba(255, 255, 255, 0.1) !important; }
+/* Badges semânticos: tons 800 escuros -> claros; fundos -50 restantes -> tinta escura */
+.theme-black .text-rose-800 { color: #FDA4AF !important; }
+.theme-black .text-amber-800 { color: #FCD34D !important; }
+.theme-black .text-blue-800 { color: #93C5FD !important; }
+.theme-black .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.14) !important; }
+.theme-black .bg-blue-50 { background-color: rgba(59, 130, 246, 0.14) !important; }
+.theme-black .border-emerald-200 { border-color: rgba(16, 185, 129, 0.4) !important; }
+
+/* --- Modificadores de OPACIDADE (/NN) --------------------------------------
+   O Tailwind gera um nome de classe próprio p/ cada `cor/NN`, então os
+   overrides de cor cheia acima NÃO os pegavam. Era a causa do menu lateral
+   lavado (cards `bg-[#F4F4F2]/50`), do item ativo oliva (`bg-[#C1F11D]/20`)
+   e de bordas/textos escuros invisíveis. Aqui cobrimos todas as variantes.
+   -------------------------------------------------------------------------- */
+/* Caixas claras translúcidas (cards da sidebar: FUEL CAR, USO DO PLANO, footer) -> vidro escuro */
+.theme-black .bg-\[\#F4F4F2\]\/50 { background-color: rgba(255, 255, 255, 0.045) !important; }
+.theme-black .bg-\[\#F4F4F2\]\/30 { background-color: rgba(255, 255, 255, 0.03) !important; }
+.theme-black .bg-\[\#EBEBE8\]\/80 { background-color: rgba(255, 255, 255, 0.08) !important; }
+/* Preenchimentos/hover escuros sutis sobre elementos claros -> tinta branca (senão somem no escuro) */
+.theme-black .bg-\[\#141414\]\/10 { background-color: rgba(255, 255, 255, 0.06) !important; }
+.theme-black .bg-\[\#141414\]\/5 { background-color: rgba(255, 255, 255, 0.04) !important; }
+.theme-black .hover\:bg-\[\#141414\]\/10:hover { background-color: rgba(255, 255, 255, 0.1) !important; }
+.theme-black .hover\:bg-\[\#141414\]\/5:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+/* (scrims de modal bg-[#141414]/40../70 ficam escuros de propósito — são backdrop) */
+
+/* Tints de lima (pílulas ativas de navegação, badges, highlights) — reforçados p/ ler no escuro */
+.theme-black .bg-\[\#C1F11D\]\/10 { background-color: rgba(193, 241, 29, 0.12) !important; }
+.theme-black .bg-\[\#C1F11D\]\/15 { background-color: rgba(193, 241, 29, 0.15) !important; }
+.theme-black .bg-\[\#C1F11D\]\/20 { background-color: rgba(193, 241, 29, 0.18) !important; }
+.theme-black .bg-\[\#C1F11D\]\/25 { background-color: rgba(193, 241, 29, 0.22) !important; }
+.theme-black .bg-\[\#C1F11D\]\/30 { background-color: rgba(193, 241, 29, 0.26) !important; }
+.theme-black .bg-\[\#C1F11D\]\/35 { background-color: rgba(193, 241, 29, 0.30) !important; }
+.theme-black .bg-\[\#C1F11D\]\/40 { background-color: rgba(193, 241, 29, 0.34) !important; }
+.theme-black .hover\:bg-\[\#C1F11D\]\/35:hover { background-color: rgba(193, 241, 29, 0.30) !important; }
+.theme-black .hover\:bg-\[\#C1F11D\]\/40:hover { background-color: rgba(193, 241, 29, 0.34) !important; }
+
+/* Bordas escuras (com opacidade) -> claras */
+.theme-black .border-\[\#141414\]\/10 { border-color: rgba(255, 255, 255, 0.1) !important; }
+.theme-black .border-\[\#141414\]\/20 { border-color: rgba(255, 255, 255, 0.14) !important; }
+.theme-black .border-\[\#141414\]\/25 { border-color: rgba(255, 255, 255, 0.16) !important; }
+.theme-black .border-\[\#141414\]\/30 { border-color: rgba(255, 255, 255, 0.2) !important; }
+.theme-black .border-\[\#141414\]\/80 { border-color: rgba(255, 255, 255, 0.5) !important; }
+.theme-black .hover\:border-\[\#141414\]\/80:hover { border-color: rgba(255, 255, 255, 0.5) !important; }
+/* Bordas claras (com opacidade) -> sutis */
+.theme-black .border-\[\#E5E5E2\]\/50 { border-color: rgba(255, 255, 255, 0.06) !important; }
+.theme-black .border-\[\#E5E5E2\]\/60 { border-color: rgba(255, 255, 255, 0.07) !important; }
+.theme-black .border-\[\#E5E5E2\]\/80 { border-color: rgba(255, 255, 255, 0.08) !important; }
+
+/* Texto escuro com opacidade sobre superfícies ESCURAS -> claro.
+   /70 e /75 ficam DE FORA: são texto sobre o lima/vitrine (acento), seguem escuros. */
+.theme-black .text-\[\#141414\]\/90 { color: rgba(244, 244, 242, 0.92) !important; }
+.theme-black .text-\[\#141414\]\/80 { color: rgba(244, 244, 242, 0.82) !important; }
+.theme-black .text-\[\#141414\]\/60 { color: rgba(244, 244, 242, 0.62) !important; }
+.theme-black .text-\[\#141414\]\/50 { color: rgba(244, 244, 242, 0.5) !important; }
+
+/* --- Classes com PREFIXO RESPONSIVO (lg:) — geram nome próprio, escapavam ----
+   O card da Reserva Rápida usa `lg:bg-white` (no desktop): ficava branco puro
+   com texto claro por cima = ilegível. Cobrimos dentro do mesmo breakpoint. */
+@media (min-width: 1024px) {
+  .theme-black .lg\:bg-white { background-color: rgba(255, 255, 255, 0.05) !important; }
+  .theme-black .lg\:border-\[\#E5E5E2\] { border-color: rgba(255, 255, 255, 0.09) !important; }
+}
+
+/* --- Barras fixas/sticky de SOBREPOSIÇÃO precisam ser OPACAS ------------------
+   bg-white nelas virava vidro 0.055 (quase transparente) e o conteúdo que rola
+   por baixo vazava (header do painel transparente sobre a vitrine). Ao contrário
+   dos cards, essas barras usam uma superfície escura sólida. Seletores evitam a
+   sidebar (que é vidro de propósito): topo com h-16, headers e sticky top-0. */
+.theme-black header.bg-white,
+.theme-black .fixed.top-0.h-16.bg-white,
+.theme-black .sticky.top-0.bg-white {
+  background-color: #131316 !important;
+}
+
+/* --- Ilha de TEMA CLARO -----------------------------------------------------
+   Subárvores com fundo-acento próprio (ex.: a vitrine olive #BDBE30) devem
+   renderizar IDÊNTICAS ao tema branco — o tema black estava invertendo o texto
+   e os pills sobre o olive, deixando ilegível. Marcar o container com
+   `.theme-light-island` reafirma os tokens que o black inverteria. A classe
+   extra dá especificidade (0,3,0)/(0,2,1) que vence os overrides globais. */
+.theme-black .theme-light-island .text-\[\#141414\] { color: #141414 !important; }
+.theme-black .theme-light-island .bg-\[\#141414\] { background-color: #141414 !important; }
+.theme-black .theme-light-island .border-\[\#141414\]\/10 { border-color: rgba(20, 20, 20, 0.1) !important; }
+.theme-black .theme-light-island.border-\[\#E5E5E2\] { border-color: #E5E5E2 !important; }
+
+/* --- Drawer mobile SÓLIDO ---------------------------------------------------
+   O painel do menu mobile usa bg-white -> virava vidro 0.055 e o conteúdo da
+   página vazava por trás (o desktop parece sólido só porque não há conteúdo
+   atrás dele). Deixamos o painel opaco na cor efetiva da sidebar desktop
+   (#0A0A0C + vidro), então o renderContent interno (0.055) por cima resulta
+   no MESMO tom do desktop. Classe extra vence o override de .bg-white. */
+.theme-black .drawer-panel-solid.bg-white { background-color: #17171a !important; }
