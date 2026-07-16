@@ -327,3 +327,13 @@ html, body {
    (#0A0A0C + vidro), então o renderContent interno (0.055) por cima resulta
    no MESMO tom do desktop. Classe extra vence o override de .bg-white. */
 .theme-black .drawer-panel-solid.bg-white { background-color: #17171a !important; }
+
+/* --- QR code SÓLIDO branco -------------------------------------------------
+   O QR (PixModal, telas preview/mobile-preview) desenha os módulos com
+   atributos SVG fixos (fill="#141414") sobre um container bg-white. No black o
+   container viraria vidro escuro e os módulos escuros sumiriam = QR ilegível.
+   Um QR precisa ser escuro-sobre-claro p/ ser escaneável, então mantemos o
+   container branco opaco (os módulos fixos já ficam corretos). Classe extra
+   vence o override de .bg-white. */
+.theme-black .qr-code-surface.bg-white { background-color: #FFFFFF !important; }
+.theme-black .qr-code-surface.border-\[\#E5E5E2\] { border-color: #E5E5E2 !important; }

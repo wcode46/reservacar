@@ -961,8 +961,9 @@ export default function App() {
         )}
         
         {currentRoute === 'sales-stats' && (
-          <SalesStatsView 
-            navigateTo={navigateTo} 
+          <SalesStatsView
+            navigateTo={navigateTo}
+            temaBlack={temaBlack}
             reservasUsadas={reservasUsadas}
             totalReservasPlano={totalReservasPlano}
             recentReservations={recentReservations}
@@ -4572,7 +4573,7 @@ function HubView({ navigateTo, reservasUsadas, totalReservasPlano, liveNotificat
 }
 
 // --- SALES STATS VIEW (LIVE FEED) ---
-function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
+function SalesStatsView({ navigateTo, temaBlack = false, reservasUsadas, totalReservasPlano, recentReservations, setRecentReservations, liveNotifications, showToast, empresaLogada, setReservaParaGerenciar }) {
   const reservasDisponiveis = totalReservasPlano - reservasUsadas;
 
   // Acha a proposta ativa mais urgente para exibir no cabeçalho
@@ -4762,6 +4763,15 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
   const chartHeight = 200;
   const paddingX = 40;
   const paddingY = 25;
+
+  // Cores do gráfico conscientes do tema: as cores são atributos SVG (não
+  // classes), então o remapeamento CSS do .theme-black não as alcança — sem
+  // isto, a linha/área/pontos escuros somem no card de vidro escuro e o grid
+  // branco fica berrante. No black a linha inverte p/ clara e o anel dos pontos
+  // p/ escuro (o inverso da linha, p/ separar o ponto do card).
+  const chartColors = temaBlack
+    ? { line: '#F4F4F2', area: '#F4F4F2', grid: 'rgba(255,255,255,0.09)', dot: '#F4F4F2', dotRing: '#131316' }
+    : { line: '#141414', area: '#141414', grid: '#F1F5F9', dot: '#141414', dotRing: '#FFFFFF' };
 
   const chartPoints = useMemo(() => {
     return diasSemana.map((dia, idx) => {
@@ -5170,8 +5180,8 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                 <defs>
                   {/* Gradiente da área preenchida */}
                   <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#141414" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#141414" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor={chartColors.area} stopOpacity="0.25" />
+                    <stop offset="100%" stopColor={chartColors.area} stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
 
@@ -5181,7 +5191,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                   y1={paddingY} 
                   x2={chartWidth - paddingX} 
                   y2={paddingY} 
-                  stroke="#F1F5F9" 
+                  stroke={chartColors.grid}
                   strokeWidth="1" 
                 />
                 <line 
@@ -5189,7 +5199,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                   y1={paddingY + (chartHeight - 2 * paddingY) / 2} 
                   x2={chartWidth - paddingX} 
                   y2={paddingY + (chartHeight - 2 * paddingY) / 2} 
-                  stroke="#F1F5F9" 
+                  stroke={chartColors.grid}
                   strokeDasharray="4 4" 
                   strokeWidth="1" 
                 />
@@ -5198,7 +5208,7 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                   y1={chartHeight - paddingY} 
                   x2={chartWidth - paddingX} 
                   y2={chartHeight - paddingY} 
-                  stroke="#F1F5F9" 
+                  stroke={chartColors.grid}
                   strokeWidth="1" 
                 />
 
@@ -5211,10 +5221,10 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
 
                 {/* Linha do Gráfico com Animação de Entrada */}
                 <path 
-                  d={linePath} 
-                  fill="none" 
-                  stroke="#141414" 
-                  strokeWidth="3.5" 
+                  d={linePath}
+                  fill="none"
+                  stroke={chartColors.line}
+                  strokeWidth="3.5"
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   className="chart-line animate-draw-line" 
@@ -5253,9 +5263,9 @@ function SalesStatsView({ navigateTo, reservasUsadas, totalReservasPlano, recent
                       <circle 
                         cx={p.x} 
                         cy={p.y} 
-                        r={isHovered ? 6 : 4} 
-                        fill={isHovered ? '#C1F11D' : '#141414'} 
-                        stroke="#FFFFFF" 
+                        r={isHovered ? 6 : 4}
+                        fill={isHovered ? '#C1F11D' : chartColors.dot}
+                        stroke={chartColors.dotRing}
                         strokeWidth={isHovered ? 2 : 1.5} 
                         className="transition-all duration-200 ease-out pointer-events-none"
                       />
@@ -7480,7 +7490,7 @@ function PixModal({ onClose, sinal, vendedor, showToast, onConfirm }) {
 
             {/* Dynamic Simulated Stylized QR Code Component */}
             <div className="flex justify-center mb-6">
-              <div className="bg-white border-2 border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-center">
+              <div className="qr-code-surface bg-white border-2 border-[#E5E5E2] p-4 rounded-2xl flex items-center justify-center">
                  <svg width="140" height="140" viewBox="0 0 100 100" fill="black" xmlns="http://www.w3.org/2000/svg">
                     {/* Top Left Finder Pattern */}
                     <rect x="5" y="5" width="25" height="25" fill="#141414"/>
